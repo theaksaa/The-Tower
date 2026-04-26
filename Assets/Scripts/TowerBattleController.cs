@@ -197,11 +197,12 @@ public class TowerBattleController : MonoBehaviour
     private void InitializeHero()
     {
         heroModifiers.Clear();
+        var startingStats = runConfig.heroDefaults.baseStats;
         hero = new HeroRuntime
         {
             Level = 1,
             Xp = 0,
-            CurrentHp = Mathf.Min(100, runConfig.heroDefaults.baseStats.health),
+            CurrentHp = startingStats.health,
             EquippedMoves = runConfig.heroDefaults.moves.Take(4).ToList(),
             KnownMoves = new HashSet<string>(runConfig.heroDefaults.moves)
         };
@@ -532,6 +533,7 @@ public class TowerBattleController : MonoBehaviour
     private void HandleVictory(string heroTurnSummary)
     {
         var rewardSummary = AwardVictoryRewards();
+        RestoreHeroToFullHealth();
         RefreshAllUi();
 
         if (encounterIndex + 1 >= runConfig.encounters.Count)
@@ -560,7 +562,6 @@ public class TowerBattleController : MonoBehaviour
         while (hero.Level < runConfig.xpTable.Count && hero.Xp >= runConfig.xpTable[hero.Level])
         {
             hero.Level++;
-            hero.CurrentHp = Mathf.Min(GetHeroBaseStats().health, hero.CurrentHp + runConfig.heroDefaults.statsPerLevel.health);
             rewardParts.Add($"Level up to {hero.Level}");
         }
 
@@ -571,6 +572,16 @@ public class TowerBattleController : MonoBehaviour
         }
 
         return string.Join(" | ", rewardParts);
+    }
+
+    private void RestoreHeroToFullHealth()
+    {
+        if (hero == null)
+        {
+            return;
+        }
+
+        hero.CurrentHp = GetHeroBaseStats().health;
     }
 
     private string PickLearnableMove(Monster monster)
