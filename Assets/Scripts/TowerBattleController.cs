@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using TheTower;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -14,6 +15,9 @@ public class TowerBattleController : MonoBehaviour
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
+
+    [Header("Navigation")]
+    [SerializeField] private string overviewSceneName = "RunOverviewScene";
 
     [Header("Turn Timing")]
     [SerializeField] private float heroAttackDelay = 1f;
@@ -44,14 +48,14 @@ public class TowerBattleController : MonoBehaviour
 
     private RunConfig runConfig;
     private Monster currentMonster;
-    private HeroRuntime hero;
-    private int encounterIndex;
+    private HeroRuntimeState hero;
+    private int encounterIndex = -1;
     private int currentMonsterHp;
     private int turnNumber = 1;
     private string heroLastMoveId;
     private bool isBusy;
-    private bool restartReady;
-    private bool usingFallbackData;
+    private bool returnReady;
+    private string returnLabel = "Back to map";
 
     private readonly List<string> monsterMoveHistory = new();
 
@@ -59,14 +63,14 @@ public class TowerBattleController : MonoBehaviour
     {
         AutoBindScene();
         CreateRuntimeHud();
-        StartCoroutine(BootstrapRun());
+        StartCoroutine(BootstrapEncounter());
     }
 
     public void UseMoveSlot(int slot)
     {
-        if (restartReady)
+        if (returnReady)
         {
-            StartCoroutine(BootstrapRun());
+            ReturnToOverview();
             return;
         }
 
@@ -78,144 +82,64 @@ public class TowerBattleController : MonoBehaviour
         StartCoroutine(ResolveTurnSequence(hero.EquippedMoves[slot]));
     }
 
-    private IEnumerator BootstrapRun()
+    private IEnumerator BootstrapEncounter()
     {
         isBusy = true;
-        restartReady = false;
+        returnReady = false;
         SetButtonsInteractable(false);
-        SetStatus("Loading run config...");
+        SetStatus("Loading battle...");
 
-        yield return LoadRunConfig();
+        if (!RunSession.HasActiveRun)
+        {
+            yield return RunDataService.LoadRunConfig(baseUrl, useLocalFallbackIfApiFails, (config, usingFallback) =>
+            {
+                runConfig = config;
+                if (runConfig != null)
+                {
+                    RunSession.InitializeNewRun(runConfig, usingFallback);
+                }
+            });
+        }
 
-        if (runConfig == null)
+        if (!RunSession.HasActiveRun)
         {
             SetStatus("Unable to load run config.");
-            PrepareRestart("Retry loading run");
+            PrepareReturn("Retry from map");
             yield break;
         }
 
-        InitializeHero();
-        encounterIndex = 0;
+        runConfig = RunSession.CurrentRunConfig;
+        hero = RunSession.Hero;
+        encounterIndex = RunSession.SelectedEncounterIndex >= 0
+            ? RunSession.SelectedEncounterIndex
+            : RunSession.GetFirstAvailableEncounterIndex();
+
+        if (!RunSession.CanEnterEncounter(encounterIndex))
+        {
+            var fallbackEncounter = RunSession.GetFirstAvailableEncounterIndex();
+            if (fallbackEncounter >= 0 && RunSession.CanEnterEncounter(fallbackEncounter))
+            {
+                encounterIndex = fallbackEncounter;
+                RunSession.SelectEncounter(encounterIndex);
+            }
+        }
+
+        if (!RunSession.CanEnterEncounter(encounterIndex))
+        {
+            SetStatus(RunSession.IsRunComplete()
+                ? "The run is already complete. Return to the map to start again."
+                : "No encounter is currently available.");
+            PrepareReturn("Back to map");
+            yield break;
+        }
+
+        RunSession.SelectEncounter(encounterIndex);
         StartEncounter(encounterIndex);
         isBusy = false;
     }
 
-    private void AutoBindScene()
-    {
-        heroLabel = FindTextMesh("HeroLabel");
-        monsterLabel = FindTextMesh("MonsterLabel");
-        heroHpWorldText = FindTextMesh("HeroHPText");
-        monsterHpWorldText = FindTextMesh("MonsterHPText");
-
-        moveButtons.Clear();
-        moveButtonLabels.Clear();
-
-        for (var index = 0; index < buttonObjectNames.Length; index++)
-        {
-            var buttonObject = GameObject.Find(buttonObjectNames[index]);
-            if (buttonObject == null)
-            {
-                Debug.LogWarning($"Missing button object '{buttonObjectNames[index]}'.");
-                continue;
-            }
-
-            var button = buttonObject.GetComponent<Button>();
-            var label = buttonObject.GetComponentInChildren<Text>();
-            if (button == null || label == null)
-            {
-                Debug.LogWarning($"Button '{buttonObjectNames[index]}' is missing a Button or Text component.");
-                continue;
-            }
-
-            var capturedIndex = index;
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => UseMoveSlot(capturedIndex));
-
-            moveButtons.Add(button);
-            moveButtonLabels.Add(label);
-        }
-    }
-
-    private void CreateRuntimeHud()
-    {
-        var canvas = GetComponent<Canvas>();
-        if (canvas == null)
-        {
-            Debug.LogError("TowerBattleController must be attached to the BattleUI canvas.");
-            return;
-        }
-
-        var font = moveButtonLabels.FirstOrDefault(label => label != null)?.font;
-        if (font == null)
-        {
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
-
-        statusText = CreateUiText("StatusText", canvas.transform, font, 28, TextAnchor.UpperCenter);
-        progressText = CreateUiText("ProgressText", canvas.transform, font, 22, TextAnchor.UpperLeft);
-        effectsText = CreateUiText("EffectsText", canvas.transform, font, 20, TextAnchor.UpperRight);
-
-        ConfigureTextRect(statusText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(820f, 120f));
-        ConfigureTextRect(progressText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(26f, -24f), new Vector2(420f, 120f));
-        ConfigureTextRect(effectsText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(420f, 160f));
-    }
-
-    private IEnumerator LoadRunConfig()
-    {
-        runConfig = null;
-        usingFallbackData = false;
-
-        using var request = UnityWebRequest.Get($"{baseUrl}/run/config");
-        yield return request.SendWebRequest();
-
-        if (request.result == UnityWebRequest.Result.Success)
-        {
-            try
-            {
-                runConfig = JsonConvert.DeserializeObject<RunConfig>(request.downloadHandler.text);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"Failed to deserialize run config: {exception}");
-            }
-        }
-
-        if (runConfig != null)
-        {
-            yield break;
-        }
-
-        if (!useLocalFallbackIfApiFails)
-        {
-            yield break;
-        }
-
-        usingFallbackData = true;
-        runConfig = BuildFallbackRunConfig();
-    }
-
-    private void InitializeHero()
-    {
-        heroModifiers.Clear();
-        var startingStats = runConfig.heroDefaults.baseStats;
-        hero = new HeroRuntime
-        {
-            Level = 1,
-            Xp = 0,
-            CurrentHp = startingStats.health,
-            EquippedMoves = runConfig.heroDefaults.moves.Take(4).ToList(),
-            KnownMoves = new HashSet<string>(runConfig.heroDefaults.moves)
-        };
-    }
-
     private void StartEncounter(int index)
     {
-        if (index >= runConfig.encounters.Count)
-        {
-            CompleteRun();
-            return;
-        }
-
         encounterIndex = index;
         currentMonster = runConfig.encounters[index];
         currentMonsterHp = currentMonster.stats.health;
@@ -224,11 +148,11 @@ public class TowerBattleController : MonoBehaviour
         monsterMoveHistory.Clear();
         heroLastMoveId = null;
         turnNumber = 1;
-        restartReady = false;
+        returnReady = false;
 
-        var intro = usingFallbackData
+        var intro = RunSession.UsingFallbackData
             ? "Offline fallback data loaded."
-            : $"Run {runConfig.runId[..8]} active.";
+            : $"Run {GetRunLabel()} active.";
         SetStatus($"{intro}\nEncounter {encounterIndex + 1}/{runConfig.encounters.Count}: {currentMonster.name}\n{currentMonster.description}");
         RefreshAllUi();
         SetButtonsInteractable(true);
@@ -534,24 +458,26 @@ public class TowerBattleController : MonoBehaviour
     {
         var rewardSummary = AwardVictoryRewards();
         RestoreHeroToFullHealth();
+        RunSession.MarkEncounterComplete(encounterIndex, rewardSummary);
         RefreshAllUi();
 
-        if (encounterIndex + 1 >= runConfig.encounters.Count)
+        if (RunSession.IsRunComplete())
         {
             SetStatus($"{heroTurnSummary}\n{currentMonster.name} was defeated.\n{rewardSummary}\nThe tower is clear.");
-            PrepareRestart("Restart run");
+            PrepareReturn("Back to map");
             return;
         }
 
         SetStatus($"{heroTurnSummary}\n{currentMonster.name} was defeated.\n{rewardSummary}");
-        StartEncounter(encounterIndex + 1);
+        PrepareReturn("Continue on map");
     }
 
     private void HandleDefeat(string heroTurnSummary, string monsterTurnSummary)
     {
+        RunSession.RegisterDefeat(encounterIndex);
         RefreshAllUi();
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
-        PrepareRestart("Restart run");
+        PrepareReturn("Back to map");
     }
 
     private string AwardVictoryRewards()
@@ -568,7 +494,7 @@ public class TowerBattleController : MonoBehaviour
         var learnedMove = PickLearnableMove(currentMonster);
         if (!string.IsNullOrEmpty(learnedMove))
         {
-            rewardParts.Add(EquipLearnedMove(learnedMove));
+            rewardParts.Add(RegisterLearnedMoveReward(learnedMove));
         }
 
         return string.Join(" | ", rewardParts);
@@ -597,7 +523,7 @@ public class TowerBattleController : MonoBehaviour
         return null;
     }
 
-    private string EquipLearnedMove(string newMoveId)
+    private string RegisterLearnedMoveReward(string newMoveId)
     {
         var newMove = GetMove(newMoveId);
         if (newMove == null)
@@ -605,61 +531,14 @@ public class TowerBattleController : MonoBehaviour
             return "Learned an unknown move";
         }
 
-        if (hero.EquippedMoves.Contains(newMoveId))
-        {
-            return $"{newMove.name} was already equipped";
-        }
-
-        if (hero.EquippedMoves.Count < 4)
-        {
-            hero.EquippedMoves.Add(newMoveId);
-            return $"Learned {newMove.name}";
-        }
-
-        var weakestIndex = 0;
-        var weakestScore = ScoreMove(GetMove(hero.EquippedMoves[0]));
-
-        for (var index = 1; index < hero.EquippedMoves.Count; index++)
-        {
-            var candidateScore = ScoreMove(GetMove(hero.EquippedMoves[index]));
-            if (candidateScore < weakestScore)
-            {
-                weakestScore = candidateScore;
-                weakestIndex = index;
-            }
-        }
-
-        var learnedScore = ScoreMove(newMove);
-        if (learnedScore <= weakestScore)
-        {
-            return $"Learned {newMove.name}, but kept the current loadout";
-        }
-
-        var replacedMoveName = GetMove(hero.EquippedMoves[weakestIndex])?.name ?? hero.EquippedMoves[weakestIndex];
-        hero.EquippedMoves[weakestIndex] = newMoveId;
-        return $"Swapped {replacedMoveName} for {newMove.name}";
+        RunSession.SetPendingLearnedMove(newMoveId);
+        return $"Learned {newMove.name} - choose whether to equip it on the map";
     }
 
-    private float ScoreMove(Move move)
+    private void PrepareReturn(string label)
     {
-        if (move == null)
-        {
-            return 0f;
-        }
-
-        var modifierValue = move.statModifier == null ? 0f : Mathf.Abs(move.statModifier.value) * 2f;
-        var sustainValue = move.effect == "heal" || move.effect == "drain" ? 12f : 0f;
-        return move.basePower + move.statMultiplier * 10f + modifierValue + sustainValue;
-    }
-
-    private void CompleteRun()
-    {
-        PrepareRestart("Restart run");
-    }
-
-    private void PrepareRestart(string label)
-    {
-        restartReady = true;
+        returnReady = true;
+        returnLabel = label;
         isBusy = false;
 
         for (var index = 0; index < moveButtons.Count; index++)
@@ -667,7 +546,7 @@ public class TowerBattleController : MonoBehaviour
             moveButtons[index].interactable = index == 0;
             if (moveButtonLabels[index] != null)
             {
-                moveButtonLabels[index].text = index == 0 ? label : "-";
+                moveButtonLabels[index].text = index == 0 ? returnLabel : "-";
             }
         }
     }
@@ -709,7 +588,7 @@ public class TowerBattleController : MonoBehaviour
         for (var index = 0; index < moveButtons.Count; index++)
         {
             var hasMove = hero != null && index < hero.EquippedMoves.Count;
-            moveButtons[index].interactable = !isBusy && !restartReady && hasMove;
+            moveButtons[index].interactable = !isBusy && !returnReady && hasMove;
             moveButtonLabels[index].text = hasMove ? GetMove(hero.EquippedMoves[index])?.name ?? hero.EquippedMoves[index] : "-";
         }
     }
@@ -772,25 +651,12 @@ public class TowerBattleController : MonoBehaviour
 
     private Move GetMove(string moveId)
     {
-        if (runConfig?.moveRegistry == null || string.IsNullOrEmpty(moveId))
-        {
-            return null;
-        }
-
-        runConfig.moveRegistry.TryGetValue(moveId, out var move);
-        return move;
+        return RunSession.GetMove(moveId);
     }
 
     private Stats GetHeroBaseStats()
     {
-        var baseStats = runConfig.heroDefaults.baseStats.Clone();
-        var levelBonus = Mathf.Max(0, hero.Level - 1);
-
-        baseStats.health += runConfig.heroDefaults.statsPerLevel.health * levelBonus;
-        baseStats.attack += runConfig.heroDefaults.statsPerLevel.attack * levelBonus;
-        baseStats.defense += runConfig.heroDefaults.statsPerLevel.defense * levelBonus;
-        baseStats.magic += runConfig.heroDefaults.statsPerLevel.magic * levelBonus;
-        return baseStats;
+        return RunSession.GetHeroBaseStats();
     }
 
     private Stats GetEffectiveHeroStats()
@@ -881,6 +747,81 @@ public class TowerBattleController : MonoBehaviour
         return gameObject != null ? gameObject.GetComponent<TextMesh>() : null;
     }
 
+    private void ReturnToOverview()
+    {
+        SceneManager.LoadScene(overviewSceneName);
+    }
+
+    private string GetRunLabel()
+    {
+        if (string.IsNullOrEmpty(runConfig?.runId))
+        {
+            return "run";
+        }
+
+        return runConfig.runId.Substring(0, Mathf.Min(8, runConfig.runId.Length));
+    }
+
+    private void AutoBindScene()
+    {
+        heroLabel = FindTextMesh("HeroLabel");
+        monsterLabel = FindTextMesh("MonsterLabel");
+        heroHpWorldText = FindTextMesh("HeroHPText");
+        monsterHpWorldText = FindTextMesh("MonsterHPText");
+
+        moveButtons.Clear();
+        moveButtonLabels.Clear();
+
+        for (var index = 0; index < buttonObjectNames.Length; index++)
+        {
+            var buttonObject = GameObject.Find(buttonObjectNames[index]);
+            if (buttonObject == null)
+            {
+                Debug.LogWarning($"Missing button object '{buttonObjectNames[index]}'.");
+                continue;
+            }
+
+            var button = buttonObject.GetComponent<Button>();
+            var label = buttonObject.GetComponentInChildren<Text>();
+            if (button == null || label == null)
+            {
+                Debug.LogWarning($"Button '{buttonObjectNames[index]}' is missing a Button or Text component.");
+                continue;
+            }
+
+            var capturedIndex = index;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => UseMoveSlot(capturedIndex));
+
+            moveButtons.Add(button);
+            moveButtonLabels.Add(label);
+        }
+    }
+
+    private void CreateRuntimeHud()
+    {
+        var canvas = GetComponent<Canvas>();
+        if (canvas == null)
+        {
+            Debug.LogError("TowerBattleController must be attached to the BattleUI canvas.");
+            return;
+        }
+
+        var font = moveButtonLabels.FirstOrDefault(label => label != null)?.font;
+        if (font == null)
+        {
+            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        }
+
+        statusText = CreateUiText("StatusText", canvas.transform, font, 28, TextAnchor.UpperCenter);
+        progressText = CreateUiText("ProgressText", canvas.transform, font, 22, TextAnchor.UpperLeft);
+        effectsText = CreateUiText("EffectsText", canvas.transform, font, 20, TextAnchor.UpperRight);
+
+        ConfigureTextRect(statusText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(820f, 120f));
+        ConfigureTextRect(progressText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(26f, -24f), new Vector2(420f, 120f));
+        ConfigureTextRect(effectsText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(420f, 160f));
+    }
+
     private static Text CreateUiText(string name, Transform parent, Font font, int fontSize, TextAnchor anchor)
     {
         var gameObject = new GameObject(name, typeof(RectTransform), typeof(Text));
@@ -903,64 +844,6 @@ public class TowerBattleController : MonoBehaviour
         rect.pivot = anchorMax;
         rect.anchoredPosition = anchoredPosition;
         rect.sizeDelta = sizeDelta;
-    }
-
-    private RunConfig BuildFallbackRunConfig()
-    {
-        const string fallbackJson = @"
-{
-  ""runId"": ""offline-fallback"",
-  ""encounters"": [
-    {
-      ""id"": ""training_dummy"",
-      ""name"": ""Training Dummy"",
-      ""description"": ""A stand-in opponent used when the local API is unavailable."",
-      ""stats"": { ""health"": 60, ""attack"": 10, ""defense"": 6, ""magic"": 4 },
-      ""moves"": [""rusty_blade"", ""dirty_kick""],
-      ""learnableMoves"": [""rusty_blade"", ""dirty_kick""],
-      ""xpReward"": 60,
-      ""spriteKey"": ""training_dummy""
-    },
-    {
-      ""id"": ""emberscale"",
-      ""name"": ""Emberscale"",
-      ""description"": ""A young drake with a nasty flame breath."",
-      ""stats"": { ""health"": 110, ""attack"": 16, ""defense"": 12, ""magic"": 16 },
-      ""moves"": [""flame_breath"", ""claw_swipe"", ""dragon_scales""],
-      ""learnableMoves"": [""flame_breath"", ""dragon_scales""],
-      ""xpReward"": 140,
-      ""spriteKey"": ""emberscale""
-    }
-  ],
-    ""heroDefaults"": {
-    ""baseStats"": { ""health"": 100, ""attack"": 18, ""defense"": 10, ""magic"": 12 },
-    ""statsPerLevel"": { ""health"": 18, ""attack"": 4, ""defense"": 3, ""magic"": 3 },
-    ""moves"": [""slash"", ""shield_up"", ""battle_cry"", ""second_wind""]
-  },
-  ""xpTable"": [0, 100, 250, 450, 700],
-  ""moveRegistry"": {
-    ""slash"": { ""id"": ""slash"", ""name"": ""Slash"", ""description"": ""Moderate physical damage."", ""type"": ""physical"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 15, ""statMultiplier"": 1.0, ""statModifier"": null, ""hpCost"": null },
-    ""shield_up"": { ""id"": ""shield_up"", ""name"": ""Shield Up"", ""description"": ""Raises the user's Defense for two turns."", ""type"": ""status"", ""effect"": ""stat_modifier"", ""target"": ""self"", ""basePower"": 0, ""statMultiplier"": 0, ""statModifier"": { ""stat"": ""defense"", ""value"": 6, ""durationTurns"": 2 }, ""hpCost"": null },
-    ""battle_cry"": { ""id"": ""battle_cry"", ""name"": ""Battle Cry"", ""description"": ""Raises the user's Attack for two turns."", ""type"": ""status"", ""effect"": ""stat_modifier"", ""target"": ""self"", ""basePower"": 0, ""statMultiplier"": 0, ""statModifier"": { ""stat"": ""attack"", ""value"": 6, ""durationTurns"": 2 }, ""hpCost"": null },
-    ""second_wind"": { ""id"": ""second_wind"", ""name"": ""Second Wind"", ""description"": ""Moderate heal that scales with Magic."", ""type"": ""magic"", ""effect"": ""heal"", ""target"": ""self"", ""basePower"": 18, ""statMultiplier"": 0.8, ""statModifier"": null, ""hpCost"": null },
-    ""rusty_blade"": { ""id"": ""rusty_blade"", ""name"": ""Rusty Blade"", ""description"": ""Moderate physical damage."", ""type"": ""physical"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 14, ""statMultiplier"": 1, ""statModifier"": null, ""hpCost"": null },
-    ""dirty_kick"": { ""id"": ""dirty_kick"", ""name"": ""Dirty Kick"", ""description"": ""Light damage and lowers the target's Defense."", ""type"": ""physical"", ""effect"": ""damage_and_stat_modifier"", ""target"": ""opponent"", ""basePower"": 8, ""statMultiplier"": 0.7, ""statModifier"": { ""stat"": ""defense"", ""value"": -5, ""durationTurns"": 2 }, ""hpCost"": null },
-    ""flame_breath"": { ""id"": ""flame_breath"", ""name"": ""Flame Breath"", ""description"": ""Heavy magic damage."", ""type"": ""magic"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 30, ""statMultiplier"": 1.3, ""statModifier"": null, ""hpCost"": null },
-    ""claw_swipe"": { ""id"": ""claw_swipe"", ""name"": ""Claw Swipe"", ""description"": ""Moderate physical damage."", ""type"": ""physical"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 18, ""statMultiplier"": 1, ""statModifier"": null, ""hpCost"": null },
-    ""dragon_scales"": { ""id"": ""dragon_scales"", ""name"": ""Dragon Scales"", ""description"": ""Raises the user's Defense for two turns."", ""type"": ""status"", ""effect"": ""stat_modifier"", ""target"": ""self"", ""basePower"": 0, ""statMultiplier"": 0, ""statModifier"": { ""stat"": ""defense"", ""value"": 8, ""durationTurns"": 2 }, ""hpCost"": null }
-  }
-}";
-
-        return JsonConvert.DeserializeObject<RunConfig>(fallbackJson);
-    }
-
-    private sealed class HeroRuntime
-    {
-        public int Level;
-        public int Xp;
-        public int CurrentHp;
-        public List<string> EquippedMoves;
-        public HashSet<string> KnownMoves;
     }
 
     private sealed class ActiveModifier

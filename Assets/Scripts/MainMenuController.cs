@@ -8,7 +8,7 @@ using UnityEditor;
 
 public class MainMenuController : MonoBehaviour
 {
-    [SerializeField] private string battleSceneName = "BattleScene";
+    [SerializeField] private string battleSceneName = "RunOverviewScene";
     [SerializeField] private string statusMessage = "Settings are not implemented yet.";
     [SerializeField] private float buttonHeight = 88f;
 
