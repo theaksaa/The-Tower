@@ -70,6 +70,8 @@ public class TowerBattleController : MonoBehaviour
     private TMP_Text monsterMagicText;
     private Image heroHealthBarImage;
     private Image monsterHealthBarImage;
+    private BattleCharacterPresenter heroCharacterPresenter;
+    private BattleCharacterPresenter monsterCharacterPresenter;
     private Image heroEffectAttackIcon;
     private Image heroEffectDefenseIcon;
     private Image heroEffectMagicIcon;
@@ -344,6 +346,7 @@ public class TowerBattleController : MonoBehaviour
             ? "Offline fallback data loaded."
             : $"Run {GetRunLabel()} active.";
         SetStatus($"{intro}\nEncounter {encounterIndex + 1}/{runConfig.encounters.Count}: {currentMonster.name}\n{currentMonster.description}");
+        ConfigureBattlePresenters();
         RefreshAllUi();
         SetButtonsInteractable(true);
     }
@@ -360,6 +363,7 @@ public class TowerBattleController : MonoBehaviour
         isBusy = true;
         SetButtonsInteractable(false);
         SetStatus($"Hero prepares {move.name}...");
+        PlayActorAnimation(actorIsHero: true, move);
         RefreshAllUi();
 
         if (heroAttackDelay > 0f)
@@ -368,6 +372,7 @@ public class TowerBattleController : MonoBehaviour
         }
 
         var heroTurnSummary = ResolveMove(move, actorIsHero: true);
+        PlayReactionAnimation(actorIsHero: true, move);
         heroLastMoveId = move.id;
         SetStatus(heroTurnSummary);
         RefreshAllUi();
@@ -377,13 +382,6 @@ public class TowerBattleController : MonoBehaviour
             HandleVictory(heroTurnSummary);
             isBusy = false;
             yield break;
-        }
-
-        SetStatus($"{heroTurnSummary}\n{currentMonster.name} prepares an attack...");
-
-        if (monsterAttackDelay > 0f)
-        {
-            yield return new WaitForSeconds(monsterAttackDelay);
         }
 
         var monsterResponse = FetchMonsterMove();
@@ -398,7 +396,16 @@ public class TowerBattleController : MonoBehaviour
             };
         }
 
+        SetStatus($"{heroTurnSummary}\n{currentMonster.name} prepares {monsterResponse.move?.name ?? "an attack"}...");
+        PlayActorAnimation(actorIsHero: false, monsterResponse.move);
+
+        if (monsterAttackDelay > 0f)
+        {
+            yield return new WaitForSeconds(monsterAttackDelay);
+        }
+
         var monsterTurnSummary = ResolveMove(monsterResponse.move, actorIsHero: false);
+        PlayReactionAnimation(actorIsHero: false, monsterResponse.move);
         monsterMoveHistory.Add(monsterResponse.move.id);
         turnNumber++;
         RefreshAllUi();
@@ -463,7 +470,7 @@ public class TowerBattleController : MonoBehaviour
             return actorIsHero ? "Hero hesitated." : $"{currentMonster.name} hesitated.";
         }
 
-        var actorName = actorIsHero ? "Hero" : currentMonster.name;
+        var actorName = actorIsHero ? RunSession.GetHeroDisplayName() : currentMonster.name;
         var sourceStats = actorIsHero ? GetEffectiveHeroStats() : GetEffectiveMonsterStats();
         var targetStats = actorIsHero ? GetEffectiveMonsterStats() : GetEffectiveHeroStats();
 
@@ -650,6 +657,7 @@ public class TowerBattleController : MonoBehaviour
         var rewards = AwardVictoryRewards();
         RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
         RestoreHeroToFullHealth();
+        monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
         pendingVictoryRewards = rewards;
 
@@ -692,6 +700,7 @@ public class TowerBattleController : MonoBehaviour
         }
 
         RunSession.RegisterDefeat(encounterIndex);
+        heroCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
 
@@ -880,7 +889,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        RunSession.InitializeNewRun(runConfig, RunSession.UsingFallbackData);
+        RunSession.InitializeNewRun(runConfig, RunSession.UsingFallbackData, RunSession.SelectedHeroDefinition);
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -917,7 +926,7 @@ public class TowerBattleController : MonoBehaviour
     {
         if (heroLabel != null)
         {
-            heroLabel.text = $"Hero Lv.{hero?.Level ?? 1}";
+            heroLabel.text = $"{RunSession.GetHeroDisplayName()} Lv.{hero?.Level ?? 1}";
         }
 
         if (monsterLabel != null)
@@ -1322,6 +1331,12 @@ public class TowerBattleController : MonoBehaviour
             return null;
         }
 
+        var keyedSprite = SpriteKeyLookup.LoadMoveSprite(move.spriteKey);
+        if (keyedSprite != null)
+        {
+            return keyedSprite;
+        }
+
         if (move.effect == "heal" || move.type == "magic" || string.Equals(move.statModifier?.stat, "magic", StringComparison.OrdinalIgnoreCase))
         {
             return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
@@ -1356,6 +1371,8 @@ public class TowerBattleController : MonoBehaviour
         monsterLabel = FindTextMesh("MonsterLabel");
         heroHpWorldText = FindTextMesh("HeroHPText");
         monsterHpWorldText = FindTextMesh("MonsterHPText");
+        heroCharacterPresenter = FindComponent<BattleCharacterPresenter>("Hero Character");
+        monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Monster Character");
 
         moveButtons.Clear();
         moveButtonLabels.Clear();
@@ -1487,6 +1504,74 @@ public class TowerBattleController : MonoBehaviour
         }
 
         UpdateMoveHoverSelectors();
+    }
+
+    private void ConfigureBattlePresenters()
+    {
+        if (heroCharacterPresenter != null)
+        {
+            heroCharacterPresenter.SetCharacter(ResolveHeroSpriteKey(), BattleAnimationState.Idle);
+        }
+
+        if (monsterCharacterPresenter != null)
+        {
+            monsterCharacterPresenter.SetCharacter(currentMonster?.spriteKey, BattleAnimationState.Idle);
+        }
+    }
+
+    private void PlayActorAnimation(bool actorIsHero, Move move)
+    {
+        var actorPresenter = actorIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
+        var actorState = ResolveAnimationStateForMove(move);
+
+        actorPresenter?.PlayTemporaryState(actorState, returnState: BattleAnimationState.Idle);
+    }
+
+    private void PlayReactionAnimation(bool actorIsHero, Move move)
+    {
+        var targetPresenter = actorIsHero ? monsterCharacterPresenter : heroCharacterPresenter;
+        if (targetPresenter == null || move == null)
+        {
+            return;
+        }
+
+        if (move.effect is "damage" or "damage_and_stat_modifier" or "drain")
+        {
+            targetPresenter.PlayTemporaryState(BattleAnimationState.Hurt, 0.05f, BattleAnimationState.Idle);
+            return;
+        }
+
+        if (move.target == "self" && move.effect == "stat_modifier")
+        {
+            var actorPresenter = actorIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
+            actorPresenter?.PlayTemporaryState(BattleAnimationState.Defend, returnState: BattleAnimationState.Idle);
+        }
+    }
+
+    private string ResolveHeroSpriteKey()
+    {
+        var selectedHero = RunSession.SelectedHeroDefinition;
+        if (!string.IsNullOrWhiteSpace(selectedHero?.spriteKey))
+        {
+            return selectedHero.spriteKey;
+        }
+
+        return selectedHero?.portraitKey;
+    }
+
+    private static BattleAnimationState ResolveAnimationStateForMove(Move move)
+    {
+        if (move == null)
+        {
+            return BattleAnimationState.Idle;
+        }
+
+        if (move.effect == "heal" || move.target == "self")
+        {
+            return BattleAnimationState.Defend;
+        }
+
+        return BattleAnimationState.Attack;
     }
 
     private void ConfigureEndPanelButton(Button button, UnityEngine.Events.UnityAction clickAction)

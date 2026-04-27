@@ -37,6 +37,7 @@ namespace TheTower
         public string id;
         public string name;
         public string description;
+        public string spriteKey;
         public string type;
         public string effect;
         public string target;
@@ -62,9 +63,26 @@ namespace TheTower
     [Serializable]
     public class HeroDefaults
     {
+        public string id;
+        public string name;
+        public string description;
+        public string spriteKey;
         public Stats baseStats;
         public Stats statsPerLevel;
         public List<string> moves;
+    }
+
+    [Serializable]
+    public class HeroDefinition
+    {
+        public string id;
+        public string name;
+        public string description;
+        public string spriteKey;
+        public Stats baseStats;
+        public Stats statsPerLevel;
+        public List<string> moves;
+        public string portraitKey;
     }
 
     [Serializable]
@@ -72,6 +90,7 @@ namespace TheTower
     {
         public string runId;
         public List<Monster> encounters;
+        public List<HeroDefinition> heroes;
         public HeroDefaults heroDefaults;
         public List<int> xpTable;
         public Dictionary<string, Move> moveRegistry;

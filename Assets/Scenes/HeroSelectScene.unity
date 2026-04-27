@@ -645,9 +645,9 @@ RectTransform:
   - {fileID: 683603173}
   m_Father: {fileID: 627485015}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 182.08179, y: -25}
   m_SizeDelta: {x: 120.77977, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &193173060
@@ -982,10 +982,10 @@ RectTransform:
   - {fileID: 1331789791}
   m_Father: {fileID: 743018097}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 170, y: -50}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &393132669
 GameObject:
@@ -1169,9 +1169,9 @@ RectTransform:
   - {fileID: 15359721}
   m_Father: {fileID: 627485015}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 303.7737, y: -25}
   m_SizeDelta: {x: 120.77977, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &491251685
@@ -1206,9 +1206,9 @@ RectTransform:
   - {fileID: 289568983}
   m_Father: {fileID: 65083794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 219.82443, y: -40}
   m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &527225753
@@ -1363,7 +1363,7 @@ GameObject:
   - component: {fileID: 651814372}
   - component: {fileID: 651814371}
   m_Layer: 5
-  m_Name: Knight Selection Panel
+  m_Name: Hero Selection Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1664,9 +1664,9 @@ RectTransform:
   - {fileID: 527225754}
   m_Father: {fileID: 65083794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 43.964886, y: -40}
   m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &914910067
@@ -1818,6 +1818,7 @@ GameObject:
   - component: {fileID: 1013675039}
   - component: {fileID: 1013675038}
   - component: {fileID: 1013675037}
+  - component: {fileID: 1013675041}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1910,6 +1911,21 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1013675041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1013675036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3aedee7a12b4484a967d3e48fc1b136, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HeroSelectController
+  baseUrl: http://localhost:3000
+  useLocalFallbackIfApiFails: 1
+  battleSceneName: BattleScene2
 --- !u!1 &1289247074
 GameObject:
   m_ObjectHideFlags: 0
@@ -2017,9 +2033,9 @@ RectTransform:
   - {fileID: 151378811}
   m_Father: {fileID: 65083794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 131.89465, y: -40}
   m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1331789790
@@ -2129,9 +2145,9 @@ RectTransform:
   - {fileID: 367193877}
   m_Father: {fileID: 65083794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 307.75418, y: -40}
   m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1549488479
@@ -2584,7 +2600,7 @@ GameObject:
   - component: {fileID: 1758282909}
   - component: {fileID: 1758282908}
   m_Layer: 5
-  m_Name: Revive Button
+  m_Name: Select Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3223,9 +3239,9 @@ RectTransform:
   - {fileID: 1571473137}
   m_Father: {fileID: 627485015}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 60.389885, y: -25}
   m_SizeDelta: {x: 120.77977, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2123895948
@@ -3260,10 +3276,10 @@ RectTransform:
   - {fileID: 411058719}
   m_Father: {fileID: 743018097}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 50, y: -50}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

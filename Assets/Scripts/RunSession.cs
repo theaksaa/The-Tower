@@ -6,6 +6,8 @@ using UnityEngine;
 [System.Serializable]
 public sealed class HeroRuntimeState
 {
+    public string HeroId;
+    public string HeroName;
     public int Level;
     public int Xp;
     public int CurrentHp;
@@ -17,6 +19,7 @@ public static class RunSession
 {
     public static RunConfig CurrentRunConfig { get; private set; }
     public static HeroRuntimeState Hero { get; private set; }
+    public static HeroDefinition SelectedHeroDefinition { get; private set; }
     public static List<bool> CompletedEncounters { get; private set; }
     public static int SelectedEncounterIndex { get; private set; } = -1;
     public static bool UsingFallbackData { get; private set; }
@@ -29,20 +32,40 @@ public static class RunSession
 
     public static void InitializeNewRun(RunConfig runConfig, bool usingFallbackData)
     {
+        InitializeNewRun(runConfig, usingFallbackData, GetAvailableHeroes(runConfig).FirstOrDefault());
+    }
+
+    public static void InitializeNewRun(RunConfig runConfig, bool usingFallbackData, HeroDefinition selectedHero)
+    {
         CurrentRunConfig = runConfig;
         UsingFallbackData = usingFallbackData;
         IsDefeated = false;
         PendingLearnedMoveId = null;
+        SelectedHeroDefinition = selectedHero ?? GetAvailableHeroes(runConfig).FirstOrDefault();
         var runLabel = string.IsNullOrEmpty(runConfig.runId)
             ? "run"
             : runConfig.runId.Substring(0, Mathf.Min(8, runConfig.runId.Length));
+        var heroName = string.IsNullOrEmpty(SelectedHeroDefinition?.name)
+            ? "Hero"
+            : SelectedHeroDefinition.name;
         StatusMessage = usingFallbackData
             ? "Offline fallback data loaded."
-            : $"Run {runLabel} ready.";
+            : $"Run {runLabel} ready. {heroName} selected.";
 
-        var defaults = runConfig.heroDefaults;
+        var defaults = SelectedHeroDefinition;
+        if (defaults == null || defaults.baseStats == null || defaults.moves == null)
+        {
+            Hero = null;
+            CompletedEncounters = null;
+            SelectedEncounterIndex = -1;
+            StatusMessage = "No hero configuration was found in the run config.";
+            return;
+        }
+
         Hero = new HeroRuntimeState
         {
+            HeroId = defaults.id,
+            HeroName = defaults.name,
             Level = 1,
             Xp = 0,
             CurrentHp = defaults.baseStats.health,
@@ -52,6 +75,45 @@ public static class RunSession
 
         CompletedEncounters = Enumerable.Repeat(false, runConfig.encounters.Count).ToList();
         SelectedEncounterIndex = GetFirstAvailableEncounterIndex();
+    }
+
+    public static IReadOnlyList<HeroDefinition> GetAvailableHeroes(RunConfig runConfig)
+    {
+        if (runConfig?.heroes != null && runConfig.heroes.Count > 0)
+        {
+            return runConfig.heroes;
+        }
+
+        if (runConfig?.heroDefaults == null)
+        {
+            return new List<HeroDefinition>();
+        }
+
+        return new List<HeroDefinition>
+        {
+            new()
+            {
+                id = string.IsNullOrEmpty(runConfig.heroDefaults.id) ? "hero" : runConfig.heroDefaults.id,
+                name = string.IsNullOrEmpty(runConfig.heroDefaults.name) ? "Hero" : runConfig.heroDefaults.name,
+                description = runConfig.heroDefaults.description,
+                spriteKey = runConfig.heroDefaults.spriteKey,
+                baseStats = runConfig.heroDefaults.baseStats?.Clone(),
+                statsPerLevel = runConfig.heroDefaults.statsPerLevel?.Clone(),
+                moves = runConfig.heroDefaults.moves?.ToList() ?? new List<string>()
+            }
+        };
+    }
+
+    public static string GetHeroDisplayName()
+    {
+        if (!string.IsNullOrEmpty(Hero?.HeroName))
+        {
+            return Hero.HeroName;
+        }
+
+        return !string.IsNullOrEmpty(SelectedHeroDefinition?.name)
+            ? SelectedHeroDefinition.name
+            : "Hero";
     }
 
     public static void SelectEncounter(int encounterIndex)
@@ -87,11 +149,13 @@ public static class RunSession
 
     public static bool CanEnterEncounter(int encounterIndex)
     {
+        var nextEncounterIndex = GetFirstAvailableEncounterIndex();
         return HasActiveRun &&
                !IsDefeated &&
                encounterIndex >= 0 &&
                encounterIndex < CurrentRunConfig.encounters.Count &&
-               !CompletedEncounters[encounterIndex];
+               !CompletedEncounters[encounterIndex] &&
+               encounterIndex == nextEncounterIndex;
     }
 
     public static void MarkEncounterComplete(int encounterIndex, string rewardSummary)
@@ -144,13 +208,19 @@ public static class RunSession
 
     public static Stats GetHeroBaseStats()
     {
-        var baseStats = CurrentRunConfig.heroDefaults.baseStats.Clone();
+        var selectedHero = SelectedHeroDefinition ?? GetAvailableHeroes(CurrentRunConfig).FirstOrDefault();
+        if (selectedHero?.baseStats == null || selectedHero.statsPerLevel == null || Hero == null)
+        {
+            return new Stats();
+        }
+
+        var baseStats = selectedHero.baseStats.Clone();
         var levelBonus = Mathf.Max(0, Hero.Level - 1);
 
-        baseStats.health += CurrentRunConfig.heroDefaults.statsPerLevel.health * levelBonus;
-        baseStats.attack += CurrentRunConfig.heroDefaults.statsPerLevel.attack * levelBonus;
-        baseStats.defense += CurrentRunConfig.heroDefaults.statsPerLevel.defense * levelBonus;
-        baseStats.magic += CurrentRunConfig.heroDefaults.statsPerLevel.magic * levelBonus;
+        baseStats.health += selectedHero.statsPerLevel.health * levelBonus;
+        baseStats.attack += selectedHero.statsPerLevel.attack * levelBonus;
+        baseStats.defense += selectedHero.statsPerLevel.defense * levelBonus;
+        baseStats.magic += selectedHero.statsPerLevel.magic * levelBonus;
         return baseStats;
     }
 }

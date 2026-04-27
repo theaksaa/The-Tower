@@ -8,12 +8,9 @@ using UnityEngine.UI;
 
 public class MapRunOverviewController : MonoBehaviour
 {
-    [Header("API")]
-    [SerializeField] private string baseUrl = "http://localhost:3000";
-    [SerializeField] private bool useLocalFallbackIfApiFails = true;
-
     [Header("Navigation")]
     [SerializeField] private string battleSceneName = "BattleScene2";
+    [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
 
     [Header("Modal")]
     [SerializeField] private float modalAnimationDuration = 0.24f;
@@ -154,27 +151,7 @@ public class MapRunOverviewController : MonoBehaviour
     {
         if (!RunSession.HasActiveRun || RunSession.IsRunComplete() || RunSession.IsDefeated)
         {
-            yield return StartCoroutine(StartNewRunRoutine());
-            yield break;
-        }
-
-        RefreshUi();
-    }
-
-    private IEnumerator StartNewRunRoutine()
-    {
-        SetStatus("Loading run overview...");
-        yield return RunDataService.LoadRunConfig(baseUrl, useLocalFallbackIfApiFails, (config, usingFallback) =>
-        {
-            if (config != null)
-            {
-                RunSession.InitializeNewRun(config, usingFallback);
-            }
-        });
-
-        if (!RunSession.HasActiveRun)
-        {
-            SetStatus("Unable to load run config.");
+            SceneManager.LoadScene(heroSelectSceneName);
             yield break;
         }
 
@@ -195,7 +172,7 @@ public class MapRunOverviewController : MonoBehaviour
         var hero = RunSession.Hero;
         var heroStats = RunSession.GetHeroBaseStats();
         heroStatsText.text =
-            $"Hero Lv.{hero.Level}   XP {hero.Xp}\n" +
+            $"{RunSession.GetHeroDisplayName()} Lv.{hero.Level}   XP {hero.Xp}\n" +
             $"HP {hero.CurrentHp}/{heroStats.health}   ATK {heroStats.attack}   DEF {heroStats.defense}   MAG {heroStats.magic}";
 
         statusText.text = RunSession.IsRunComplete()
@@ -411,7 +388,7 @@ public class MapRunOverviewController : MonoBehaviour
 
     private void StartNewRun()
     {
-        StartCoroutine(StartNewRunRoutine());
+        SceneManager.LoadScene(heroSelectSceneName);
     }
 
     private void SetModalVisible(bool visible, bool immediate)

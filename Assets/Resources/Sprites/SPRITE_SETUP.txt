@@ -1,0 +1,22 @@
+Put battle art under `Assets/Resources/Sprites/`.
+
+Character animations:
+- `Assets/Resources/Sprites/Characters/hero_knight_Idle.png`
+- `Assets/Resources/Sprites/Characters/hero_knight_Attack.png`
+- `Assets/Resources/Sprites/Characters/hero_knight_Hurt.png`
+- `Assets/Resources/Sprites/Characters/hero_knight_Defend.png`
+- `Assets/Resources/Sprites/Characters/goblin_warrior_Idle.png`
+
+Rules:
+- The backend `spriteKey` is the filename prefix.
+- The animation state is the suffix: `Idle`, `Attack`, `Hurt`, `Defend`, `Death`.
+- Each file can be a sliced sprite sheet or a single sprite.
+- If a state file is missing, the client falls back to `<spriteKey>_Idle`.
+
+Move icons:
+- `Assets/Resources/Sprites/Moves/slash.png`
+- `Assets/Resources/Sprites/Moves/firebolt.png`
+
+Rules:
+- `move.spriteKey` resolves move button icons from `Sprites/Moves/<spriteKey>`.
+- If no move icon exists, the client falls back to the existing sword, shield, or magic icon logic.

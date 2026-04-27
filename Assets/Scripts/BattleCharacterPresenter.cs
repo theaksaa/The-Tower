@@ -16,6 +16,8 @@ public class BattleCharacterPresenter : MonoBehaviour
     [SerializeField] private Texture2D spriteSheetTexture;
     [SerializeField] private Sprite[] animationFrames;
     [SerializeField] private float framesPerSecond = 10f;
+    [SerializeField] private string spriteKey;
+    [SerializeField] private BattleAnimationState initialState = BattleAnimationState.Idle;
 
     [Header("Display")]
     [SerializeField] private bool faceLeft;
@@ -26,6 +28,9 @@ public class BattleCharacterPresenter : MonoBehaviour
     [SerializeField] private Image targetImage;
     [SerializeField] private UiSpriteSheetAnimator spriteAnimator;
 
+    private BattleAnimationState currentState;
+    private Coroutine temporaryStateRoutine;
+
     private void Reset()
     {
         CacheReferences();
@@ -35,12 +40,14 @@ public class BattleCharacterPresenter : MonoBehaviour
     private void Awake()
     {
         CacheReferences();
+        currentState = initialState;
         ApplyPresentation();
     }
 
     private void OnEnable()
     {
         CacheReferences();
+        currentState = initialState;
         ApplyPresentation();
     }
 
@@ -48,6 +55,7 @@ public class BattleCharacterPresenter : MonoBehaviour
     {
         CacheReferences();
         framesPerSecond = Mathf.Max(0.01f, framesPerSecond);
+        currentState = initialState;
 
 #if UNITY_EDITOR
         AutoPopulateFramesFromSheet();
@@ -88,7 +96,66 @@ public class BattleCharacterPresenter : MonoBehaviour
         targetImage.raycastTarget = false;
 
         spriteAnimator.FramesPerSecond = framesPerSecond;
-        spriteAnimator.Frames = animationFrames;
+        spriteAnimator.Frames = ResolveFramesForState(currentState);
+    }
+
+    public void SetCharacter(string newSpriteKey, BattleAnimationState state = BattleAnimationState.Idle)
+    {
+        spriteKey = newSpriteKey;
+        PlayState(state);
+    }
+
+    public void PlayState(BattleAnimationState state)
+    {
+        currentState = state;
+        ApplyPresentation();
+    }
+
+    public void PlayTemporaryState(BattleAnimationState state, float extraDuration = 0f, BattleAnimationState returnState = BattleAnimationState.Idle)
+    {
+        if (!Application.isPlaying)
+        {
+            PlayState(state);
+            return;
+        }
+
+        if (temporaryStateRoutine != null)
+        {
+            StopCoroutine(temporaryStateRoutine);
+        }
+
+        temporaryStateRoutine = StartCoroutine(PlayTemporaryStateRoutine(state, extraDuration, returnState));
+    }
+
+    private System.Collections.IEnumerator PlayTemporaryStateRoutine(BattleAnimationState state, float extraDuration, BattleAnimationState returnState)
+    {
+        PlayState(state);
+
+        var animationDuration = GetAnimationDuration(state);
+        if (animationDuration > 0f || extraDuration > 0f)
+        {
+            yield return new WaitForSeconds(animationDuration + Mathf.Max(0f, extraDuration));
+        }
+
+        PlayState(returnState);
+        temporaryStateRoutine = null;
+    }
+
+    private Sprite[] ResolveFramesForState(BattleAnimationState state)
+    {
+        var keyedFrames = SpriteKeyLookup.LoadCharacterAnimation(spriteKey, state);
+        return keyedFrames.Length > 0 ? keyedFrames : animationFrames;
+    }
+
+    private float GetAnimationDuration(BattleAnimationState state)
+    {
+        var frames = ResolveFramesForState(state);
+        if (frames == null || frames.Length == 0)
+        {
+            return 0f;
+        }
+
+        return Mathf.Max(0.01f, frames.Length / Mathf.Max(0.01f, framesPerSecond));
     }
 
 #if UNITY_EDITOR
