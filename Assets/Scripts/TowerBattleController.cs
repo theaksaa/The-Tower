@@ -643,7 +643,9 @@ public class TowerBattleController : MonoBehaviour
 
     private void HandleVictory(string heroTurnSummary)
     {
+        var wasFinalEncounter = IsPendingEncounterFinal();
         var rewards = AwardVictoryRewards();
+        RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
         RestoreHeroToFullHealth();
         RefreshAllUi();
         pendingVictoryRewards = rewards;
@@ -652,7 +654,7 @@ public class TowerBattleController : MonoBehaviour
         statusBuilder.AppendLine(heroTurnSummary);
         statusBuilder.AppendLine($"{currentMonster.name} was defeated.");
         statusBuilder.Append(rewards.Summary);
-        if (IsPendingEncounterFinal())
+        if (wasFinalEncounter)
         {
             statusBuilder.AppendLine();
             statusBuilder.Append("Continue to finish the run.");
@@ -662,7 +664,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (usingBattleScene2Ui && endPanelRoot != null)
         {
-            ShowVictoryEndPanel(rewards);
+            ShowVictoryEndPanel(rewards, wasFinalEncounter);
             return;
         }
 
@@ -677,6 +679,15 @@ public class TowerBattleController : MonoBehaviour
 
     private void HandleDefeat(string heroTurnSummary, string monsterTurnSummary)
     {
+        if (RunSession.IsEncounterCompleted(encounterIndex))
+        {
+            RestoreHeroToFullHealth();
+            RefreshAllUi();
+            SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell after the encounter was already cleared. Return to the map when you're ready.");
+            PrepareReturn("Back to map");
+            return;
+        }
+
         RunSession.RegisterDefeat(encounterIndex);
         RefreshAllUi();
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
@@ -778,7 +789,7 @@ public class TowerBattleController : MonoBehaviour
         RefreshEffects();
     }
 
-    private void ShowVictoryEndPanel(VictoryRewards rewards)
+    private void ShowVictoryEndPanel(VictoryRewards rewards, bool wasFinalEncounter)
     {
         if (endPanelRoot == null || rewards == null)
         {
@@ -787,7 +798,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (endPanelTitleText != null)
         {
-            endPanelTitleText.text = IsPendingEncounterFinal() ? "Run Complete!" : "Victory!";
+            endPanelTitleText.text = wasFinalEncounter ? "Run Complete!" : "Victory!";
         }
 
         if (reward1Text != null)
@@ -847,12 +858,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void OnContinueButtonPressed()
     {
-        if (pendingVictoryRewards != null)
-        {
-            RunSession.MarkEncounterComplete(encounterIndex, pendingVictoryRewards.Summary);
-            pendingVictoryRewards = null;
-        }
-
+        pendingVictoryRewards = null;
         ReturnToOverview();
     }
 
