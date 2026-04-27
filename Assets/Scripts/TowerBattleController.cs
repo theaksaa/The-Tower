@@ -77,6 +77,7 @@ public class TowerBattleController : MonoBehaviour
     private Image monsterEffectDefenseIcon;
     private Image monsterEffectMagicIcon;
     private GameObject endPanelRoot;
+    private GameObject defeatPanelRoot;
     private TMP_Text endPanelTitleText;
     private TMP_Text reward1Text;
     private TMP_Text reward2Text;
@@ -87,6 +88,8 @@ public class TowerBattleController : MonoBehaviour
     private Image reward3Icon;
     private Button reviveButton;
     private Button continueButton;
+    private Button defeatReviveButton;
+    private Button defeatMapButton;
 
     private RunConfig runConfig;
     private Monster currentMonster;
@@ -691,6 +694,14 @@ public class TowerBattleController : MonoBehaviour
         RunSession.RegisterDefeat(encounterIndex);
         RefreshAllUi();
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
+
+        if (usingBattleScene2Ui && defeatPanelRoot != null)
+        {
+            SetButtonsInteractable(false);
+            SetDefeatPanelVisible(true);
+            return;
+        }
+
         PrepareReturn("Back to map");
     }
 
@@ -862,6 +873,22 @@ public class TowerBattleController : MonoBehaviour
         ReturnToOverview();
     }
 
+    private void OnDefeatReviveButtonPressed()
+    {
+        if (runConfig == null)
+        {
+            return;
+        }
+
+        RunSession.InitializeNewRun(runConfig, RunSession.UsingFallbackData);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    private void OnDefeatMapButtonPressed()
+    {
+        ReturnToOverview();
+    }
+
     private void SetEndPanelVisible(bool isVisible)
     {
         if (endPanelRoot == null)
@@ -874,6 +901,16 @@ public class TowerBattleController : MonoBehaviour
         {
             pendingVictoryRewards = null;
         }
+    }
+
+    private void SetDefeatPanelVisible(bool isVisible)
+    {
+        if (defeatPanelRoot == null)
+        {
+            return;
+        }
+
+        defeatPanelRoot.SetActive(isVisible);
     }
 
     private void RefreshLabels()
@@ -1378,6 +1415,7 @@ public class TowerBattleController : MonoBehaviour
         monsterEffectDefenseIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Shield Icon");
         monsterEffectMagicIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Magic Icon");
         endPanelRoot = GameObject.Find("Canvas/End Panel");
+        defeatPanelRoot = GameObject.Find("Canvas/Defeat Panel");
         endPanelTitleText = FindComponent<TMP_Text>("Canvas/End Panel/Title Image/Title Text");
         reward2Root = GameObject.Find("Canvas/End Panel/Rewards/Reward 2");
         reward1Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 1/Text");
@@ -1388,6 +1426,8 @@ public class TowerBattleController : MonoBehaviour
         reward3Icon = FindComponent<Image>("Canvas/End Panel/Rewards/Reward 3/Reward Icon");
         reviveButton = FindComponent<Button>("Canvas/End Panel/Revive Button");
         continueButton = FindComponent<Button>("Canvas/End Panel/Continue Button");
+        defeatReviveButton = FindComponent<Button>("Canvas/Defeat Panel/Revive Button");
+        defeatMapButton = FindComponent<Button>("Canvas/Defeat Panel/Map Button");
 
         if (reviveButton != null)
         {
@@ -1399,7 +1439,18 @@ public class TowerBattleController : MonoBehaviour
             ConfigureEndPanelButton(continueButton, OnContinueButtonPressed);
         }
 
+        if (defeatReviveButton != null)
+        {
+            ConfigureEndPanelButton(defeatReviveButton, OnDefeatReviveButtonPressed);
+        }
+
+        if (defeatMapButton != null)
+        {
+            ConfigureEndPanelButton(defeatMapButton, OnDefeatMapButtonPressed);
+        }
+
         SetEndPanelVisible(false);
+        SetDefeatPanelVisible(false);
 
         for (var index = 0; index < 4; index++)
         {

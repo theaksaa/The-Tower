@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 732485b134e433a4bb83ff457c1a0872
+guid: d68e9a0adaa0e4d4280c0ef46fa1318e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4918375594502835747
-    second: _Classic_UI_Button1_0
+      213: 3244889106937645256
+    second: _Classic_UI_BannerDark_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,8 +51,8 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 18
-  spriteBorder: {x: 4, y: 8, z: 4, w: 4}
+  spritePixelsToUnits: 10
+  spriteBorder: {x: 7, y: 6, z: 7, w: 7}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: _Classic_UI_Button1_0
+      name: _Classic_UI_BannerDark_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 48
-        height: 16
+        height: 14
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: dd135b9947b6ebbb0800000000000000
-      internalID: -4918375594502835747
+      spriteID: 8c88d8a5379280d20800000000000000
+      internalID: 3244889106937645256
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      _Classic_UI_Button1_0: -4918375594502835747
+      _Classic_UI_BannerDark_0: 3244889106937645256
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
