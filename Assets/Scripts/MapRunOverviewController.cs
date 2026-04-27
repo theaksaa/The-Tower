@@ -13,7 +13,7 @@ public class MapRunOverviewController : MonoBehaviour
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]
-    [SerializeField] private string battleSceneName = "BattleScene";
+    [SerializeField] private string battleSceneName = "BattleScene2";
 
     [Header("Modal")]
     [SerializeField] private float modalAnimationDuration = 0.24f;

@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using TheTower;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -24,6 +26,13 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private float monsterAttackDelay = 1f;
     [SerializeField] private float nextTurnDelay = 0.75f;
 
+    [Header("BattleScene2 UI")]
+    [SerializeField] private Sprite battleScene2HoverSelectorTopLeft;
+    [SerializeField] private Sprite battleScene2HoverSelectorTopRight;
+    [SerializeField] private Sprite battleScene2HoverSelectorBottomLeft;
+    [SerializeField] private Sprite battleScene2HoverSelectorBottomRight;
+    [SerializeField] private float battleScene2HoverSelectorCornerSize = 24f;
+
     private readonly string[] buttonObjectNames =
     {
         "SlashButton",
@@ -34,6 +43,8 @@ public class TowerBattleController : MonoBehaviour
 
     private readonly List<Button> moveButtons = new();
     private readonly List<Text> moveButtonLabels = new();
+    private readonly List<Image> moveButtonIcons = new();
+    private readonly List<GameObject> moveHoverSelectorRoots = new();
     private readonly List<ActiveModifier> heroModifiers = new();
     private readonly List<ActiveModifier> monsterModifiers = new();
 
@@ -45,6 +56,21 @@ public class TowerBattleController : MonoBehaviour
     private Text statusText;
     private Text progressText;
     private Text effectsText;
+    private TMP_Text levelText;
+    private TMP_Text heroAttackText;
+    private TMP_Text heroDefenseText;
+    private TMP_Text heroMagicText;
+    private TMP_Text monsterAttackText;
+    private TMP_Text monsterDefenseText;
+    private TMP_Text monsterMagicText;
+    private Image heroHealthBarImage;
+    private Image monsterHealthBarImage;
+    private Image heroEffectAttackIcon;
+    private Image heroEffectDefenseIcon;
+    private Image heroEffectMagicIcon;
+    private Image monsterEffectAttackIcon;
+    private Image monsterEffectDefenseIcon;
+    private Image monsterEffectMagicIcon;
 
     private RunConfig runConfig;
     private Monster currentMonster;
@@ -56,8 +82,42 @@ public class TowerBattleController : MonoBehaviour
     private bool isBusy;
     private bool returnReady;
     private string returnLabel = "Back to map";
+    private bool usingBattleScene2Ui;
+    private int hoveredMoveIndex = -1;
 
     private readonly List<string> monsterMoveHistory = new();
+    private readonly Color inactiveEffectColor = Color.black;
+    private readonly Color buffEffectColor = new(0.85f, 1f, 0.3f, 1f);
+    private readonly Color debuffEffectColor = new(1f, 0.45f, 0.45f, 1f);
+    private readonly Color activeMoveIconColor = Color.white;
+    private readonly Color inactiveMoveIconColor = new(0.35f, 0.35f, 0.35f, 1f);
+
+    private sealed class MoveHoverListener : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private TowerBattleController owner;
+        private int moveIndex;
+
+        public void Initialize(TowerBattleController controller, int index)
+        {
+            owner = controller;
+            moveIndex = index;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            owner?.HandleMoveHoverChanged(moveIndex, true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            owner?.HandleMoveHoverChanged(moveIndex, false);
+        }
+
+        private void OnDisable()
+        {
+            owner?.HandleMoveHoverChanged(moveIndex, false);
+        }
+    }
 
     private void Start()
     {
@@ -549,6 +609,8 @@ public class TowerBattleController : MonoBehaviour
                 moveButtonLabels[index].text = index == 0 ? returnLabel : "-";
             }
         }
+
+        UpdateMoveHoverSelectors();
     }
 
     private void RefreshAllUi()
@@ -581,6 +643,60 @@ public class TowerBattleController : MonoBehaviour
             var maxMonsterHp = currentMonster?.stats.health ?? 0;
             monsterHpWorldText.text = $"HP: {currentMonsterHp}/{maxMonsterHp}";
         }
+
+        if (levelText != null)
+        {
+            var encounterText = runConfig != null && encounterIndex >= 0
+                ? $"Encounter {encounterIndex + 1}/{runConfig.encounters.Count}"
+                : "Battle";
+            levelText.text = hero != null
+                ? $"Hero Lv.{hero.Level}  •  {encounterText}"
+                : encounterText;
+        }
+
+        if (heroHealthBarImage != null && hero != null)
+        {
+            var heroMaxHp = Mathf.Max(1, GetHeroBaseStats().health);
+            heroHealthBarImage.fillAmount = Mathf.Clamp01(hero.CurrentHp / (float)heroMaxHp);
+        }
+
+        if (monsterHealthBarImage != null)
+        {
+            var monsterMaxHp = Mathf.Max(1, currentMonster?.stats.health ?? 1);
+            monsterHealthBarImage.fillAmount = Mathf.Clamp01(currentMonsterHp / (float)monsterMaxHp);
+        }
+
+        var heroStats = hero != null ? GetEffectiveHeroStats() : null;
+        if (heroAttackText != null)
+        {
+            heroAttackText.text = $"{heroStats?.attack ?? 0}";
+        }
+
+        if (heroDefenseText != null)
+        {
+            heroDefenseText.text = $"{heroStats?.defense ?? 0}";
+        }
+
+        if (heroMagicText != null)
+        {
+            heroMagicText.text = $"{heroStats?.magic ?? 0}";
+        }
+
+        var monsterStats = currentMonster != null ? GetEffectiveMonsterStats() : null;
+        if (monsterAttackText != null)
+        {
+            monsterAttackText.text = $"{monsterStats?.attack ?? 0}";
+        }
+
+        if (monsterDefenseText != null)
+        {
+            monsterDefenseText.text = $"{monsterStats?.defense ?? 0}";
+        }
+
+        if (monsterMagicText != null)
+        {
+            monsterMagicText.text = $"{monsterStats?.magic ?? 0}";
+        }
     }
 
     private void RefreshButtons()
@@ -589,8 +705,20 @@ public class TowerBattleController : MonoBehaviour
         {
             var hasMove = hero != null && index < hero.EquippedMoves.Count;
             moveButtons[index].interactable = !isBusy && !returnReady && hasMove;
-            moveButtonLabels[index].text = hasMove ? GetMove(hero.EquippedMoves[index])?.name ?? hero.EquippedMoves[index] : "-";
+            if (moveButtonLabels[index] != null)
+            {
+                moveButtonLabels[index].text = hasMove ? GetMove(hero.EquippedMoves[index])?.name ?? hero.EquippedMoves[index] : "-";
+            }
+
+            if (index < moveButtonIcons.Count && moveButtonIcons[index] != null)
+            {
+                var move = hasMove ? GetMove(hero.EquippedMoves[index]) : null;
+                moveButtonIcons[index].sprite = ResolveMoveIconSprite(move);
+                moveButtonIcons[index].color = hasMove ? activeMoveIconColor : inactiveMoveIconColor;
+            }
         }
+
+        UpdateMoveHoverSelectors();
     }
 
     private void RefreshProgress()
@@ -611,6 +739,13 @@ public class TowerBattleController : MonoBehaviour
 
     private void RefreshEffects()
     {
+        RefreshEffectIcon(heroEffectAttackIcon, heroModifiers, "attack");
+        RefreshEffectIcon(heroEffectDefenseIcon, heroModifiers, "defense");
+        RefreshEffectIcon(heroEffectMagicIcon, heroModifiers, "magic");
+        RefreshEffectIcon(monsterEffectAttackIcon, monsterModifiers, "attack");
+        RefreshEffectIcon(monsterEffectDefenseIcon, monsterModifiers, "defense");
+        RefreshEffectIcon(monsterEffectMagicIcon, monsterModifiers, "magic");
+
         if (effectsText == null)
         {
             return;
@@ -646,6 +781,108 @@ public class TowerBattleController : MonoBehaviour
             {
                 button.interactable = interactable;
             }
+        }
+
+        UpdateMoveHoverSelectors();
+    }
+
+    private void ConfigureMoveHoverListener(GameObject moveRoot, int index)
+    {
+        if (moveRoot == null)
+        {
+            return;
+        }
+
+        var listener = moveRoot.GetComponent<MoveHoverListener>();
+        if (listener == null)
+        {
+            listener = moveRoot.AddComponent<MoveHoverListener>();
+        }
+
+        listener.Initialize(this, index);
+    }
+
+    private GameObject CreateMoveHoverSelector(Transform moveRoot)
+    {
+        if (moveRoot == null ||
+            battleScene2HoverSelectorTopLeft == null ||
+            battleScene2HoverSelectorTopRight == null ||
+            battleScene2HoverSelectorBottomLeft == null ||
+            battleScene2HoverSelectorBottomRight == null)
+        {
+            return null;
+        }
+
+        var existing = moveRoot.Find("Hover Selector");
+        if (existing != null)
+        {
+            existing.gameObject.SetActive(false);
+            existing.SetAsLastSibling();
+            return existing.gameObject;
+        }
+
+        var selectorRoot = new GameObject("Hover Selector", typeof(RectTransform));
+        selectorRoot.transform.SetParent(moveRoot, false);
+
+        var selectorRect = selectorRoot.GetComponent<RectTransform>();
+        selectorRect.anchorMin = Vector2.zero;
+        selectorRect.anchorMax = Vector2.one;
+        selectorRect.offsetMin = Vector2.zero;
+        selectorRect.offsetMax = Vector2.zero;
+
+        CreateSelectorCorner(selectorRoot.transform, "Top Left", battleScene2HoverSelectorTopLeft, new Vector2(0f, 1f));
+        CreateSelectorCorner(selectorRoot.transform, "Top Right", battleScene2HoverSelectorTopRight, new Vector2(1f, 1f));
+        CreateSelectorCorner(selectorRoot.transform, "Bottom Left", battleScene2HoverSelectorBottomLeft, new Vector2(0f, 0f));
+        CreateSelectorCorner(selectorRoot.transform, "Bottom Right", battleScene2HoverSelectorBottomRight, new Vector2(1f, 0f));
+
+        selectorRoot.transform.SetAsLastSibling();
+        selectorRoot.SetActive(false);
+        return selectorRoot;
+    }
+
+    private void CreateSelectorCorner(Transform parent, string name, Sprite sprite, Vector2 anchor)
+    {
+        var cornerObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        cornerObject.transform.SetParent(parent, false);
+
+        var rect = cornerObject.GetComponent<RectTransform>();
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.pivot = anchor;
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = new Vector2(battleScene2HoverSelectorCornerSize, battleScene2HoverSelectorCornerSize);
+
+        var image = cornerObject.GetComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+    }
+
+    private void HandleMoveHoverChanged(int moveIndex, bool isHovered)
+    {
+        hoveredMoveIndex = isHovered
+            ? moveIndex
+            : hoveredMoveIndex == moveIndex ? -1 : hoveredMoveIndex;
+        UpdateMoveHoverSelectors();
+    }
+
+    private void UpdateMoveHoverSelectors()
+    {
+        for (var index = 0; index < moveHoverSelectorRoots.Count; index++)
+        {
+            var selectorRoot = moveHoverSelectorRoots[index];
+            if (selectorRoot == null)
+            {
+                continue;
+            }
+
+            var isActive = usingBattleScene2Ui &&
+                index == hoveredMoveIndex &&
+                index < moveButtons.Count &&
+                moveButtons[index] != null &&
+                moveButtons[index].interactable;
+
+            selectorRoot.SetActive(isActive);
         }
     }
 
@@ -741,10 +978,69 @@ public class TowerBattleController : MonoBehaviour
         return $"{modifier.Stat} {sign}{modifier.Value} ({modifier.RemainingUses} uses{timing})";
     }
 
+    private void RefreshEffectIcon(Image icon, IEnumerable<ActiveModifier> modifiers, string stat)
+    {
+        if (icon == null)
+        {
+            return;
+        }
+
+        var total = modifiers
+            .Where(modifier => string.Equals(modifier.Stat, stat, StringComparison.OrdinalIgnoreCase))
+            .Sum(modifier => modifier.Value);
+
+        icon.color = total switch
+        {
+            > 0 => buffEffectColor,
+            < 0 => debuffEffectColor,
+            _ => inactiveEffectColor
+        };
+    }
+
     private TextMesh FindTextMesh(string objectName)
     {
         var gameObject = GameObject.Find(objectName);
         return gameObject != null ? gameObject.GetComponent<TextMesh>() : null;
+    }
+
+    private static T FindComponent<T>(string objectPath) where T : Component
+    {
+        var gameObject = GameObject.Find(objectPath);
+        return gameObject != null ? gameObject.GetComponent<T>() : null;
+    }
+
+    private static void ConfigureHealthBarImage(Image image)
+    {
+        if (image == null)
+        {
+            return;
+        }
+
+        image.type = Image.Type.Filled;
+        image.fillMethod = Image.FillMethod.Horizontal;
+        image.fillOrigin = (int)Image.OriginHorizontal.Left;
+        image.fillClockwise = true;
+        image.preserveAspect = false;
+    }
+
+    private Sprite ResolveMoveIconSprite(Move move)
+    {
+        if (move == null)
+        {
+            return null;
+        }
+
+        if (move.effect == "heal" || move.type == "magic" || string.Equals(move.statModifier?.stat, "magic", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
+        }
+
+        if (string.Equals(move.statModifier?.stat, "defense", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectDefenseIcon?.sprite ?? monsterEffectDefenseIcon?.sprite;
+        }
+
+        return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
     }
 
     private void ReturnToOverview()
@@ -771,13 +1067,15 @@ public class TowerBattleController : MonoBehaviour
 
         moveButtons.Clear();
         moveButtonLabels.Clear();
+        moveButtonIcons.Clear();
+        moveHoverSelectorRoots.Clear();
+        hoveredMoveIndex = -1;
 
         for (var index = 0; index < buttonObjectNames.Length; index++)
         {
             var buttonObject = GameObject.Find(buttonObjectNames[index]);
             if (buttonObject == null)
             {
-                Debug.LogWarning($"Missing button object '{buttonObjectNames[index]}'.");
                 continue;
             }
 
@@ -795,7 +1093,71 @@ public class TowerBattleController : MonoBehaviour
 
             moveButtons.Add(button);
             moveButtonLabels.Add(label);
+            moveButtonIcons.Add(null);
+            moveHoverSelectorRoots.Add(null);
         }
+
+        usingBattleScene2Ui = moveButtons.Count == 0;
+        if (!usingBattleScene2Ui)
+        {
+            return;
+        }
+
+        levelText = FindComponent<TMP_Text>("Canvas/Level Text");
+        heroAttackText = FindComponent<TMP_Text>("Canvas/Hero UI/Stats/Attack Text");
+        heroDefenseText = FindComponent<TMP_Text>("Canvas/Hero UI/Stats/Defense Text");
+        heroMagicText = FindComponent<TMP_Text>("Canvas/Hero UI/Stats/Magic Text");
+        monsterAttackText = FindComponent<TMP_Text>("Canvas/Monster UI/Stats/Attack Text");
+        monsterDefenseText = FindComponent<TMP_Text>("Canvas/Monster UI/Stats/Defense Text");
+        monsterMagicText = FindComponent<TMP_Text>("Canvas/Monster UI/Stats/Magic Text");
+
+        heroHealthBarImage = FindComponent<Image>("Canvas/Hero UI/Health Bar/Health Bar");
+        monsterHealthBarImage = FindComponent<Image>("Canvas/Monster UI/Health Bar/Health Bar");
+        ConfigureHealthBarImage(heroHealthBarImage);
+        ConfigureHealthBarImage(monsterHealthBarImage);
+
+        heroEffectAttackIcon = FindComponent<Image>("Canvas/Hero UI/Stat Effects/Sword Icon");
+        heroEffectDefenseIcon = FindComponent<Image>("Canvas/Hero UI/Stat Effects/Shield Icon");
+        heroEffectMagicIcon = FindComponent<Image>("Canvas/Hero UI/Stat Effects/Magic Icon");
+        monsterEffectAttackIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Sword Icon");
+        monsterEffectDefenseIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Shield Icon");
+        monsterEffectMagicIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Magic Icon");
+
+        for (var index = 0; index < 4; index++)
+        {
+            var movePath = $"Canvas/Moves Bar/Moves/Move {index + 1}";
+            var moveRoot = GameObject.Find(movePath);
+            if (moveRoot == null)
+            {
+                Debug.LogWarning($"Missing move slot '{movePath}'.");
+                continue;
+            }
+
+            var button = moveRoot.GetComponent<Button>();
+            if (button == null)
+            {
+                button = moveRoot.AddComponent<Button>();
+            }
+
+            var backgroundImage = FindComponent<Image>($"{movePath}/Move Background");
+            if (backgroundImage != null)
+            {
+                button.targetGraphic = backgroundImage;
+            }
+
+            var iconImage = FindComponent<Image>($"{movePath}/Move Icon");
+            var capturedIndex = index;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => UseMoveSlot(capturedIndex));
+
+            moveButtons.Add(button);
+            moveButtonLabels.Add(null);
+            moveButtonIcons.Add(iconImage);
+            moveHoverSelectorRoots.Add(CreateMoveHoverSelector(moveRoot.transform));
+            ConfigureMoveHoverListener(moveRoot, capturedIndex);
+        }
+
+        UpdateMoveHoverSelectors();
     }
 
     private void CreateRuntimeHud()
@@ -814,12 +1176,21 @@ public class TowerBattleController : MonoBehaviour
         }
 
         statusText = CreateUiText("StatusText", canvas.transform, font, 28, TextAnchor.UpperCenter);
-        progressText = CreateUiText("ProgressText", canvas.transform, font, 22, TextAnchor.UpperLeft);
-        effectsText = CreateUiText("EffectsText", canvas.transform, font, 20, TextAnchor.UpperRight);
+        ConfigureTextRect(
+            statusText.rectTransform,
+            new Vector2(0.5f, 1f),
+            new Vector2(0.5f, 1f),
+            new Vector2(0f, usingBattleScene2Ui ? -92f : -26f),
+            new Vector2(900f, 120f));
 
-        ConfigureTextRect(statusText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(820f, 120f));
-        ConfigureTextRect(progressText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(26f, -24f), new Vector2(420f, 120f));
-        ConfigureTextRect(effectsText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(420f, 160f));
+        if (!usingBattleScene2Ui)
+        {
+            progressText = CreateUiText("ProgressText", canvas.transform, font, 22, TextAnchor.UpperLeft);
+            effectsText = CreateUiText("EffectsText", canvas.transform, font, 20, TextAnchor.UpperRight);
+
+            ConfigureTextRect(progressText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(26f, -24f), new Vector2(420f, 120f));
+            ConfigureTextRect(effectsText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(420f, 160f));
+        }
     }
 
     private static Text CreateUiText(string name, Transform parent, Font font, int fontSize, TextAnchor anchor)
