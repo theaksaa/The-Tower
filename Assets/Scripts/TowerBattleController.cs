@@ -15,6 +15,9 @@ using Random = UnityEngine.Random;
 
 public class TowerBattleController : MonoBehaviour
 {
+    private const string DefaultMonsterSpriteKey = "goblin_warrior";
+    private const string DefaultHeroSpriteKey = "hero_knight";
+
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
@@ -384,6 +387,12 @@ public class TowerBattleController : MonoBehaviour
             yield break;
         }
 
+        var monsterReactionDelay = GetReactionAnimationDelay(actorIsHero: true, move);
+        if (monsterReactionDelay > 0f)
+        {
+            yield return new WaitForSeconds(monsterReactionDelay);
+        }
+
         var monsterResponse = FetchMonsterMove();
 
         if (monsterResponse == null)
@@ -412,7 +421,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (hero.CurrentHp <= 0)
         {
-            HandleDefeat(heroTurnSummary, monsterTurnSummary);
+            yield return StartCoroutine(HandleDefeatSequence(heroTurnSummary, monsterTurnSummary));
             isBusy = false;
             yield break;
         }
@@ -688,30 +697,22 @@ public class TowerBattleController : MonoBehaviour
         PrepareReturn("Continue on map");
     }
 
-    private void HandleDefeat(string heroTurnSummary, string monsterTurnSummary)
+    private IEnumerator HandleDefeatSequence(string heroTurnSummary, string monsterTurnSummary)
     {
-        if (RunSession.IsEncounterCompleted(encounterIndex))
-        {
-            RestoreHeroToFullHealth();
-            RefreshAllUi();
-            SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell after the encounter was already cleared. Return to the map when you're ready.");
-            PrepareReturn("Back to map");
-            return;
-        }
-
         RunSession.RegisterDefeat(encounterIndex);
+        SetButtonsInteractable(false);
         heroCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
 
         if (usingBattleScene2Ui && defeatPanelRoot != null)
         {
-            SetButtonsInteractable(false);
             SetDefeatPanelVisible(true);
-            return;
+            yield break;
         }
 
         PrepareReturn("Back to map");
+        yield break;
     }
 
     private VictoryRewards AwardVictoryRewards()
@@ -788,6 +789,12 @@ public class TowerBattleController : MonoBehaviour
         returnReady = true;
         returnLabel = label;
         isBusy = false;
+
+        if (usingBattleScene2Ui)
+        {
+            SetButtonsInteractable(false);
+            return;
+        }
 
         for (var index = 0; index < moveButtons.Count; index++)
         {
@@ -905,6 +912,11 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
+        if (isVisible)
+        {
+            endPanelRoot.transform.SetAsLastSibling();
+        }
+
         endPanelRoot.SetActive(isVisible);
         if (!isVisible)
         {
@@ -917,6 +929,11 @@ public class TowerBattleController : MonoBehaviour
         if (defeatPanelRoot == null)
         {
             return;
+        }
+
+        if (isVisible)
+        {
+            defeatPanelRoot.transform.SetAsLastSibling();
         }
 
         defeatPanelRoot.SetActive(isVisible);
@@ -1300,14 +1317,62 @@ public class TowerBattleController : MonoBehaviour
 
     private TextMesh FindTextMesh(string objectName)
     {
-        var gameObject = GameObject.Find(objectName);
+        var gameObject = FindGameObject(objectName);
         return gameObject != null ? gameObject.GetComponent<TextMesh>() : null;
     }
 
     private static T FindComponent<T>(string objectPath) where T : Component
     {
-        var gameObject = GameObject.Find(objectPath);
+        var gameObject = FindGameObject(objectPath);
         return gameObject != null ? gameObject.GetComponent<T>() : null;
+    }
+
+    private static GameObject FindGameObject(string objectPath)
+    {
+        if (string.IsNullOrWhiteSpace(objectPath))
+        {
+            return null;
+        }
+
+        var directMatch = GameObject.Find(objectPath);
+        if (directMatch != null)
+        {
+            return directMatch;
+        }
+
+        var pathSegments = objectPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        if (pathSegments.Length == 0)
+        {
+            return null;
+        }
+
+        var activeScene = SceneManager.GetActiveScene();
+        foreach (var root in activeScene.GetRootGameObjects())
+        {
+            if (!string.Equals(root.name, pathSegments[0], StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var current = root.transform;
+            var found = true;
+            for (var index = 1; index < pathSegments.Length; index++)
+            {
+                current = current.Find(pathSegments[index]);
+                if (current == null)
+                {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                return current.gameObject;
+            }
+        }
+
+        return null;
     }
 
     private static void ConfigureHealthBarImage(Image image)
@@ -1373,6 +1438,11 @@ public class TowerBattleController : MonoBehaviour
         monsterHpWorldText = FindTextMesh("MonsterHPText");
         heroCharacterPresenter = FindComponent<BattleCharacterPresenter>("Hero Character");
         monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Monster Character");
+        endPanelRoot = FindGameObject("Canvas/End Panel");
+        defeatPanelRoot = FindGameObject("Canvas/Defeat Panel");
+        usingBattleScene2Ui = FindGameObject("Canvas/Moves Bar/Moves/Move 1") != null ||
+                              endPanelRoot != null ||
+                              defeatPanelRoot != null;
 
         moveButtons.Clear();
         moveButtonLabels.Clear();
@@ -1380,33 +1450,35 @@ public class TowerBattleController : MonoBehaviour
         moveHoverSelectorRoots.Clear();
         hoveredMoveIndex = -1;
 
-        for (var index = 0; index < buttonObjectNames.Length; index++)
+        if (!usingBattleScene2Ui)
         {
-            var buttonObject = GameObject.Find(buttonObjectNames[index]);
-            if (buttonObject == null)
+            for (var index = 0; index < buttonObjectNames.Length; index++)
             {
-                continue;
+                var buttonObject = GameObject.Find(buttonObjectNames[index]);
+                if (buttonObject == null)
+                {
+                    continue;
+                }
+
+                var button = buttonObject.GetComponent<Button>();
+                var label = buttonObject.GetComponentInChildren<Text>();
+                if (button == null || label == null)
+                {
+                    Debug.LogWarning($"Button '{buttonObjectNames[index]}' is missing a Button or Text component.");
+                    continue;
+                }
+
+                var capturedIndex = index;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => UseMoveSlot(capturedIndex));
+
+                moveButtons.Add(button);
+                moveButtonLabels.Add(label);
+                moveButtonIcons.Add(null);
+                moveHoverSelectorRoots.Add(null);
             }
-
-            var button = buttonObject.GetComponent<Button>();
-            var label = buttonObject.GetComponentInChildren<Text>();
-            if (button == null || label == null)
-            {
-                Debug.LogWarning($"Button '{buttonObjectNames[index]}' is missing a Button or Text component.");
-                continue;
-            }
-
-            var capturedIndex = index;
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => UseMoveSlot(capturedIndex));
-
-            moveButtons.Add(button);
-            moveButtonLabels.Add(label);
-            moveButtonIcons.Add(null);
-            moveHoverSelectorRoots.Add(null);
         }
 
-        usingBattleScene2Ui = moveButtons.Count == 0;
         if (!usingBattleScene2Ui)
         {
             return;
@@ -1431,10 +1503,8 @@ public class TowerBattleController : MonoBehaviour
         monsterEffectAttackIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Sword Icon");
         monsterEffectDefenseIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Shield Icon");
         monsterEffectMagicIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Magic Icon");
-        endPanelRoot = GameObject.Find("Canvas/End Panel");
-        defeatPanelRoot = GameObject.Find("Canvas/Defeat Panel");
         endPanelTitleText = FindComponent<TMP_Text>("Canvas/End Panel/Title Image/Title Text");
-        reward2Root = GameObject.Find("Canvas/End Panel/Rewards/Reward 2");
+        reward2Root = FindGameObject("Canvas/End Panel/Rewards/Reward 2");
         reward1Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 1/Text");
         reward2Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 2/Text");
         reward3Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 3/Text");
@@ -1472,7 +1542,7 @@ public class TowerBattleController : MonoBehaviour
         for (var index = 0; index < 4; index++)
         {
             var movePath = $"Canvas/Moves Bar/Moves/Move {index + 1}";
-            var moveRoot = GameObject.Find(movePath);
+            var moveRoot = FindGameObject(movePath);
             if (moveRoot == null)
             {
                 Debug.LogWarning($"Missing move slot '{movePath}'.");
@@ -1515,7 +1585,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (monsterCharacterPresenter != null)
         {
-            monsterCharacterPresenter.SetCharacter(currentMonster?.spriteKey, BattleAnimationState.Idle);
+            monsterCharacterPresenter.SetCharacter(ResolveMonsterSpriteKey(), BattleAnimationState.Idle);
         }
     }
 
@@ -1548,15 +1618,61 @@ public class TowerBattleController : MonoBehaviour
         }
     }
 
+    private float GetReactionAnimationDelay(bool actorIsHero, Move move)
+    {
+        var targetPresenter = actorIsHero ? monsterCharacterPresenter : heroCharacterPresenter;
+        if (targetPresenter == null || move == null)
+        {
+            return 0f;
+        }
+
+        if (move.effect is "damage" or "damage_and_stat_modifier" or "drain")
+        {
+            return targetPresenter.GetStateDuration(BattleAnimationState.Hurt, 0.05f);
+        }
+
+        if (move.target == "self" && move.effect == "stat_modifier")
+        {
+            var actorPresenter = actorIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
+            return actorPresenter != null
+                ? actorPresenter.GetStateDuration(BattleAnimationState.Defend)
+                : 0f;
+        }
+
+        return 0f;
+    }
+
     private string ResolveHeroSpriteKey()
     {
         var selectedHero = RunSession.SelectedHeroDefinition;
-        if (!string.IsNullOrWhiteSpace(selectedHero?.spriteKey))
+        if (!string.IsNullOrWhiteSpace(selectedHero?.spriteKey) &&
+            SpriteKeyLookup.HasCharacterAnimation(selectedHero.spriteKey))
         {
             return selectedHero.spriteKey;
         }
 
-        return selectedHero?.portraitKey;
+        if (!string.IsNullOrWhiteSpace(selectedHero?.portraitKey) &&
+            SpriteKeyLookup.HasCharacterAnimation(selectedHero.portraitKey))
+        {
+            return selectedHero.portraitKey;
+        }
+
+        return DefaultHeroSpriteKey;
+    }
+
+    private string ResolveMonsterSpriteKey()
+    {
+        if (SpriteKeyLookup.HasCharacterAnimation(currentMonster?.spriteKey))
+        {
+            return currentMonster.spriteKey;
+        }
+
+        if (SpriteKeyLookup.HasCharacterAnimation(currentMonster?.id))
+        {
+            return currentMonster.id;
+        }
+
+        return DefaultMonsterSpriteKey;
     }
 
     private static BattleAnimationState ResolveAnimationStateForMove(Move move)

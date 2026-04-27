@@ -8,6 +8,7 @@ public class UiSpriteSheetAnimator : MonoBehaviour
     [SerializeField] private Image targetImage;
     [SerializeField] private Sprite[] frames;
     [SerializeField] private float framesPerSecond = 10f;
+    [SerializeField] private bool loop = true;
 
     private int currentFrameIndex;
     private float elapsedTime;
@@ -26,6 +27,12 @@ public class UiSpriteSheetAnimator : MonoBehaviour
     {
         get => framesPerSecond;
         set => framesPerSecond = Mathf.Max(0.01f, value);
+    }
+
+    public bool Loop
+    {
+        get => loop;
+        set => loop = value;
     }
 
     private void Reset()
@@ -64,8 +71,22 @@ public class UiSpriteSheetAnimator : MonoBehaviour
         while (elapsedTime >= frameDuration)
         {
             elapsedTime -= frameDuration;
-            currentFrameIndex = (currentFrameIndex + 1) % frames.Length;
+            if (loop)
+            {
+                currentFrameIndex = (currentFrameIndex + 1) % frames.Length;
+            }
+            else if (currentFrameIndex < frames.Length - 1)
+            {
+                currentFrameIndex++;
+            }
+
             ApplyCurrentFrame();
+
+            if (!loop && currentFrameIndex >= frames.Length - 1)
+            {
+                elapsedTime = 0f;
+                break;
+            }
         }
     }
 

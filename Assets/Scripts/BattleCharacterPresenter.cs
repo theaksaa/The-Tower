@@ -96,6 +96,7 @@ public class BattleCharacterPresenter : MonoBehaviour
         targetImage.raycastTarget = false;
 
         spriteAnimator.FramesPerSecond = framesPerSecond;
+        spriteAnimator.Loop = ShouldLoopState(currentState);
         spriteAnimator.Frames = ResolveFramesForState(currentState);
     }
 
@@ -107,6 +108,7 @@ public class BattleCharacterPresenter : MonoBehaviour
 
     public void PlayState(BattleAnimationState state)
     {
+        CancelTemporaryState();
         currentState = state;
         ApplyPresentation();
     }
@@ -119,17 +121,20 @@ public class BattleCharacterPresenter : MonoBehaviour
             return;
         }
 
-        if (temporaryStateRoutine != null)
-        {
-            StopCoroutine(temporaryStateRoutine);
-        }
+        CancelTemporaryState();
 
         temporaryStateRoutine = StartCoroutine(PlayTemporaryStateRoutine(state, extraDuration, returnState));
     }
 
+    public float GetStateDuration(BattleAnimationState state, float extraDuration = 0f)
+    {
+        return GetAnimationDuration(state) + Mathf.Max(0f, extraDuration);
+    }
+
     private System.Collections.IEnumerator PlayTemporaryStateRoutine(BattleAnimationState state, float extraDuration, BattleAnimationState returnState)
     {
-        PlayState(state);
+        currentState = state;
+        ApplyPresentation();
 
         var animationDuration = GetAnimationDuration(state);
         if (animationDuration > 0f || extraDuration > 0f)
@@ -137,7 +142,8 @@ public class BattleCharacterPresenter : MonoBehaviour
             yield return new WaitForSeconds(animationDuration + Mathf.Max(0f, extraDuration));
         }
 
-        PlayState(returnState);
+        currentState = returnState;
+        ApplyPresentation();
         temporaryStateRoutine = null;
     }
 
@@ -156,6 +162,22 @@ public class BattleCharacterPresenter : MonoBehaviour
         }
 
         return Mathf.Max(0.01f, frames.Length / Mathf.Max(0.01f, framesPerSecond));
+    }
+
+    private void CancelTemporaryState()
+    {
+        if (temporaryStateRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(temporaryStateRoutine);
+        temporaryStateRoutine = null;
+    }
+
+    private static bool ShouldLoopState(BattleAnimationState state)
+    {
+        return state == BattleAnimationState.Idle;
     }
 
 #if UNITY_EDITOR

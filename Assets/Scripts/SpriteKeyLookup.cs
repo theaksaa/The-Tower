@@ -46,6 +46,11 @@ public static class SpriteKeyLookup
         return frames;
     }
 
+    public static bool HasCharacterAnimation(string spriteKey, BattleAnimationState state = BattleAnimationState.Idle)
+    {
+        return LoadCharacterAnimation(spriteKey, state).Length > 0;
+    }
+
     public static Sprite LoadMoveSprite(string spriteKey)
     {
         if (string.IsNullOrWhiteSpace(spriteKey))
