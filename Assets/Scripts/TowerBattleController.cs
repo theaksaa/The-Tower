@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using TheTower;
 using TMPro;
@@ -32,6 +33,10 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private Sprite battleScene2HoverSelectorBottomLeft;
     [SerializeField] private Sprite battleScene2HoverSelectorBottomRight;
     [SerializeField] private float battleScene2HoverSelectorCornerSize = 24f;
+    [SerializeField] private Sprite battleScene2EndPanelPressedButtonSprite;
+    [SerializeField] private Color battleScene2EndPanelHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
+    [SerializeField] private Color battleScene2EndPanelPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
+    [SerializeField] private Vector2 battleScene2EndPanelPressedTextOffset = new(0f, -6f);
 
     private readonly string[] buttonObjectNames =
     {
@@ -71,6 +76,17 @@ public class TowerBattleController : MonoBehaviour
     private Image monsterEffectAttackIcon;
     private Image monsterEffectDefenseIcon;
     private Image monsterEffectMagicIcon;
+    private GameObject endPanelRoot;
+    private TMP_Text endPanelTitleText;
+    private TMP_Text reward1Text;
+    private TMP_Text reward2Text;
+    private TMP_Text reward3Text;
+    private GameObject reward2Root;
+    private Image reward1Icon;
+    private Image reward2Icon;
+    private Image reward3Icon;
+    private Button reviveButton;
+    private Button continueButton;
 
     private RunConfig runConfig;
     private Monster currentMonster;
@@ -91,6 +107,17 @@ public class TowerBattleController : MonoBehaviour
     private readonly Color debuffEffectColor = new(1f, 0.45f, 0.45f, 1f);
     private readonly Color activeMoveIconColor = Color.white;
     private readonly Color inactiveMoveIconColor = new(0.35f, 0.35f, 0.35f, 1f);
+    private VictoryRewards pendingVictoryRewards;
+
+    private sealed class VictoryRewards
+    {
+        public string Summary;
+        public string CoinsText;
+        public string LearnedMoveText;
+        public string XpText;
+        public string LearnedMoveId;
+        public bool HasLearnedMove;
+    }
 
     private sealed class MoveHoverListener : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
@@ -116,6 +143,106 @@ public class TowerBattleController : MonoBehaviour
         private void OnDisable()
         {
             owner?.HandleMoveHoverChanged(moveIndex, false);
+        }
+    }
+
+    private sealed class EndPanelButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+    {
+        private Button button;
+        private Image backgroundImage;
+        private RectTransform labelRect;
+        private Sprite normalSprite;
+        private Sprite pressedSprite;
+        private Color normalColor;
+        private Color hoverColor;
+        private Color pressedColor;
+        private Vector2 labelBasePosition;
+        private Vector2 pressedLabelOffset;
+        private bool isHovered;
+        private bool isPressed;
+
+        public void Initialize(
+            Button targetButton,
+            Image targetImage,
+            RectTransform targetLabelRect,
+            Sprite targetPressedSprite,
+            Color targetHoverColor,
+            Color targetPressedColor,
+            Vector2 targetPressedLabelOffset)
+        {
+            button = targetButton;
+            backgroundImage = targetImage;
+            labelRect = targetLabelRect;
+            pressedSprite = targetPressedSprite;
+            hoverColor = targetHoverColor;
+            pressedColor = targetPressedColor;
+            pressedLabelOffset = targetPressedLabelOffset;
+
+            if (backgroundImage != null)
+            {
+                normalSprite = backgroundImage.sprite;
+                normalColor = backgroundImage.color;
+            }
+
+            if (labelRect != null)
+            {
+                labelBasePosition = labelRect.anchoredPosition;
+            }
+
+            ApplyVisualState();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (button == null || !button.IsInteractable())
+            {
+                return;
+            }
+
+            isPressed = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        private void ApplyVisualState()
+        {
+            if (backgroundImage != null)
+            {
+                backgroundImage.sprite = isPressed && pressedSprite != null ? pressedSprite : normalSprite;
+                backgroundImage.color = isPressed
+                    ? pressedColor
+                    : isHovered ? hoverColor : normalColor;
+            }
+
+            if (labelRect != null)
+            {
+                labelRect.anchoredPosition = labelBasePosition + (isPressed ? pressedLabelOffset : Vector2.zero);
+            }
         }
     }
 
@@ -516,19 +643,35 @@ public class TowerBattleController : MonoBehaviour
 
     private void HandleVictory(string heroTurnSummary)
     {
-        var rewardSummary = AwardVictoryRewards();
+        var rewards = AwardVictoryRewards();
         RestoreHeroToFullHealth();
-        RunSession.MarkEncounterComplete(encounterIndex, rewardSummary);
         RefreshAllUi();
+        pendingVictoryRewards = rewards;
+
+        var statusBuilder = new StringBuilder();
+        statusBuilder.AppendLine(heroTurnSummary);
+        statusBuilder.AppendLine($"{currentMonster.name} was defeated.");
+        statusBuilder.Append(rewards.Summary);
+        if (IsPendingEncounterFinal())
+        {
+            statusBuilder.AppendLine();
+            statusBuilder.Append("Continue to finish the run.");
+        }
+
+        SetStatus(statusBuilder.ToString());
+
+        if (usingBattleScene2Ui && endPanelRoot != null)
+        {
+            ShowVictoryEndPanel(rewards);
+            return;
+        }
 
         if (RunSession.IsRunComplete())
         {
-            SetStatus($"{heroTurnSummary}\n{currentMonster.name} was defeated.\n{rewardSummary}\nThe tower is clear.");
             PrepareReturn("Back to map");
             return;
         }
 
-        SetStatus($"{heroTurnSummary}\n{currentMonster.name} was defeated.\n{rewardSummary}");
         PrepareReturn("Continue on map");
     }
 
@@ -540,24 +683,38 @@ public class TowerBattleController : MonoBehaviour
         PrepareReturn("Back to map");
     }
 
-    private string AwardVictoryRewards()
+    private VictoryRewards AwardVictoryRewards()
     {
         hero.Xp += currentMonster.xpReward;
-        var rewardParts = new List<string> { $"+{currentMonster.xpReward} XP" };
+        var xpSummary = $"+{currentMonster.xpReward} xp";
 
         while (hero.Level < runConfig.xpTable.Count && hero.Xp >= runConfig.xpTable[hero.Level])
         {
             hero.Level++;
-            rewardParts.Add($"Level up to {hero.Level}");
         }
 
         var learnedMove = PickLearnableMove(currentMonster);
+        string learnedMoveText = null;
         if (!string.IsNullOrEmpty(learnedMove))
         {
-            rewardParts.Add(RegisterLearnedMoveReward(learnedMove));
+            learnedMoveText = RegisterLearnedMoveReward(learnedMove);
         }
 
-        return string.Join(" | ", rewardParts);
+        var summaryParts = new List<string> { xpSummary };
+        if (!string.IsNullOrEmpty(learnedMoveText))
+        {
+            summaryParts.Add(learnedMoveText);
+        }
+
+        return new VictoryRewards
+        {
+            Summary = string.Join(" | ", summaryParts),
+            CoinsText = "+0",
+            LearnedMoveText = learnedMoveText,
+            XpText = xpSummary,
+            LearnedMoveId = learnedMove,
+            HasLearnedMove = !string.IsNullOrEmpty(learnedMoveText)
+        };
     }
 
     private void RestoreHeroToFullHealth()
@@ -588,11 +745,11 @@ public class TowerBattleController : MonoBehaviour
         var newMove = GetMove(newMoveId);
         if (newMove == null)
         {
-            return "Learned an unknown move";
+            return "Unknown move";
         }
 
         RunSession.SetPendingLearnedMove(newMoveId);
-        return $"Learned {newMove.name} - choose whether to equip it on the map";
+        return newMove.name;
     }
 
     private void PrepareReturn(string label)
@@ -619,6 +776,98 @@ public class TowerBattleController : MonoBehaviour
         RefreshButtons();
         RefreshProgress();
         RefreshEffects();
+    }
+
+    private void ShowVictoryEndPanel(VictoryRewards rewards)
+    {
+        if (endPanelRoot == null || rewards == null)
+        {
+            return;
+        }
+
+        if (endPanelTitleText != null)
+        {
+            endPanelTitleText.text = IsPendingEncounterFinal() ? "Run Complete!" : "Victory!";
+        }
+
+        if (reward1Text != null)
+        {
+            reward1Text.text = rewards.CoinsText;
+        }
+
+        if (reward2Root != null)
+        {
+            reward2Root.SetActive(rewards.HasLearnedMove);
+        }
+
+        if (reward2Text != null)
+        {
+            reward2Text.text = rewards.LearnedMoveText;
+        }
+
+        if (reward3Text != null)
+        {
+            reward3Text.text = rewards.XpText;
+        }
+
+        if (reward2Icon != null)
+        {
+            reward2Icon.sprite = ResolveReward2Icon(rewards.LearnedMoveId);
+            reward2Icon.color = Color.white;
+        }
+
+        SetButtonsInteractable(false);
+        SetEndPanelVisible(true);
+    }
+
+    private Sprite ResolveReward2Icon(string learnedMoveId)
+    {
+        var learnedMove = GetMove(learnedMoveId);
+        var icon = ResolveMoveIconSprite(learnedMove);
+        return icon != null ? icon : reward2Icon?.sprite;
+    }
+
+    private bool IsPendingEncounterFinal()
+    {
+        return RunSession.CompletedEncounters != null &&
+               RunSession.CompletedEncounters.Count > 0 &&
+               RunSession.CompletedEncounters.Count(completed => completed) == RunSession.CompletedEncounters.Count - 1;
+    }
+
+    private void OnReviveButtonPressed()
+    {
+        if (pendingVictoryRewards == null)
+        {
+            return;
+        }
+
+        SetEndPanelVisible(false);
+        StartEncounter(encounterIndex);
+    }
+
+    private void OnContinueButtonPressed()
+    {
+        if (pendingVictoryRewards != null)
+        {
+            RunSession.MarkEncounterComplete(encounterIndex, pendingVictoryRewards.Summary);
+            pendingVictoryRewards = null;
+        }
+
+        ReturnToOverview();
+    }
+
+    private void SetEndPanelVisible(bool isVisible)
+    {
+        if (endPanelRoot == null)
+        {
+            return;
+        }
+
+        endPanelRoot.SetActive(isVisible);
+        if (!isVisible)
+        {
+            pendingVictoryRewards = null;
+        }
     }
 
     private void RefreshLabels()
@@ -1122,6 +1371,29 @@ public class TowerBattleController : MonoBehaviour
         monsterEffectAttackIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Sword Icon");
         monsterEffectDefenseIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Shield Icon");
         monsterEffectMagicIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Magic Icon");
+        endPanelRoot = GameObject.Find("Canvas/End Panel");
+        endPanelTitleText = FindComponent<TMP_Text>("Canvas/End Panel/Title Image/Title Text");
+        reward2Root = GameObject.Find("Canvas/End Panel/Rewards/Reward 2");
+        reward1Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 1/Text");
+        reward2Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 2/Text");
+        reward3Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 3/Text");
+        reward1Icon = FindComponent<Image>("Canvas/End Panel/Rewards/Reward 1/Reward Icon");
+        reward2Icon = FindComponent<Image>("Canvas/End Panel/Rewards/Reward 2/Reward Icon");
+        reward3Icon = FindComponent<Image>("Canvas/End Panel/Rewards/Reward 3/Reward Icon");
+        reviveButton = FindComponent<Button>("Canvas/End Panel/Revive Button");
+        continueButton = FindComponent<Button>("Canvas/End Panel/Continue Button");
+
+        if (reviveButton != null)
+        {
+            ConfigureEndPanelButton(reviveButton, OnReviveButtonPressed);
+        }
+
+        if (continueButton != null)
+        {
+            ConfigureEndPanelButton(continueButton, OnContinueButtonPressed);
+        }
+
+        SetEndPanelVisible(false);
 
         for (var index = 0; index < 4; index++)
         {
@@ -1158,6 +1430,40 @@ public class TowerBattleController : MonoBehaviour
         }
 
         UpdateMoveHoverSelectors();
+    }
+
+    private void ConfigureEndPanelButton(Button button, UnityEngine.Events.UnityAction clickAction)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(clickAction);
+        button.transition = Selectable.Transition.None;
+
+        var buttonImage = button.targetGraphic as Image ?? button.GetComponent<Image>();
+        if (buttonImage != null)
+        {
+            button.targetGraphic = buttonImage;
+        }
+
+        var labelRect = button.GetComponentInChildren<TMP_Text>()?.rectTransform;
+        var feedback = button.GetComponent<EndPanelButtonFeedback>();
+        if (feedback == null)
+        {
+            feedback = button.gameObject.AddComponent<EndPanelButtonFeedback>();
+        }
+
+        feedback.Initialize(
+            button,
+            buttonImage,
+            labelRect,
+            battleScene2EndPanelPressedButtonSprite,
+            battleScene2EndPanelHoverTint,
+            battleScene2EndPanelPressedTint,
+            battleScene2EndPanelPressedTextOffset);
     }
 
     private void CreateRuntimeHud()
