@@ -349,6 +349,7 @@ public class TowerBattleController : MonoBehaviour
             ? "Offline fallback data loaded."
             : $"Run {GetRunLabel()} active.";
         SetStatus($"{intro}\nEncounter {encounterIndex + 1}/{runConfig.encounters.Count}: {currentMonster.name}\n{currentMonster.description}");
+        PreloadBattleAssets();
         ConfigureBattlePresenters();
         RefreshAllUi();
         SetButtonsInteractable(true);
@@ -393,7 +394,8 @@ public class TowerBattleController : MonoBehaviour
             yield return new WaitForSeconds(monsterReactionDelay);
         }
 
-        var monsterResponse = FetchMonsterMove();
+        MonsterMoveResponse monsterResponse = null;
+        yield return FetchMonsterMoveRoutine(response => monsterResponse = response);
 
         if (monsterResponse == null)
         {
@@ -439,7 +441,7 @@ public class TowerBattleController : MonoBehaviour
         RefreshAllUi();
     }
 
-    private MonsterMoveResponse FetchMonsterMove()
+    private IEnumerator FetchMonsterMoveRoutine(Action<MonsterMoveResponse> onCompleted)
     {
         var payload = new BattleState
         {
@@ -456,20 +458,35 @@ public class TowerBattleController : MonoBehaviour
         var json = JsonConvert.SerializeObject(payload);
         var encodedState = Uri.EscapeDataString(json);
         var url = $"{baseUrl}/battle/monster-move?state={encodedState}";
+        MonsterMoveResponse response = null;
 
-        try
+        using (var request = UnityWebRequest.Get(url))
         {
-            using var client = new System.Net.WebClient();
-            var responseText = client.DownloadString(url);
-            var response = JsonConvert.DeserializeObject<MonsterMoveResponse>(responseText);
-            response.move ??= GetMove(response.moveId);
-            return response;
+            request.timeout = 5;
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                try
+                {
+                    response = JsonConvert.DeserializeObject<MonsterMoveResponse>(request.downloadHandler.text);
+                    if (response != null)
+                    {
+                        response.move ??= GetMove(response.moveId);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"Monster move response could not be parsed: {exception.Message}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Monster move request failed: {request.error}");
+            }
         }
-        catch (Exception exception)
-        {
-            Debug.LogWarning($"Monster move request failed: {exception.Message}");
-            return null;
-        }
+
+        onCompleted?.Invoke(response);
     }
 
     private string ResolveMove(Move move, bool actorIsHero)
@@ -1587,6 +1604,54 @@ public class TowerBattleController : MonoBehaviour
         {
             monsterCharacterPresenter.SetCharacter(ResolveMonsterSpriteKey(), BattleAnimationState.Idle);
         }
+    }
+
+    private void PreloadBattleAssets()
+    {
+        var heroSpriteKey = ResolveHeroSpriteKey();
+        var monsterSpriteKey = ResolveMonsterSpriteKey();
+        PreloadAnimationStates(heroSpriteKey);
+        PreloadAnimationStates(monsterSpriteKey);
+
+        if (hero?.EquippedMoves != null)
+        {
+            foreach (var moveId in hero.EquippedMoves)
+            {
+                var move = GetMove(moveId);
+                if (!string.IsNullOrWhiteSpace(move?.spriteKey))
+                {
+                    SpriteKeyLookup.LoadMoveSprite(move.spriteKey);
+                }
+            }
+        }
+
+        if (currentMonster?.moves == null)
+        {
+            return;
+        }
+
+        foreach (var moveId in currentMonster.moves)
+        {
+            var move = GetMove(moveId);
+            if (!string.IsNullOrWhiteSpace(move?.spriteKey))
+            {
+                SpriteKeyLookup.LoadMoveSprite(move.spriteKey);
+            }
+        }
+    }
+
+    private static void PreloadAnimationStates(string spriteKey)
+    {
+        if (string.IsNullOrWhiteSpace(spriteKey))
+        {
+            return;
+        }
+
+        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Idle);
+        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Attack);
+        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Hurt);
+        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Defend);
+        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Death);
     }
 
     private void PlayActorAnimation(bool actorIsHero, Move move)
