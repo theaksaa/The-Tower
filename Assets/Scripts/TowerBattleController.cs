@@ -30,16 +30,16 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private float monsterAttackDelay = 1f;
     [SerializeField] private float nextTurnDelay = 0.75f;
 
-    [Header("BattleScene2 UI")]
-    [SerializeField] private Sprite battleScene2HoverSelectorTopLeft;
-    [SerializeField] private Sprite battleScene2HoverSelectorTopRight;
-    [SerializeField] private Sprite battleScene2HoverSelectorBottomLeft;
-    [SerializeField] private Sprite battleScene2HoverSelectorBottomRight;
-    [SerializeField] private float battleScene2HoverSelectorCornerSize = 24f;
-    [SerializeField] private Sprite battleScene2EndPanelPressedButtonSprite;
-    [SerializeField] private Color battleScene2EndPanelHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
-    [SerializeField] private Color battleScene2EndPanelPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
-    [SerializeField] private Vector2 battleScene2EndPanelPressedTextOffset = new(0f, -6f);
+    [Header("Battle Scene UI")]
+    [SerializeField] private Sprite battleSceneHoverSelectorTopLeft;
+    [SerializeField] private Sprite battleSceneHoverSelectorTopRight;
+    [SerializeField] private Sprite battleSceneHoverSelectorBottomLeft;
+    [SerializeField] private Sprite battleSceneHoverSelectorBottomRight;
+    [SerializeField] private float battleSceneHoverSelectorCornerSize = 24f;
+    [SerializeField] private Sprite battleSceneEndPanelPressedButtonSprite;
+    [SerializeField] private Color battleSceneEndPanelHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
+    [SerializeField] private Color battleSceneEndPanelPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
+    [SerializeField] private Vector2 battleSceneEndPanelPressedTextOffset = new(0f, -6f);
 
     private readonly string[] buttonObjectNames =
     {
@@ -106,7 +106,7 @@ public class TowerBattleController : MonoBehaviour
     private bool isBusy;
     private bool returnReady;
     private string returnLabel = "Back to map";
-    private bool usingBattleScene2Ui;
+    private bool usingBattleSceneUi;
     private int hoveredMoveIndex = -1;
 
     private readonly List<string> monsterMoveHistory = new();
@@ -699,7 +699,7 @@ public class TowerBattleController : MonoBehaviour
 
         SetStatus(statusBuilder.ToString());
 
-        if (usingBattleScene2Ui && endPanelRoot != null)
+        if (usingBattleSceneUi && endPanelRoot != null)
         {
             ShowVictoryEndPanel(rewards, wasFinalEncounter);
             return;
@@ -722,7 +722,7 @@ public class TowerBattleController : MonoBehaviour
         RefreshAllUi();
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
 
-        if (usingBattleScene2Ui && defeatPanelRoot != null)
+        if (usingBattleSceneUi && defeatPanelRoot != null)
         {
             SetDefeatPanelVisible(true);
             yield break;
@@ -807,7 +807,7 @@ public class TowerBattleController : MonoBehaviour
         returnLabel = label;
         isBusy = false;
 
-        if (usingBattleScene2Ui)
+        if (usingBattleSceneUi)
         {
             SetButtonsInteractable(false);
             return;
@@ -1140,10 +1140,10 @@ public class TowerBattleController : MonoBehaviour
     private GameObject CreateMoveHoverSelector(Transform moveRoot)
     {
         if (moveRoot == null ||
-            battleScene2HoverSelectorTopLeft == null ||
-            battleScene2HoverSelectorTopRight == null ||
-            battleScene2HoverSelectorBottomLeft == null ||
-            battleScene2HoverSelectorBottomRight == null)
+            battleSceneHoverSelectorTopLeft == null ||
+            battleSceneHoverSelectorTopRight == null ||
+            battleSceneHoverSelectorBottomLeft == null ||
+            battleSceneHoverSelectorBottomRight == null)
         {
             return null;
         }
@@ -1165,10 +1165,10 @@ public class TowerBattleController : MonoBehaviour
         selectorRect.offsetMin = Vector2.zero;
         selectorRect.offsetMax = Vector2.zero;
 
-        CreateSelectorCorner(selectorRoot.transform, "Top Left", battleScene2HoverSelectorTopLeft, new Vector2(0f, 1f));
-        CreateSelectorCorner(selectorRoot.transform, "Top Right", battleScene2HoverSelectorTopRight, new Vector2(1f, 1f));
-        CreateSelectorCorner(selectorRoot.transform, "Bottom Left", battleScene2HoverSelectorBottomLeft, new Vector2(0f, 0f));
-        CreateSelectorCorner(selectorRoot.transform, "Bottom Right", battleScene2HoverSelectorBottomRight, new Vector2(1f, 0f));
+        CreateSelectorCorner(selectorRoot.transform, "Top Left", battleSceneHoverSelectorTopLeft, new Vector2(0f, 1f));
+        CreateSelectorCorner(selectorRoot.transform, "Top Right", battleSceneHoverSelectorTopRight, new Vector2(1f, 1f));
+        CreateSelectorCorner(selectorRoot.transform, "Bottom Left", battleSceneHoverSelectorBottomLeft, new Vector2(0f, 0f));
+        CreateSelectorCorner(selectorRoot.transform, "Bottom Right", battleSceneHoverSelectorBottomRight, new Vector2(1f, 0f));
 
         selectorRoot.transform.SetAsLastSibling();
         selectorRoot.SetActive(false);
@@ -1185,7 +1185,7 @@ public class TowerBattleController : MonoBehaviour
         rect.anchorMax = anchor;
         rect.pivot = anchor;
         rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(battleScene2HoverSelectorCornerSize, battleScene2HoverSelectorCornerSize);
+        rect.sizeDelta = new Vector2(battleSceneHoverSelectorCornerSize, battleSceneHoverSelectorCornerSize);
 
         var image = cornerObject.GetComponent<Image>();
         image.sprite = sprite;
@@ -1211,7 +1211,7 @@ public class TowerBattleController : MonoBehaviour
                 continue;
             }
 
-            var isActive = usingBattleScene2Ui &&
+            var isActive = usingBattleSceneUi &&
                 index == hoveredMoveIndex &&
                 index < moveButtons.Count &&
                 moveButtons[index] != null &&
@@ -1457,9 +1457,9 @@ public class TowerBattleController : MonoBehaviour
         monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Monster Character");
         endPanelRoot = FindGameObject("Canvas/End Panel");
         defeatPanelRoot = FindGameObject("Canvas/Defeat Panel");
-        usingBattleScene2Ui = FindGameObject("Canvas/Moves Bar/Moves/Move 1") != null ||
-                              endPanelRoot != null ||
-                              defeatPanelRoot != null;
+        usingBattleSceneUi = FindGameObject("Canvas/Moves Bar/Moves/Move 1") != null ||
+                             endPanelRoot != null ||
+                             defeatPanelRoot != null;
 
         moveButtons.Clear();
         moveButtonLabels.Clear();
@@ -1467,7 +1467,7 @@ public class TowerBattleController : MonoBehaviour
         moveHoverSelectorRoots.Clear();
         hoveredMoveIndex = -1;
 
-        if (!usingBattleScene2Ui)
+        if (!usingBattleSceneUi)
         {
             for (var index = 0; index < buttonObjectNames.Length; index++)
             {
@@ -1496,7 +1496,7 @@ public class TowerBattleController : MonoBehaviour
             }
         }
 
-        if (!usingBattleScene2Ui)
+        if (!usingBattleSceneUi)
         {
             return;
         }
@@ -1778,10 +1778,10 @@ public class TowerBattleController : MonoBehaviour
             button,
             buttonImage,
             labelRect,
-            battleScene2EndPanelPressedButtonSprite,
-            battleScene2EndPanelHoverTint,
-            battleScene2EndPanelPressedTint,
-            battleScene2EndPanelPressedTextOffset);
+            battleSceneEndPanelPressedButtonSprite,
+            battleSceneEndPanelHoverTint,
+            battleSceneEndPanelPressedTint,
+            battleSceneEndPanelPressedTextOffset);
     }
 
     private void CreateRuntimeHud()
@@ -1804,10 +1804,10 @@ public class TowerBattleController : MonoBehaviour
             statusText.rectTransform,
             new Vector2(0.5f, 1f),
             new Vector2(0.5f, 1f),
-            new Vector2(0f, usingBattleScene2Ui ? -92f : -26f),
+            new Vector2(0f, usingBattleSceneUi ? -92f : -26f),
             new Vector2(900f, 120f));
 
-        if (!usingBattleScene2Ui)
+        if (!usingBattleSceneUi)
         {
             progressText = CreateUiText("ProgressText", canvas.transform, font, 22, TextAnchor.UpperLeft);
             effectsText = CreateUiText("EffectsText", canvas.transform, font, 20, TextAnchor.UpperRight);

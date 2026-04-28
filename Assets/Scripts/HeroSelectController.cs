@@ -14,7 +14,7 @@ public class HeroSelectController : MonoBehaviour
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]
-    [SerializeField] private string battleSceneName = "BattleScene2";
+    [SerializeField] private string battleSceneName = "BattleScene";
 
     private Transform heroSelectorRoot;
     private TMP_Text heroNameText;

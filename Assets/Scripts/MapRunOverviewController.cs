@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public class MapRunOverviewController : MonoBehaviour
 {
     [Header("Navigation")]
-    [SerializeField] private string battleSceneName = "BattleScene2";
+    [SerializeField] private string battleSceneName = "BattleScene";
     [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
 
     [Header("Modal")]

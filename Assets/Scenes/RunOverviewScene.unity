@@ -453,7 +453,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MapRunOverviewController
   baseUrl: http://localhost:3000
   useLocalFallbackIfApiFails: 1
-  battleSceneName: BattleScene2
+  battleSceneName: BattleScene
   modalAnimationDuration: 0.24
 --- !u!114 &1425189913
 MonoBehaviour:
