@@ -23,7 +23,7 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]
-    [SerializeField] private string overviewSceneName = "RunOverviewScene";
+    [SerializeField] private string overviewSceneName = "RunOverviewScene2";
 
     [Header("Turn Timing")]
     [SerializeField] private float heroAttackDelay = 1f;
@@ -309,17 +309,17 @@ public class TowerBattleController : MonoBehaviour
             ? RunSession.SelectedEncounterIndex
             : RunSession.GetFirstAvailableEncounterIndex();
 
-        if (!RunSession.CanEnterEncounter(encounterIndex))
+        if (!RunSession.CanEnterEncounterFromMap(encounterIndex))
         {
             var fallbackEncounter = RunSession.GetFirstAvailableEncounterIndex();
-            if (fallbackEncounter >= 0 && RunSession.CanEnterEncounter(fallbackEncounter))
+            if (fallbackEncounter >= 0 && RunSession.CanEnterEncounterFromMap(fallbackEncounter))
             {
                 encounterIndex = fallbackEncounter;
                 RunSession.SelectEncounter(encounterIndex);
             }
         }
 
-        if (!RunSession.CanEnterEncounter(encounterIndex))
+        if (!RunSession.CanEnterEncounterFromMap(encounterIndex))
         {
             SetStatus(RunSession.IsRunComplete()
                 ? "The run is already complete. Return to the map to start again."
@@ -737,11 +737,6 @@ public class TowerBattleController : MonoBehaviour
         hero.Xp += currentMonster.xpReward;
         var xpSummary = $"+{currentMonster.xpReward} xp";
 
-        while (hero.Level < runConfig.xpTable.Count && hero.Xp >= runConfig.xpTable[hero.Level])
-        {
-            hero.Level++;
-        }
-
         var learnedMove = PickLearnableMove(currentMonster);
         string learnedMoveText = null;
         if (!string.IsNullOrEmpty(learnedMove))
@@ -750,6 +745,11 @@ public class TowerBattleController : MonoBehaviour
         }
 
         var summaryParts = new List<string> { xpSummary };
+        if (RunSession.CanLevelUp())
+        {
+            summaryParts.Add("level up ready");
+        }
+
         if (!string.IsNullOrEmpty(learnedMoveText))
         {
             summaryParts.Add(learnedMoveText);

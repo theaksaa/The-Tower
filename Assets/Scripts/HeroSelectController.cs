@@ -14,7 +14,7 @@ public class HeroSelectController : MonoBehaviour
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]
-    [SerializeField] private string battleSceneName = "BattleScene";
+    [SerializeField] private string overviewSceneName = "RunOverviewScene2";
 
     private Transform heroSelectorRoot;
     private TMP_Text heroNameText;
@@ -322,7 +322,7 @@ public class HeroSelectController : MonoBehaviour
         }
 
         RunSession.InitializeNewRun(loadedRunConfig, usingFallbackData, availableHeroes[selectedHeroIndex]);
-        SceneManager.LoadScene(battleSceneName);
+        SceneManager.LoadScene(overviewSceneName);
     }
 
     private void UpdateSelectButtonLabel()

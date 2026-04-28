@@ -1,13 +1,20 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+public interface IMoveLoadoutController
+{
+    bool TryApplyMoveDrop(string moveId, bool sourceWasEquipped, int sourceEquippedIndex, int targetEquippedIndex);
+    void QueueDropRefresh();
+    void NotifyDragStateChanged(bool isDragging);
+}
+
 public class MoveDropZone : MonoBehaviour, IDropHandler
 {
-    private MapRunOverviewController controller;
+    private IMoveLoadoutController controller;
 
     public int EquippedIndex { get; private set; }
 
-    public void Initialize(MapRunOverviewController owner, int equippedIndex)
+    public void Initialize(IMoveLoadoutController owner, int equippedIndex)
     {
         controller = owner;
         EquippedIndex = equippedIndex;

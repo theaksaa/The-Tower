@@ -5,20 +5,23 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasGroup))]
 public class MoveSlotDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    private MapRunOverviewController controller;
+    private static readonly Color EmptyMoveSlotTint = new(1f, 1f, 1f, 0.28f);
+
+    private IMoveLoadoutController controller;
     private RectTransform dragRoot;
     private RectTransform rectTransform;
     private CanvasGroup canvasGroup;
     private Canvas canvas;
-    private LayoutElement layoutElement;
-    private Transform originalParent;
-    private int originalSiblingIndex;
-    private Vector2 originalAnchorMin;
-    private Vector2 originalAnchorMax;
-    private Vector2 originalPivot;
-    private Vector2 originalOffsetMin;
-    private Vector2 originalOffsetMax;
-    private Vector2 originalSizeDelta;
+    private Image sourceBackground;
+    private Image sourceIcon;
+    private Sprite originalBackgroundSprite;
+    private Sprite originalIconSprite;
+    private Color originalBackgroundColor;
+    private Color originalIconColor;
+    private bool originalBackgroundPreserveAspect;
+    private bool originalIconPreserveAspect;
+    private Sprite emptyBackgroundSprite;
+    private RectTransform dragProxyRectTransform;
     private bool dropHandled;
 
     public string MoveId { get; private set; }
@@ -26,12 +29,14 @@ public class MoveSlotDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     public bool SourceWasEquipped { get; private set; }
 
     public void Initialize(
-        MapRunOverviewController owner,
+        IMoveLoadoutController owner,
         string moveId,
         int sourceEquippedIndex,
         bool sourceWasEquipped,
         RectTransform root,
-        Canvas parentCanvas)
+        Canvas parentCanvas,
+        Sprite emptySlotBackgroundSprite = null,
+        bool destroyOnDrop = true)
     {
         controller = owner;
         MoveId = moveId;
@@ -39,19 +44,16 @@ public class MoveSlotDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         SourceWasEquipped = sourceWasEquipped;
         dragRoot = root;
         canvas = parentCanvas;
+        emptyBackgroundSprite = emptySlotBackgroundSprite;
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
-        layoutElement = GetComponent<LayoutElement>();
+        sourceBackground = rectTransform.Find("Move Background")?.GetComponent<Image>();
+        sourceIcon = rectTransform.Find("Move Icon")?.GetComponent<Image>();
     }
 
     public void MarkDropHandled()
     {
         dropHandled = true;
-        if (canvasGroup != null)
-        {
-            canvasGroup.blocksRaycasts = false;
-            canvasGroup.alpha = 0f;
-        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -63,33 +65,9 @@ public class MoveSlotDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
         dropHandled = false;
         controller.NotifyDragStateChanged(true);
-        originalParent = rectTransform.parent;
-        originalSiblingIndex = rectTransform.GetSiblingIndex();
-        originalAnchorMin = rectTransform.anchorMin;
-        originalAnchorMax = rectTransform.anchorMax;
-        originalPivot = rectTransform.pivot;
-        originalOffsetMin = rectTransform.offsetMin;
-        originalOffsetMax = rectTransform.offsetMax;
-        originalSizeDelta = rectTransform.sizeDelta;
-
-        if (layoutElement != null)
-        {
-            layoutElement.ignoreLayout = true;
-        }
-
-        var worldCorners = new Vector3[4];
-        rectTransform.GetWorldCorners(worldCorners);
-        var width = worldCorners[3].x - worldCorners[0].x;
-        var height = worldCorners[1].y - worldCorners[0].y;
-
-        rectTransform.SetParent(dragRoot, true);
-        rectTransform.SetAsLastSibling();
-        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        rectTransform.pivot = new Vector2(0.5f, 0.5f);
-        rectTransform.sizeDelta = new Vector2(width, height);
+        CreateDragProxy();
+        ApplyEmptySlotPreview();
         canvasGroup.blocksRaycasts = false;
-        canvasGroup.alpha = 0.92f;
         UpdatePosition(eventData);
     }
 
@@ -100,52 +78,26 @@ public class MoveSlotDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        DestroyDragProxy();
+
         if (canvasGroup != null)
         {
             canvasGroup.blocksRaycasts = true;
-            canvasGroup.alpha = 1f;
         }
 
         controller.NotifyDragStateChanged(false);
 
         if (dropHandled)
         {
-            if (layoutElement != null)
-            {
-                layoutElement.ignoreLayout = false;
-            }
-
-            if (gameObject != null)
-            {
-                Destroy(gameObject);
-            }
-
             return;
         }
 
-        if (rectTransform == null || originalParent == null)
-        {
-            return;
-        }
-
-        rectTransform.SetParent(originalParent, false);
-        rectTransform.SetSiblingIndex(originalSiblingIndex);
-        rectTransform.anchorMin = originalAnchorMin;
-        rectTransform.anchorMax = originalAnchorMax;
-        rectTransform.pivot = originalPivot;
-        rectTransform.offsetMin = originalOffsetMin;
-        rectTransform.offsetMax = originalOffsetMax;
-        rectTransform.sizeDelta = originalSizeDelta;
-
-        if (layoutElement != null)
-        {
-            layoutElement.ignoreLayout = false;
-        }
+        RestoreSourceVisuals();
     }
 
     private void UpdatePosition(PointerEventData eventData)
     {
-        if (rectTransform == null || dragRoot == null)
+        if (dragProxyRectTransform == null || dragRoot == null)
         {
             return;
         }
@@ -156,7 +108,86 @@ public class MoveSlotDragItem : MonoBehaviour, IBeginDragHandler, IDragHandler, 
                 canvas != null ? canvas.worldCamera : null,
                 out var localPoint))
         {
-            rectTransform.localPosition = localPoint;
+            dragProxyRectTransform.localPosition = localPoint;
+        }
+    }
+
+    private void CreateDragProxy()
+    {
+        var proxyObject = Instantiate(gameObject, dragRoot, true);
+        proxyObject.name = $"{gameObject.name} Drag Proxy";
+
+        foreach (var behaviour in proxyObject.GetComponents<MonoBehaviour>())
+        {
+            Destroy(behaviour);
+        }
+
+        var proxyCanvasGroup = proxyObject.GetComponent<CanvasGroup>();
+        if (proxyCanvasGroup == null)
+        {
+            proxyCanvasGroup = proxyObject.AddComponent<CanvasGroup>();
+        }
+
+        proxyCanvasGroup.blocksRaycasts = false;
+        proxyCanvasGroup.alpha = 0.92f;
+
+        dragProxyRectTransform = proxyObject.GetComponent<RectTransform>();
+        dragProxyRectTransform.SetAsLastSibling();
+        dragProxyRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        dragProxyRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        dragProxyRectTransform.pivot = new Vector2(0.5f, 0.5f);
+    }
+
+    private void DestroyDragProxy()
+    {
+        if (dragProxyRectTransform == null)
+        {
+            return;
+        }
+
+        Destroy(dragProxyRectTransform.gameObject);
+        dragProxyRectTransform = null;
+    }
+
+    private void ApplyEmptySlotPreview()
+    {
+        if (sourceBackground != null)
+        {
+            originalBackgroundSprite = sourceBackground.sprite;
+            originalBackgroundColor = sourceBackground.color;
+            originalBackgroundPreserveAspect = sourceBackground.preserveAspect;
+            if (emptyBackgroundSprite != null)
+            {
+                sourceBackground.sprite = emptyBackgroundSprite;
+            }
+
+            sourceBackground.color = EmptyMoveSlotTint;
+            sourceBackground.preserveAspect = true;
+        }
+
+        if (sourceIcon != null)
+        {
+            originalIconSprite = sourceIcon.sprite;
+            originalIconColor = sourceIcon.color;
+            originalIconPreserveAspect = sourceIcon.preserveAspect;
+            sourceIcon.color = new Color(1f, 1f, 1f, 0f);
+        }
+    }
+
+    private void RestoreSourceVisuals()
+    {
+        if (sourceBackground != null)
+        {
+            sourceBackground.sprite = originalBackgroundSprite;
+            sourceBackground.color = originalBackgroundColor;
+            sourceBackground.preserveAspect = originalBackgroundPreserveAspect;
+        }
+
+        if (sourceIcon != null)
+        {
+            sourceIcon.sprite = originalIconSprite;
+            sourceIcon.color = originalIconColor;
+            sourceIcon.preserveAspect = originalIconPreserveAspect;
         }
     }
 }

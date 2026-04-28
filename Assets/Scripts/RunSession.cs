@@ -11,6 +11,9 @@ public sealed class HeroRuntimeState
     public int Level;
     public int Xp;
     public int CurrentHp;
+    public int BonusAttack;
+    public int BonusDefense;
+    public int BonusMagic;
     public List<string> EquippedMoves = new();
     public HashSet<string> KnownMoves = new();
 }
@@ -158,6 +161,26 @@ public static class RunSession
                encounterIndex == nextEncounterIndex;
     }
 
+    public static bool CanEnterEncounterFromMap(int encounterIndex)
+    {
+        if (!HasActiveRun || IsDefeated || CurrentRunConfig == null || CompletedEncounters == null)
+        {
+            return false;
+        }
+
+        if (encounterIndex < 0 || encounterIndex >= CurrentRunConfig.encounters.Count)
+        {
+            return false;
+        }
+
+        if (CompletedEncounters[encounterIndex])
+        {
+            return true;
+        }
+
+        return encounterIndex == GetFirstAvailableEncounterIndex();
+    }
+
     public static void MarkEncounterComplete(int encounterIndex, string rewardSummary)
     {
         if (!IsEncounterCompleted(encounterIndex))
@@ -206,6 +229,79 @@ public static class RunSession
         return move;
     }
 
+    public static int GetNextLevelXpThreshold()
+    {
+        if (!HasActiveRun || CurrentRunConfig?.xpTable == null || Hero == null)
+        {
+            return -1;
+        }
+
+        return Hero.Level < CurrentRunConfig.xpTable.Count
+            ? CurrentRunConfig.xpTable[Hero.Level]
+            : -1;
+    }
+
+    public static bool CanLevelUp()
+    {
+        var nextThreshold = GetNextLevelXpThreshold();
+        return nextThreshold >= 0 && Hero.Xp >= nextThreshold;
+    }
+
+    public static int GetAvailableLevelUpCount()
+    {
+        if (!HasActiveRun || CurrentRunConfig?.xpTable == null || Hero == null)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        var simulatedLevel = Hero.Level;
+        while (simulatedLevel < CurrentRunConfig.xpTable.Count &&
+               Hero.Xp >= CurrentRunConfig.xpTable[simulatedLevel])
+        {
+            count++;
+            simulatedLevel++;
+        }
+
+        return count;
+    }
+
+    public static bool TrySpendLevelUp(string stat)
+    {
+        if (!CanLevelUp() || string.IsNullOrWhiteSpace(stat))
+        {
+            return false;
+        }
+
+        var selectedHero = SelectedHeroDefinition ?? GetAvailableHeroes(CurrentRunConfig).FirstOrDefault();
+        if (selectedHero?.statsPerLevel == null || Hero == null)
+        {
+            return false;
+        }
+
+        var healthGain = Mathf.Max(0, selectedHero.statsPerLevel.health);
+        switch (stat.Trim().ToLowerInvariant())
+        {
+            case "attack":
+                Hero.BonusAttack += Mathf.Max(0, selectedHero.statsPerLevel.attack);
+                break;
+            case "defense":
+                Hero.BonusDefense += Mathf.Max(0, selectedHero.statsPerLevel.defense);
+                break;
+            case "magic":
+                Hero.BonusMagic += Mathf.Max(0, selectedHero.statsPerLevel.magic);
+                break;
+            default:
+                return false;
+        }
+
+        Hero.Level++;
+        Hero.CurrentHp += healthGain;
+        Hero.CurrentHp = Mathf.Min(Hero.CurrentHp, GetHeroBaseStats().health);
+        StatusMessage = $"{GetHeroDisplayName()} leveled up {stat.Trim().ToUpperInvariant()}.";
+        return true;
+    }
+
     public static Stats GetHeroBaseStats()
     {
         var selectedHero = SelectedHeroDefinition ?? GetAvailableHeroes(CurrentRunConfig).FirstOrDefault();
@@ -218,9 +314,9 @@ public static class RunSession
         var levelBonus = Mathf.Max(0, Hero.Level - 1);
 
         baseStats.health += selectedHero.statsPerLevel.health * levelBonus;
-        baseStats.attack += selectedHero.statsPerLevel.attack * levelBonus;
-        baseStats.defense += selectedHero.statsPerLevel.defense * levelBonus;
-        baseStats.magic += selectedHero.statsPerLevel.magic * levelBonus;
+        baseStats.attack += Hero.BonusAttack;
+        baseStats.defense += Hero.BonusDefense;
+        baseStats.magic += Hero.BonusMagic;
         return baseStats;
     }
 }
