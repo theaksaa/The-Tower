@@ -71,6 +71,20 @@ public class TowerBattleController : MonoBehaviour
     private TMP_Text monsterAttackText;
     private TMP_Text monsterDefenseText;
     private TMP_Text monsterMagicText;
+    private Image moveStatsIcon;
+    private GameObject currentMoveStatsRoot;
+    private TMP_Text moveStatsTitleText;
+    private TMP_Text moveStatsTypeText;
+    private TMP_Text moveStatsDescriptionText;
+    private TMP_Text moveStatsAttackText;
+    private TMP_Text moveStatsHealText;
+    private TMP_Text heroAttackEffectText;
+    private TMP_Text heroDefenseEffectText;
+    private TMP_Text heroMagicEffectText;
+    private TMP_Text monsterAttackEffectText;
+    private TMP_Text monsterDefenseEffectText;
+    private TMP_Text monsterMagicEffectText;
+    private TMP_Text moveStatsEffectsAmountText;
     private Image heroHealthBarImage;
     private Image monsterHealthBarImage;
     private BattleCharacterPresenter heroCharacterPresenter;
@@ -829,6 +843,7 @@ public class TowerBattleController : MonoBehaviour
     {
         RefreshLabels();
         RefreshButtons();
+        RefreshCurrentMoveStats();
         RefreshProgress();
         RefreshEffects();
     }
@@ -1200,6 +1215,7 @@ public class TowerBattleController : MonoBehaviour
             ? moveIndex
             : hoveredMoveIndex == moveIndex ? -1 : hoveredMoveIndex;
         UpdateMoveHoverSelectors();
+        RefreshCurrentMoveStats();
     }
 
     private void UpdateMoveHoverSelectors()
@@ -1219,6 +1235,87 @@ public class TowerBattleController : MonoBehaviour
                 moveButtons[index].interactable;
 
             selectorRoot.SetActive(isActive);
+        }
+    }
+
+    private void RefreshCurrentMoveStats()
+    {
+        RefreshMoveStats(GetHoveredMove());
+    }
+
+    private Move GetHoveredMove()
+    {
+        if (!usingBattleSceneUi ||
+            hero?.EquippedMoves == null ||
+            hoveredMoveIndex < 0 ||
+            hoveredMoveIndex >= hero.EquippedMoves.Count ||
+            hoveredMoveIndex >= moveButtons.Count)
+        {
+            return null;
+        }
+
+        var button = moveButtons[hoveredMoveIndex];
+        if (button == null || !button.interactable)
+        {
+            return null;
+        }
+
+        return GetMove(hero.EquippedMoves[hoveredMoveIndex]);
+    }
+
+    private void RefreshMoveStats(Move move)
+    {
+        if (currentMoveStatsRoot != null)
+        {
+            currentMoveStatsRoot.SetActive(move != null);
+        }
+
+        if (moveStatsIcon != null)
+        {
+            moveStatsIcon.sprite = ResolveMoveIconSprite(move) ?? moveStatsIcon.sprite;
+            moveStatsIcon.color = move == null ? new Color(1f, 1f, 1f, 0f) : Color.white;
+            moveStatsIcon.preserveAspect = true;
+        }
+
+        if (moveStatsTitleText != null)
+        {
+            moveStatsTitleText.text = move?.name ?? "Move Stats";
+        }
+
+        if (moveStatsTypeText != null)
+        {
+            moveStatsTypeText.text = move == null
+                ? "Hover a move to inspect it."
+                : $"{move.type?.ToUpperInvariant() ?? "UNKNOWN"}  |  {move.target?.ToUpperInvariant() ?? "TARGET"}";
+        }
+
+        if (moveStatsDescriptionText != null)
+        {
+            moveStatsDescriptionText.text = move == null
+                ? "Hover over a move to see its details."
+                : BuildMoveDescription(move);
+        }
+
+        if (moveStatsAttackText != null)
+        {
+            moveStatsAttackText.text = move == null ? "-" : BuildAttackValue(move);
+        }
+
+        if (moveStatsHealText != null)
+        {
+            moveStatsHealText.text = move == null ? "-" : BuildHealValue(move);
+        }
+
+        SetEffectValue(heroAttackEffectText, move, "attack", targetIsHero: true);
+        SetEffectValue(heroDefenseEffectText, move, "defense", targetIsHero: true);
+        SetEffectValue(heroMagicEffectText, move, "magic", targetIsHero: true);
+        SetEffectValue(monsterAttackEffectText, move, "attack", targetIsHero: false);
+        SetEffectValue(monsterDefenseEffectText, move, "defense", targetIsHero: false);
+        SetEffectValue(monsterMagicEffectText, move, "magic", targetIsHero: false);
+
+        if (moveStatsEffectsAmountText != null)
+        {
+            moveStatsEffectsAmountText.text = move == null ? "-" : BuildEffectDurationLine(move);
         }
     }
 
@@ -1331,6 +1428,95 @@ public class TowerBattleController : MonoBehaviour
             < 0 => debuffEffectColor,
             _ => inactiveEffectColor
         };
+    }
+
+    private static string BuildMoveDescription(Move move)
+    {
+        return string.IsNullOrWhiteSpace(move?.description) ? "-" : move.description;
+    }
+
+    private static string BuildAttackValue(Move move)
+    {
+        if (move == null || move.effect is not "damage" and not "damage_and_stat_modifier" and not "drain")
+        {
+            return "-";
+        }
+
+        return BuildActionValue(move);
+    }
+
+    private static string BuildHealValue(Move move)
+    {
+        if (move == null || !string.Equals(move.effect, "heal"))
+        {
+            return "-";
+        }
+
+        return BuildActionValue(move);
+    }
+
+    private static string BuildActionValue(Move move)
+    {
+        if (move.basePower > 0 && move.statMultiplier > 0f)
+        {
+            return $"{move.basePower} x{move.statMultiplier:0.##}";
+        }
+
+        if (move.basePower > 0)
+        {
+            return move.basePower.ToString();
+        }
+
+        if (move.statMultiplier > 0f)
+        {
+            return $"x{move.statMultiplier:0.##}";
+        }
+
+        return "-";
+    }
+
+    private static void SetEffectValue(TMP_Text targetText, Move move, string statName, bool targetIsHero)
+    {
+        if (targetText == null)
+        {
+            return;
+        }
+
+        targetText.text = BuildModifierValue(move, statName, targetIsHero);
+    }
+
+    private static string BuildModifierValue(Move move, string statName, bool targetIsHero)
+    {
+        if (move?.statModifier == null)
+        {
+            return "0";
+        }
+
+        if (!string.Equals(move.statModifier.stat, statName, StringComparison.OrdinalIgnoreCase))
+        {
+            return "0";
+        }
+
+        var moveTargetsHero = string.Equals(move.target, "self", StringComparison.OrdinalIgnoreCase);
+        if (moveTargetsHero != targetIsHero)
+        {
+            return "0";
+        }
+
+        var sign = move.statModifier.value >= 0 ? "+" : string.Empty;
+        return $"{sign}{move.statModifier.value}";
+    }
+
+    private static string BuildEffectDurationLine(Move move)
+    {
+        if (move?.statModifier == null)
+        {
+            return "No effects will be applied.";
+        }
+
+        var rounds = Mathf.Max(1, move.statModifier.durationTurns);
+        var roundLabel = rounds == 1 ? "round" : "rounds";
+        return $"Effects will be applied for {rounds} {roundLabel}.";
     }
 
     private TextMesh FindTextMesh(string objectName)
@@ -1509,6 +1695,20 @@ public class TowerBattleController : MonoBehaviour
         monsterAttackText = FindComponent<TMP_Text>("Canvas/Monster UI/Stats/Attack Text");
         monsterDefenseText = FindComponent<TMP_Text>("Canvas/Monster UI/Stats/Defense Text");
         monsterMagicText = FindComponent<TMP_Text>("Canvas/Monster UI/Stats/Magic Text");
+        moveStatsIcon = FindComponent<Image>("Canvas/Current Move Stats/Move/Move Icon");
+        currentMoveStatsRoot = FindGameObject("Canvas/Current Move Stats");
+        moveStatsTitleText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Title");
+        moveStatsTypeText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Type");
+        moveStatsDescriptionText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Description");
+        moveStatsAttackText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Attack/Attack Text");
+        moveStatsHealText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Heal/Heal Text");
+        heroAttackEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Hero Effects Stat/Attack/Attack Text");
+        heroDefenseEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Hero Effects Stat/Defense/Defense Text");
+        heroMagicEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Hero Effects Stat/Magic/Magic Text");
+        monsterAttackEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Monster Effects Stat/Attack/Attack Text");
+        monsterDefenseEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Monster Effects Stat/Defense/Defense Text");
+        monsterMagicEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Monster Effects Stat/Magic/Magic Text");
+        moveStatsEffectsAmountText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Effects Amount");
 
         heroHealthBarImage = FindComponent<Image>("Canvas/Hero UI/Health Bar/Health Bar");
         monsterHealthBarImage = FindComponent<Image>("Canvas/Monster UI/Health Bar/Health Bar");
