@@ -919,6 +919,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void OnDefeatMapButtonPressed()
     {
+        RunSession.ReturnToMapAfterDefeat(encounterIndex);
         ReturnToOverview();
     }
 

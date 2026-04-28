@@ -198,6 +198,28 @@ public static class RunSession
         StatusMessage = $"The hero fell on encounter {encounterIndex + 1}. Start a new run to try again.";
     }
 
+    public static void ReturnToMapAfterDefeat(int encounterIndex)
+    {
+        if (!HasActiveRun || Hero == null)
+        {
+            return;
+        }
+
+        IsDefeated = false;
+        Hero.CurrentHp = GetHeroBaseStats().health;
+
+        var nextEncounterIndex = encounterIndex >= 0 && encounterIndex < CurrentRunConfig.encounters.Count
+            ? encounterIndex
+            : GetFirstAvailableEncounterIndex();
+
+        if (nextEncounterIndex >= 0)
+        {
+            SelectedEncounterIndex = nextEncounterIndex;
+        }
+
+        StatusMessage = $"The hero retreated from encounter {encounterIndex + 1}. Choose your next fight from the map.";
+    }
+
     public static void SetPendingLearnedMove(string moveId)
     {
         PendingLearnedMoveId = moveId;
