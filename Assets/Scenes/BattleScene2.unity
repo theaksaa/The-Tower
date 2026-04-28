@@ -272,9 +272,9 @@ RectTransform:
   - {fileID: 2106375270}
   m_Father: {fileID: 1279967234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 405.9568, y: -48}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &114825052
@@ -1712,9 +1712,9 @@ RectTransform:
   - {fileID: 1202210878}
   m_Father: {fileID: 243422083}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 429, y: -68.95}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &529120918
@@ -2049,9 +2049,9 @@ RectTransform:
   - {fileID: 1128097874}
   m_Father: {fileID: 1279967234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 289.96912, y: -48}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &656462205
@@ -2237,9 +2237,9 @@ RectTransform:
   - {fileID: 454121618}
   m_Father: {fileID: 243422083}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 85.8, y: -68.95}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &677700454
@@ -2368,17 +2368,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cce9f5a60f0eea644939ea809a745066, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BattleCharacterPresenter
-  spriteSheetTexture: {fileID: 2800000, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  animationFrames:
-  - {fileID: 7384290322352760091, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: 5558041129755138300, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: 5494728702781700201, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: 855971943943930739, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: 8590257050535953886, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: -1175184007495930954, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: -4675935811743254547, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
-  - {fileID: 1839488653993705794, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
+  spriteSheetTexture: {fileID: 0}
+  animationFrames: []
   framesPerSecond: 10
+  spriteKey: 
+  spriteKind: 1
+  initialState: 0
   faceLeft: 0
   preserveAspect: 1
   tint: {r: 1, g: 1, b: 1, a: 1}
@@ -2407,6 +2402,7 @@ MonoBehaviour:
   - {fileID: -4675935811743254547, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
   - {fileID: 1839488653993705794, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
   framesPerSecond: 10
+  loop: 1
 --- !u!114 &721693488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2427,7 +2423,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 7384290322352760091, guid: ba7fa05bce91070498b5cb7adf8a0dee, type: 3}
+  m_Sprite: {fileID: -2354316335275470200, guid: f656997d0292aaf44b46c83e86bf3350, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -2571,15 +2567,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cce9f5a60f0eea644939ea809a745066, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BattleCharacterPresenter
-  spriteSheetTexture: {fileID: 2800000, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
-  animationFrames:
-  - {fileID: 4723107735738678597, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
-  - {fileID: -7385789195546760866, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
-  - {fileID: 3234629978573100161, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
-  - {fileID: 6373048116405451881, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
-  - {fileID: 7264182050183361747, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
-  - {fileID: -2834552850196481573, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
+  spriteSheetTexture: {fileID: 0}
+  animationFrames: []
   framesPerSecond: 10
+  spriteKey: 
+  spriteKind: 2
+  initialState: 0
   faceLeft: 1
   preserveAspect: 1
   tint: {r: 1, g: 1, b: 1, a: 1}
@@ -2606,6 +2599,7 @@ MonoBehaviour:
   - {fileID: 7264182050183361747, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
   - {fileID: -2834552850196481573, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
   framesPerSecond: 10
+  loop: 1
 --- !u!114 &774761941
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2626,7 +2620,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 4723107735738678597, guid: e25b30f1cff92c8498d37ecb0509103d, type: 3}
+  m_Sprite: {fileID: -8726642730319694076, guid: 1f330b9a71294354381b1d7187bf957a, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -3672,9 +3666,9 @@ RectTransform:
   - {fileID: 1621794444}
   m_Father: {fileID: 1279967234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 173.98148, y: -48}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1202210877
@@ -6167,9 +6161,9 @@ RectTransform:
   - {fileID: 1519445354}
   m_Father: {fileID: 243422083}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 257.40002, y: -68.95}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1766781921
@@ -6528,9 +6522,9 @@ RectTransform:
   - {fileID: 1477754780}
   m_Father: {fileID: 1279967234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 57.993824, y: -48}
   m_SizeDelta: {x: 96, y: 96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1926846938

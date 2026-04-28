@@ -17,6 +17,7 @@ public class BattleCharacterPresenter : MonoBehaviour
     [SerializeField] private Sprite[] animationFrames;
     [SerializeField] private float framesPerSecond = 10f;
     [SerializeField] private string spriteKey;
+    [SerializeField] private CharacterSpriteKind spriteKind = CharacterSpriteKind.Unknown;
     [SerializeField] private BattleAnimationState initialState = BattleAnimationState.Idle;
 
     [Header("Display")]
@@ -48,6 +49,9 @@ public class BattleCharacterPresenter : MonoBehaviour
     {
         CacheReferences();
         currentState = initialState;
+#if UNITY_EDITOR
+        EnsureEditorPreviewFrames();
+#endif
         ApplyPresentation();
     }
 
@@ -59,6 +63,7 @@ public class BattleCharacterPresenter : MonoBehaviour
 
 #if UNITY_EDITOR
         AutoPopulateFramesFromSheet();
+        EnsureEditorPreviewFrames();
 #endif
 
         ApplyPresentation();
@@ -97,12 +102,37 @@ public class BattleCharacterPresenter : MonoBehaviour
 
         spriteAnimator.FramesPerSecond = framesPerSecond;
         spriteAnimator.Loop = ShouldLoopState(currentState);
+
+#if UNITY_EDITOR
+        // In edit mode, avoid overwriting serialized animator frame arrays with runtime-loaded sprites.
+        // This prevents the scene from "losing" sprites after domain reloads / saves.
+        if (!Application.isPlaying)
+        {
+            var previewFrames = ResolveFramesForState(currentState);
+            var previewSprite = GetFirstValidSprite(previewFrames);
+            if (previewSprite != null)
+            {
+                targetImage.sprite = previewSprite;
+                EditorUtility.SetDirty(targetImage);
+            }
+
+            return;
+        }
+#endif
+
         spriteAnimator.Frames = ResolveFramesForState(currentState);
     }
 
     public void SetCharacter(string newSpriteKey, BattleAnimationState state = BattleAnimationState.Idle)
     {
         spriteKey = newSpriteKey;
+        PlayState(state);
+    }
+
+    public void SetCharacter(string newSpriteKey, CharacterSpriteKind kind, BattleAnimationState state = BattleAnimationState.Idle)
+    {
+        spriteKey = newSpriteKey;
+        spriteKind = kind;
         PlayState(state);
     }
 
@@ -149,8 +179,15 @@ public class BattleCharacterPresenter : MonoBehaviour
 
     private Sprite[] ResolveFramesForState(BattleAnimationState state)
     {
-        var keyedFrames = SpriteKeyLookup.LoadCharacterAnimation(spriteKey, state);
-        return keyedFrames.Length > 0 ? keyedFrames : animationFrames;
+        var keyedFrames = spriteKind == CharacterSpriteKind.Unknown
+            ? SpriteKeyLookup.LoadCharacterAnimation(spriteKey, state)
+            : SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, state, spriteKind);
+        if (HasValidFrames(keyedFrames))
+        {
+            return keyedFrames;
+        }
+
+        return GetFallbackFrames();
     }
 
     private float GetAnimationDuration(BattleAnimationState state)
@@ -183,21 +220,74 @@ public class BattleCharacterPresenter : MonoBehaviour
 #if UNITY_EDITOR
     private void AutoPopulateFramesFromSheet()
     {
-        if (spriteSheetTexture == null)
+        var sheetFrames = LoadFramesFromSheet();
+        if (!HasValidFrames(sheetFrames))
         {
             return;
+        }
+
+        animationFrames = sheetFrames;
+        EditorUtility.SetDirty(this);
+    }
+
+    private void EnsureEditorPreviewFrames()
+    {
+        if (Application.isPlaying || HasValidFrames(animationFrames))
+        {
+            return;
+        }
+
+        var sheetFrames = LoadFramesFromSheet();
+        if (!HasValidFrames(sheetFrames))
+        {
+            return;
+        }
+
+        animationFrames = sheetFrames;
+        EditorUtility.SetDirty(this);
+    }
+
+    private Sprite[] LoadFramesFromSheet()
+    {
+        if (spriteSheetTexture == null)
+        {
+            return System.Array.Empty<Sprite>();
         }
 
         var assetPath = AssetDatabase.GetAssetPath(spriteSheetTexture);
         if (string.IsNullOrEmpty(assetPath))
         {
-            return;
+            return System.Array.Empty<Sprite>();
         }
 
-        animationFrames = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+        return AssetDatabase.LoadAllAssetsAtPath(assetPath)
             .OfType<Sprite>()
             .OrderBy(sprite => sprite.name)
             .ToArray();
     }
 #endif
+
+    private Sprite[] GetFallbackFrames()
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying && !HasValidFrames(animationFrames))
+        {
+            EnsureEditorPreviewFrames();
+        }
+#endif
+
+        return HasValidFrames(animationFrames)
+            ? animationFrames.Where(sprite => sprite != null).ToArray()
+            : System.Array.Empty<Sprite>();
+    }
+
+    private static bool HasValidFrames(Sprite[] frames)
+    {
+        return frames != null && frames.Any(sprite => sprite != null);
+    }
+
+    private static Sprite GetFirstValidSprite(Sprite[] frames)
+    {
+        return frames == null ? null : frames.FirstOrDefault(sprite => sprite != null);
+    }
 }

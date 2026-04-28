@@ -1,0 +1,1872 @@
+fileFormatVersion: 2
+guid: 1d0b987809eeb8649883108040759ad2
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5371917976116141239
+    second: werebear_0
+  - first:
+      213: 3404346821912900360
+    second: werebear_1
+  - first:
+      213: 8217149576252737444
+    second: werebear_2
+  - first:
+      213: 6829480098760883142
+    second: werebear_3
+  - first:
+      213: 8702280706830186125
+    second: werebear_4
+  - first:
+      213: 1811816583020089855
+    second: werebear_5
+  - first:
+      213: 7916669254942047930
+    second: werebear_6
+  - first:
+      213: -4578720478348559630
+    second: werebear_7
+  - first:
+      213: 1273134315657156964
+    second: werebear_8
+  - first:
+      213: 4975115766877447118
+    second: werebear_9
+  - first:
+      213: 4654889588121382381
+    second: werebear_10
+  - first:
+      213: 5526482098073824336
+    second: werebear_11
+  - first:
+      213: 2321472322393609059
+    second: werebear_12
+  - first:
+      213: 7656109089993968519
+    second: werebear_13
+  - first:
+      213: 6797088389812349122
+    second: werebear_14
+  - first:
+      213: 1374617776564962464
+    second: werebear_15
+  - first:
+      213: 7111396914254521438
+    second: werebear_16
+  - first:
+      213: 4612171716076955134
+    second: werebear_17
+  - first:
+      213: -5329380583191331966
+    second: werebear_18
+  - first:
+      213: 5389386182688044672
+    second: werebear_19
+  - first:
+      213: 8494378561714961932
+    second: werebear_20
+  - first:
+      213: 2351467648342683364
+    second: werebear_21
+  - first:
+      213: -751638409710478938
+    second: werebear_22
+  - first:
+      213: -134626026642604641
+    second: werebear_23
+  - first:
+      213: -9003487223257929197
+    second: werebear_24
+  - first:
+      213: -6752877573354812235
+    second: werebear_25
+  - first:
+      213: 1947030840795198006
+    second: werebear_26
+  - first:
+      213: -6874710193990139278
+    second: werebear_27
+  - first:
+      213: 6931426267432349699
+    second: werebear_28
+  - first:
+      213: -8058896630404721264
+    second: werebear_29
+  - first:
+      213: 1903500329721228719
+    second: werebear_30
+  - first:
+      213: 9020366292853686947
+    second: werebear_31
+  - first:
+      213: -437804473544776738
+    second: werebear_32
+  - first:
+      213: 2507658357919080743
+    second: werebear_33
+  - first:
+      213: 2476306874221787487
+    second: werebear_34
+  - first:
+      213: -1941728518161174374
+    second: werebear_35
+  - first:
+      213: 7433692091073291910
+    second: werebear_36
+  - first:
+      213: -6362411383080799681
+    second: werebear_37
+  - first:
+      213: 8368165689690681367
+    second: werebear_38
+  - first:
+      213: -3321110057448714083
+    second: werebear_39
+  - first:
+      213: 6288431910526024785
+    second: werebear_40
+  - first:
+      213: 4265756084634017344
+    second: werebear_41
+  - first:
+      213: -321289623433000000
+    second: werebear_42
+  - first:
+      213: -2061817118828392298
+    second: werebear_43
+  - first:
+      213: 3394259511556125379
+    second: werebear_44
+  - first:
+      213: 8519996340108052010
+    second: werebear_45
+  - first:
+      213: -3297331001744578364
+    second: werebear_46
+  - first:
+      213: -3887023244554757286
+    second: werebear_47
+  - first:
+      213: 6112137555257268407
+    second: werebear_48
+  - first:
+      213: -2887043630753016105
+    second: werebear_49
+  - first:
+      213: -4280508378971200434
+    second: werebear_50
+  - first:
+      213: -4600398388808674154
+    second: werebear_51
+  - first:
+      213: 7179346731606898059
+    second: werebear_52
+  - first:
+      213: -8712964284663527144
+    second: werebear_53
+  - first:
+      213: -6335582416582765603
+    second: werebear_54
+  - first:
+      213: 534235693037898618
+    second: werebear_55
+  - first:
+      213: -8152200918971625801
+    second: werebear_56
+  - first:
+      213: -329650818338575700
+    second: werebear_57
+  - first:
+      213: 5267543813357713599
+    second: werebear_58
+  - first:
+      213: -1037250422827020738
+    second: werebear_59
+  - first:
+      213: -7859653725779879297
+    second: werebear_60
+  - first:
+      213: 3768067236241379482
+    second: werebear_61
+  - first:
+      213: 2732802067515900683
+    second: werebear_62
+  - first:
+      213: 6590670892155723414
+    second: werebear_63
+  - first:
+      213: -2552834122038458258
+    second: werebear_64
+  - first:
+      213: 2748757462510378803
+    second: werebear_65
+  - first:
+      213: -6502392617808952973
+    second: werebear_66
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 50
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: werebear_0
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 639
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bc10f800f2ec8a40800000000000000
+      internalID: 5371917976116141239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_1
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 639
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8033954c56bae3f20800000000000000
+      internalID: 3404346821912900360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_2
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 639
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a7cbc6d00e290270800000000000000
+      internalID: 8217149576252737444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_3
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 639
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cbfd3737ff27ce50800000000000000
+      internalID: 6829480098760883142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_4
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 639
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d86395a3236b4c870800000000000000
+      internalID: 8702280706830186125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_5
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 639
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ff11315359dd42910800000000000000
+      internalID: 1811816583020089855
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_6
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 539
+        width: 22
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: abeb3193eb8addd60800000000000000
+      internalID: 7916669254942047930
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_7
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 539
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2fa3a3aebfd1570c0800000000000000
+      internalID: -4578720478348559630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_8
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 539
+        width: 22
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 469da1c2ae41ba110800000000000000
+      internalID: 1273134315657156964
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_9
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 539
+        width: 22
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec3ec214e692b0540800000000000000
+      internalID: 4975115766877447118
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_10
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 539
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: deda3a0fa6d799040800000000000000
+      internalID: 4654889588121382381
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_11
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 539
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05cee39003202bc40800000000000000
+      internalID: 5526482098073824336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_12
+      rect:
+        serializedVersion: 2
+        x: 641
+        y: 539
+        width: 22
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3631c2c07c6873020800000000000000
+      internalID: 2321472322393609059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_13
+      rect:
+        serializedVersion: 2
+        x: 741
+        y: 539
+        width: 22
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 78bcabe47a6ff3a60800000000000000
+      internalID: 7656109089993968519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_14
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 439
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c862b5c0eb145e50800000000000000
+      internalID: 6797088389812349122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_15
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 439
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a48712b59f931310800000000000000
+      internalID: 1374617776564962464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_16
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 439
+        width: 23
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e5423f2d0d1c0b260800000000000000
+      internalID: 7111396914254521438
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_17
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 439
+        width: 23
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef5eedb4db9b10040800000000000000
+      internalID: 4612171716076955134
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_18
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 439
+        width: 24
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28b340a889c3a06b0800000000000000
+      internalID: -5329380583191331966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_19
+      rect:
+        serializedVersion: 2
+        x: 542
+        y: 439
+        width: 27
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 086f480dd22faca40800000000000000
+      internalID: 5389386182688044672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_20
+      rect:
+        serializedVersion: 2
+        x: 566
+        y: 441
+        width: 8
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0eb6b6fb4812e570800000000000000
+      internalID: 8494378561714961932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_21
+      rect:
+        serializedVersion: 2
+        x: 571
+        y: 441
+        width: 12
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4eee9481e5712a020800000000000000
+      internalID: 2351467648342683364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_22
+      rect:
+        serializedVersion: 2
+        x: 642
+        y: 439
+        width: 27
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a9daa549d4a195f0800000000000000
+      internalID: -751638409710478938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_23
+      rect:
+        serializedVersion: 2
+        x: 668
+        y: 440
+        width: 6
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9df1709756b12ef0800000000000000
+      internalID: -134626026642604641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_24
+      rect:
+        serializedVersion: 2
+        x: 673
+        y: 440
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31a61fda2103d0380800000000000000
+      internalID: -9003487223257929197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_25
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 439
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5bc0c7410a5f842a0800000000000000
+      internalID: -6752877573354812235
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_26
+      rect:
+        serializedVersion: 2
+        x: 841
+        y: 439
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 632f350eb3e350b10800000000000000
+      internalID: 1947030840795198006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_27
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 339
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2720679908f1890a0800000000000000
+      internalID: -6874710193990139278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_28
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 339
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 300fd19477f513060800000000000000
+      internalID: 6931426267432349699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_29
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 339
+        width: 24
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0955227663c092090800000000000000
+      internalID: -8058896630404721264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_30
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 339
+        width: 26
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fad6fd6f6779a6a10800000000000000
+      internalID: 1903500329721228719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_31
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 339
+        width: 36
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a28375f957ce2d70800000000000000
+      internalID: 9020366292853686947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_32
+      rect:
+        serializedVersion: 2
+        x: 464
+        y: 338
+        width: 17
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed36941a62b9ce9f0800000000000000
+      internalID: -437804473544776738
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_33
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 339
+        width: 34
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7216ec98dfdfcc220800000000000000
+      internalID: 2507658357919080743
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_34
+      rect:
+        serializedVersion: 2
+        x: 564
+        y: 338
+        width: 15
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f59f8d86bfb9d5220800000000000000
+      internalID: 2476306874221787487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_35
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 339
+        width: 23
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a90f1c053389d05e0800000000000000
+      internalID: -1941728518161174374
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_36
+      rect:
+        serializedVersion: 2
+        x: 740
+        y: 339
+        width: 23
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 686ed0a4297c92760800000000000000
+      internalID: 7433692091073291910
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_37
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 339
+        width: 21
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f32319c7e8c24b7a0800000000000000
+      internalID: -6362411383080799681
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_38
+      rect:
+        serializedVersion: 2
+        x: 942
+        y: 334
+        width: 33
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 710ff9bbb52b12470800000000000000
+      internalID: 8368165689690681367
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_39
+      rect:
+        serializedVersion: 2
+        x: 962
+        y: 337
+        width: 18
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d90dacdaffb09e1d0800000000000000
+      internalID: -3321110057448714083
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_40
+      rect:
+        serializedVersion: 2
+        x: 1042
+        y: 338
+        width: 21
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15c722d418ff44750800000000000000
+      internalID: 6288431910526024785
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_41
+      rect:
+        serializedVersion: 2
+        x: 1060
+        y: 334
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 04e521bde82033b30800000000000000
+      internalID: 4265756084634017344
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_42
+      rect:
+        serializedVersion: 2
+        x: 1062
+        y: 335
+        width: 13
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0cbc14d2acc8a8bf0800000000000000
+      internalID: -321289623433000000
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_43
+      rect:
+        serializedVersion: 2
+        x: 1068
+        y: 337
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6901a602144f263e0800000000000000
+      internalID: -2061817118828392298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_44
+      rect:
+        serializedVersion: 2
+        x: 1142
+        y: 338
+        width: 21
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c23bcdca05da1f20800000000000000
+      internalID: 3394259511556125379
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_45
+      rect:
+        serializedVersion: 2
+        x: 1241
+        y: 339
+        width: 21
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a26c4cbc78b1d3670800000000000000
+      internalID: 8519996340108052010
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_46
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 239
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c8a1268ce68d32d0800000000000000
+      internalID: -3297331001744578364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_47
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 239
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5b90a214f48e0ac0800000000000000
+      internalID: -3887023244554757286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_48
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 239
+        width: 20
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b81f6719bca2d450800000000000000
+      internalID: 6112137555257268407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_49
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 239
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d699e13d192fe7d0800000000000000
+      internalID: -2887043630753016105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_50
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 239
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e44a655fe449894c0800000000000000
+      internalID: -4280508378971200434
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_51
+      rect:
+        serializedVersion: 2
+        x: 535
+        y: 239
+        width: 31
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69497c11a0a1820c0800000000000000
+      internalID: -4600398388808674154
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_52
+      rect:
+        serializedVersion: 2
+        x: 567
+        y: 242
+        width: 15
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b857ac880d922a360800000000000000
+      internalID: 7179346731606898059
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_53
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 239
+        width: 40
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81907f77525551780800000000000000
+      internalID: -8712964284663527144
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_54
+      rect:
+        serializedVersion: 2
+        x: 667
+        y: 242
+        width: 19
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd39f560c5d7318a0800000000000000
+      internalID: -6335582416582765603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_55
+      rect:
+        serializedVersion: 2
+        x: 724
+        y: 242
+        width: 12
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7bcbd5488cf96700800000000000000
+      internalID: 534235693037898618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_56
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 239
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7be4517d4709dde80800000000000000
+      internalID: -8152200918971625801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_57
+      rect:
+        serializedVersion: 2
+        x: 776
+        y: 242
+        width: 12
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: caa2309c358dc6bf0800000000000000
+      internalID: -329650818338575700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_58
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 239
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb83ef980331a1940800000000000000
+      internalID: 5267543813357713599
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_59
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 139
+        width: 22
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e3e854c6c32fa91f0800000000000000
+      internalID: -1037250422827020738
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_60
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 139
+        width: 22
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f7a90512496ece290800000000000000
+      internalID: -7859653725779879297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_61
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 139
+        width: 22
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a9094f1ff2dda4430800000000000000
+      internalID: 3768067236241379482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_62
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 139
+        width: 22
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b030dbb500ddce520800000000000000
+      internalID: 2732802067515900683
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_63
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 39
+        width: 21
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 69ed27ee144c67b50800000000000000
+      internalID: 6590670892155723414
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_64
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 39
+        width: 22
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e68c66934e2829cd0800000000000000
+      internalID: -2552834122038458258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_65
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 39
+        width: 23
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33f92ae395c852620800000000000000
+      internalID: 2748757462510378803
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: werebear_66
+      rect:
+        serializedVersion: 2
+        x: 343
+        y: 39
+        width: 24
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37100618d5cd2c5a0800000000000000
+      internalID: -6502392617808952973
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      werebear_0: 5371917976116141239
+      werebear_1: 3404346821912900360
+      werebear_10: 4654889588121382381
+      werebear_11: 5526482098073824336
+      werebear_12: 2321472322393609059
+      werebear_13: 7656109089993968519
+      werebear_14: 6797088389812349122
+      werebear_15: 1374617776564962464
+      werebear_16: 7111396914254521438
+      werebear_17: 4612171716076955134
+      werebear_18: -5329380583191331966
+      werebear_19: 5389386182688044672
+      werebear_2: 8217149576252737444
+      werebear_20: 8494378561714961932
+      werebear_21: 2351467648342683364
+      werebear_22: -751638409710478938
+      werebear_23: -134626026642604641
+      werebear_24: -9003487223257929197
+      werebear_25: -6752877573354812235
+      werebear_26: 1947030840795198006
+      werebear_27: -6874710193990139278
+      werebear_28: 6931426267432349699
+      werebear_29: -8058896630404721264
+      werebear_3: 6829480098760883142
+      werebear_30: 1903500329721228719
+      werebear_31: 9020366292853686947
+      werebear_32: -437804473544776738
+      werebear_33: 2507658357919080743
+      werebear_34: 2476306874221787487
+      werebear_35: -1941728518161174374
+      werebear_36: 7433692091073291910
+      werebear_37: -6362411383080799681
+      werebear_38: 8368165689690681367
+      werebear_39: -3321110057448714083
+      werebear_4: 8702280706830186125
+      werebear_40: 6288431910526024785
+      werebear_41: 4265756084634017344
+      werebear_42: -321289623433000000
+      werebear_43: -2061817118828392298
+      werebear_44: 3394259511556125379
+      werebear_45: 8519996340108052010
+      werebear_46: -3297331001744578364
+      werebear_47: -3887023244554757286
+      werebear_48: 6112137555257268407
+      werebear_49: -2887043630753016105
+      werebear_5: 1811816583020089855
+      werebear_50: -4280508378971200434
+      werebear_51: -4600398388808674154
+      werebear_52: 7179346731606898059
+      werebear_53: -8712964284663527144
+      werebear_54: -6335582416582765603
+      werebear_55: 534235693037898618
+      werebear_56: -8152200918971625801
+      werebear_57: -329650818338575700
+      werebear_58: 5267543813357713599
+      werebear_59: -1037250422827020738
+      werebear_6: 7916669254942047930
+      werebear_60: -7859653725779879297
+      werebear_61: 3768067236241379482
+      werebear_62: 2732802067515900683
+      werebear_63: 6590670892155723414
+      werebear_64: -2552834122038458258
+      werebear_65: 2748757462510378803
+      werebear_66: -6502392617808952973
+      werebear_7: -4578720478348559630
+      werebear_8: 1273134315657156964
+      werebear_9: 4975115766877447118
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

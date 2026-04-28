@@ -15,8 +15,8 @@ using Random = UnityEngine.Random;
 
 public class TowerBattleController : MonoBehaviour
 {
-    private const string DefaultMonsterSpriteKey = "goblin_warrior";
-    private const string DefaultHeroSpriteKey = "hero_knight";
+    private const string DefaultMonsterSpriteKey = "";
+    private const string DefaultHeroSpriteKey = "";
 
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
@@ -1597,12 +1597,12 @@ public class TowerBattleController : MonoBehaviour
     {
         if (heroCharacterPresenter != null)
         {
-            heroCharacterPresenter.SetCharacter(ResolveHeroSpriteKey(), BattleAnimationState.Idle);
+            heroCharacterPresenter.SetCharacter(ResolveHeroSpriteKey(), CharacterSpriteKind.Hero, BattleAnimationState.Idle);
         }
 
         if (monsterCharacterPresenter != null)
         {
-            monsterCharacterPresenter.SetCharacter(ResolveMonsterSpriteKey(), BattleAnimationState.Idle);
+            monsterCharacterPresenter.SetCharacter(ResolveMonsterSpriteKey(), CharacterSpriteKind.Monster, BattleAnimationState.Idle);
         }
     }
 
@@ -1610,8 +1610,8 @@ public class TowerBattleController : MonoBehaviour
     {
         var heroSpriteKey = ResolveHeroSpriteKey();
         var monsterSpriteKey = ResolveMonsterSpriteKey();
-        PreloadAnimationStates(heroSpriteKey);
-        PreloadAnimationStates(monsterSpriteKey);
+        PreloadAnimationStates(heroSpriteKey, CharacterSpriteKind.Hero);
+        PreloadAnimationStates(monsterSpriteKey, CharacterSpriteKind.Monster);
 
         if (hero?.EquippedMoves != null)
         {
@@ -1640,18 +1640,13 @@ public class TowerBattleController : MonoBehaviour
         }
     }
 
-    private static void PreloadAnimationStates(string spriteKey)
+    private static void PreloadAnimationStates(string spriteKey, CharacterSpriteKind kind)
     {
-        if (string.IsNullOrWhiteSpace(spriteKey))
-        {
-            return;
-        }
-
-        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Idle);
-        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Attack);
-        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Hurt);
-        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Defend);
-        SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Death);
+        SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Idle, kind);
+        SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Attack, kind);
+        SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Hurt, kind);
+        SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Defend, kind);
+        SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Death, kind);
     }
 
     private void PlayActorAnimation(bool actorIsHero, Move move)

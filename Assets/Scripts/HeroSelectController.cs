@@ -247,7 +247,8 @@ public class HeroSelectController : MonoBehaviour
             ? hero.spriteKey
             : hero?.portraitKey;
 
-        var keyedPortrait = SpriteKeyLookup.LoadCharacterAnimation(spriteKey, BattleAnimationState.Idle).FirstOrDefault();
+        var keyedPortrait = SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Idle, CharacterSpriteKind.Hero)
+            .FirstOrDefault();
         if (keyedPortrait != null)
         {
             return keyedPortrait;

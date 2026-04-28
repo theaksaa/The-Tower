@@ -1,0 +1,1482 @@
+fileFormatVersion: 2
+guid: 683085b6966f740498578884ede52eab
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2856339835348638871
+    second: armored_axeman_0
+  - first:
+      213: 3733291851155100390
+    second: armored_axeman_1
+  - first:
+      213: 5249920958282570702
+    second: armored_axeman_2
+  - first:
+      213: 3457567099697551361
+    second: armored_axeman_3
+  - first:
+      213: 9015898474005994053
+    second: armored_axeman_4
+  - first:
+      213: 6783677148720347236
+    second: armored_axeman_5
+  - first:
+      213: 223162684696477912
+    second: armored_axeman_6
+  - first:
+      213: -5930426034278095976
+    second: armored_axeman_7
+  - first:
+      213: 9179726192350352572
+    second: armored_axeman_8
+  - first:
+      213: 6861097984244767005
+    second: armored_axeman_9
+  - first:
+      213: -2905419128616442929
+    second: armored_axeman_10
+  - first:
+      213: -2776969802595204218
+    second: armored_axeman_11
+  - first:
+      213: -1578528655434656395
+    second: armored_axeman_12
+  - first:
+      213: 2975059208735869720
+    second: armored_axeman_13
+  - first:
+      213: -164600617204116522
+    second: armored_axeman_14
+  - first:
+      213: -4254003875504649966
+    second: armored_axeman_15
+  - first:
+      213: -7369146368339906020
+    second: armored_axeman_16
+  - first:
+      213: -7620011310689730812
+    second: armored_axeman_17
+  - first:
+      213: 139594121360422633
+    second: armored_axeman_18
+  - first:
+      213: -221031880722879029
+    second: armored_axeman_19
+  - first:
+      213: 5846866910767117003
+    second: armored_axeman_20
+  - first:
+      213: -9165728612117429708
+    second: armored_axeman_21
+  - first:
+      213: -1609272674953214636
+    second: armored_axeman_22
+  - first:
+      213: 3081234835514822128
+    second: armored_axeman_23
+  - first:
+      213: 4380492988338383421
+    second: armored_axeman_24
+  - first:
+      213: 3118960343975156459
+    second: armored_axeman_25
+  - first:
+      213: 6267175573072105971
+    second: armored_axeman_26
+  - first:
+      213: -8151479535724768287
+    second: armored_axeman_27
+  - first:
+      213: 5890855770187681704
+    second: armored_axeman_28
+  - first:
+      213: -6230306309421640975
+    second: armored_axeman_29
+  - first:
+      213: -2473624697749259729
+    second: armored_axeman_30
+  - first:
+      213: -1508653044772178626
+    second: armored_axeman_31
+  - first:
+      213: 9060657468752927159
+    second: armored_axeman_32
+  - first:
+      213: 6156426665592358504
+    second: armored_axeman_33
+  - first:
+      213: -7710810840442711945
+    second: armored_axeman_34
+  - first:
+      213: -1552960250092789804
+    second: armored_axeman_35
+  - first:
+      213: 5659345977701563209
+    second: armored_axeman_36
+  - first:
+      213: 896810445945707220
+    second: armored_axeman_37
+  - first:
+      213: 7047416512927911244
+    second: armored_axeman_38
+  - first:
+      213: 6585400827220408938
+    second: armored_axeman_39
+  - first:
+      213: -4013476053666584629
+    second: armored_axeman_40
+  - first:
+      213: 7136222951864326976
+    second: armored_axeman_41
+  - first:
+      213: 5163293258251801300
+    second: armored_axeman_42
+  - first:
+      213: 8714239233284727980
+    second: armored_axeman_43
+  - first:
+      213: 7332114848836596739
+    second: armored_axeman_44
+  - first:
+      213: 241988438702298116
+    second: armored_axeman_45
+  - first:
+      213: -125646495807445720
+    second: armored_axeman_46
+  - first:
+      213: 5464189585952495050
+    second: armored_axeman_47
+  - first:
+      213: -1741586238878934647
+    second: armored_axeman_48
+  - first:
+      213: -2488100604091876750
+    second: armored_axeman_49
+  - first:
+      213: -7300404617788149375
+    second: armored_axeman_50
+  - first:
+      213: -2867671151736056502
+    second: armored_axeman_51
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 50
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: armored_axeman_0
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 639
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9632f34ad0e3c58d0800000000000000
+      internalID: -2856339835348638871
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_1
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 639
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e2d5f6a8215fc330800000000000000
+      internalID: 3733291851155100390
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_2
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 639
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ecb9f49db477bd840800000000000000
+      internalID: 5249920958282570702
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_3
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 639
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 108dc8c45febbff20800000000000000
+      internalID: 3457567099697551361
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_4
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 639
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 54a1d12d4e7ee1d70800000000000000
+      internalID: 9015898474005994053
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_5
+      rect:
+        serializedVersion: 2
+        x: 542
+        y: 639
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4683960ec66742e50800000000000000
+      internalID: 6783677148720347236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_6
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 539
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d0c4748745d81300800000000000000
+      internalID: 223162684696477912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_7
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 539
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 893202c41f4e2bda0800000000000000
+      internalID: -5930426034278095976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_8
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 539
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb4546ee550f46f70800000000000000
+      internalID: 9179726192350352572
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_9
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 539
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d19de08d344873f50800000000000000
+      internalID: 6861097984244767005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_10
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 539
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc3213332b0eda7d0800000000000000
+      internalID: -2905419128616442929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_11
+      rect:
+        serializedVersion: 2
+        x: 542
+        y: 539
+        width: 22
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 68383547da83679d0800000000000000
+      internalID: -2776969802595204218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_12
+      rect:
+        serializedVersion: 2
+        x: 642
+        y: 539
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 575da012d80f71ae0800000000000000
+      internalID: -1578528655434656395
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_13
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 539
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81bc47a7698894920800000000000000
+      internalID: 2975059208735869720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_14
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 439
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d31db95c9837bdf0800000000000000
+      internalID: -164600617204116522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_15
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 439
+        width: 24
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 219096f830eb6f4c0800000000000000
+      internalID: -4254003875504649966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_16
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 439
+        width: 24
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c127d31eb688bb990800000000000000
+      internalID: -7369146368339906020
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_17
+      rect:
+        serializedVersion: 2
+        x: 334
+        y: 439
+        width: 25
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40f31e1e518404690800000000000000
+      internalID: -7620011310689730812
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_18
+      rect:
+        serializedVersion: 2
+        x: 435
+        y: 438
+        width: 43
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e6bb602d10ffe100800000000000000
+      internalID: 139594121360422633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_19
+      rect:
+        serializedVersion: 2
+        x: 542
+        y: 438
+        width: 33
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bcde971fcacbeecf0800000000000000
+      internalID: -221031880722879029
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_20
+      rect:
+        serializedVersion: 2
+        x: 642
+        y: 439
+        width: 32
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc272413a7e342150800000000000000
+      internalID: 5846866910767117003
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_21
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 439
+        width: 32
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4324b1fa36accc080800000000000000
+      internalID: -9165728612117429708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_22
+      rect:
+        serializedVersion: 2
+        x: 841
+        y: 439
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 455cba64707baa9e0800000000000000
+      internalID: -1609272674953214636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_23
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 339
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0fd8b6002ceb2ca20800000000000000
+      internalID: 3081234835514822128
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_24
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 339
+        width: 24
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3aaffef923aacc30800000000000000
+      internalID: 4380492988338383421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_25
+      rect:
+        serializedVersion: 2
+        x: 234
+        y: 339
+        width: 25
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bea5b2b68e5c84b20800000000000000
+      internalID: 3118960343975156459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_26
+      rect:
+        serializedVersion: 2
+        x: 334
+        y: 339
+        width: 25
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f1d7f19afa79f650800000000000000
+      internalID: 6267175573072105971
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_27
+      rect:
+        serializedVersion: 2
+        x: 439
+        y: 338
+        width: 40
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e35247fc8020ee80800000000000000
+      internalID: -8151479535724768287
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_28
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 336
+        width: 34
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8afc815ac1680c150800000000000000
+      internalID: 5890855770187681704
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_29
+      rect:
+        serializedVersion: 2
+        x: 627
+        y: 339
+        width: 44
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f25c01db618989a0800000000000000
+      internalID: -6230306309421640975
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_30
+      rect:
+        serializedVersion: 2
+        x: 730
+        y: 339
+        width: 38
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2ab507717bebadd0800000000000000
+      internalID: -2473624697749259729
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_31
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 338
+        width: 40
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e35fa098c00301be0800000000000000
+      internalID: -1508653044772178626
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_32
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 239
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b9128066fbedbd70800000000000000
+      internalID: 9060657468752927159
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_33
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 239
+        width: 27
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86600682f65007550800000000000000
+      internalID: 6156426665592358504
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_34
+      rect:
+        serializedVersion: 2
+        x: 232
+        y: 239
+        width: 27
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7705e2de462bdf490800000000000000
+      internalID: -7710810840442711945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_35
+      rect:
+        serializedVersion: 2
+        x: 333
+        y: 238
+        width: 26
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4dfdae661e6c27ae0800000000000000
+      internalID: -1552960250092789804
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_36
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 239
+        width: 39
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94bffe5ae290a8e40800000000000000
+      internalID: 5659345977701563209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_37
+      rect:
+        serializedVersion: 2
+        x: 535
+        y: 239
+        width: 31
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4da147d595c127c00800000000000000
+      internalID: 896810445945707220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_38
+      rect:
+        serializedVersion: 2
+        x: 635
+        y: 239
+        width: 24
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4d4a4dcaf37dc160800000000000000
+      internalID: 7047416512927911244
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_39
+      rect:
+        serializedVersion: 2
+        x: 735
+        y: 238
+        width: 43
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6a3902592b046b50800000000000000
+      internalID: 6585400827220408938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_40
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 238
+        width: 44
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc7aaa22bc44d48c0800000000000000
+      internalID: -4013476053666584629
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_41
+      rect:
+        serializedVersion: 2
+        x: 942
+        y: 238
+        width: 52
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 04bdcd327f4f80360800000000000000
+      internalID: 7136222951864326976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_42
+      rect:
+        serializedVersion: 2
+        x: 1042
+        y: 238
+        width: 55
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d29441bcd3b7a740800000000000000
+      internalID: 5163293258251801300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_43
+      rect:
+        serializedVersion: 2
+        x: 1142
+        y: 239
+        width: 32
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ca465b3a9623fe870800000000000000
+      internalID: 8714239233284727980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_44
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 139
+        width: 18
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 304b5499b97e0c560800000000000000
+      internalID: 7332114848836596739
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_45
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 139
+        width: 18
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4041a90f337bb5300800000000000000
+      internalID: 241988438702298116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_46
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 139
+        width: 18
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 825ef128d2d914ef0800000000000000
+      internalID: -125646495807445720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_47
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 139
+        width: 18
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac556185a73b4db40800000000000000
+      internalID: 5464189585952495050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_48
+      rect:
+        serializedVersion: 2
+        x: 42
+        y: 39
+        width: 22
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 98999e50b84a4d7e0800000000000000
+      internalID: -1741586238878934647
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_49
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 39
+        width: 28
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27a3bafdead787dd0800000000000000
+      internalID: -2488100604091876750
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_50
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 39
+        width: 28
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 181bd18eda0cfaa90800000000000000
+      internalID: -7300404617788149375
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: armored_axeman_51
+      rect:
+        serializedVersion: 2
+        x: 332
+        y: 39
+        width: 29
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a451324f74cf338d0800000000000000
+      internalID: -2867671151736056502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      armored_axeman_0: -2856339835348638871
+      armored_axeman_1: 3733291851155100390
+      armored_axeman_10: -2905419128616442929
+      armored_axeman_11: -2776969802595204218
+      armored_axeman_12: -1578528655434656395
+      armored_axeman_13: 2975059208735869720
+      armored_axeman_14: -164600617204116522
+      armored_axeman_15: -4254003875504649966
+      armored_axeman_16: -7369146368339906020
+      armored_axeman_17: -7620011310689730812
+      armored_axeman_18: 139594121360422633
+      armored_axeman_19: -221031880722879029
+      armored_axeman_2: 5249920958282570702
+      armored_axeman_20: 5846866910767117003
+      armored_axeman_21: -9165728612117429708
+      armored_axeman_22: -1609272674953214636
+      armored_axeman_23: 3081234835514822128
+      armored_axeman_24: 4380492988338383421
+      armored_axeman_25: 3118960343975156459
+      armored_axeman_26: 6267175573072105971
+      armored_axeman_27: -8151479535724768287
+      armored_axeman_28: 5890855770187681704
+      armored_axeman_29: -6230306309421640975
+      armored_axeman_3: 3457567099697551361
+      armored_axeman_30: -2473624697749259729
+      armored_axeman_31: -1508653044772178626
+      armored_axeman_32: 9060657468752927159
+      armored_axeman_33: 6156426665592358504
+      armored_axeman_34: -7710810840442711945
+      armored_axeman_35: -1552960250092789804
+      armored_axeman_36: 5659345977701563209
+      armored_axeman_37: 896810445945707220
+      armored_axeman_38: 7047416512927911244
+      armored_axeman_39: 6585400827220408938
+      armored_axeman_4: 9015898474005994053
+      armored_axeman_40: -4013476053666584629
+      armored_axeman_41: 7136222951864326976
+      armored_axeman_42: 5163293258251801300
+      armored_axeman_43: 8714239233284727980
+      armored_axeman_44: 7332114848836596739
+      armored_axeman_45: 241988438702298116
+      armored_axeman_46: -125646495807445720
+      armored_axeman_47: 5464189585952495050
+      armored_axeman_48: -1741586238878934647
+      armored_axeman_49: -2488100604091876750
+      armored_axeman_5: 6783677148720347236
+      armored_axeman_50: -7300404617788149375
+      armored_axeman_51: -2867671151736056502
+      armored_axeman_6: 223162684696477912
+      armored_axeman_7: -5930426034278095976
+      armored_axeman_8: 9179726192350352572
+      armored_axeman_9: 6861097984244767005
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

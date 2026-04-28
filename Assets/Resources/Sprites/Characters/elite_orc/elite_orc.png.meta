@@ -1,0 +1,1664 @@
+fileFormatVersion: 2
+guid: 15401525db180164aa6a20e5ddf95e5f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7176097449737665285
+    second: elite_orc_0
+  - first:
+      213: -4804099887776571764
+    second: elite_orc_1
+  - first:
+      213: -6243114124829569750
+    second: elite_orc_2
+  - first:
+      213: -2444923467103791538
+    second: elite_orc_3
+  - first:
+      213: 8649389907052516563
+    second: elite_orc_4
+  - first:
+      213: 9205933257969846352
+    second: elite_orc_5
+  - first:
+      213: 6173762457828799072
+    second: elite_orc_6
+  - first:
+      213: 5802280838796196160
+    second: elite_orc_7
+  - first:
+      213: 7722602655481505038
+    second: elite_orc_8
+  - first:
+      213: -4991831435911082032
+    second: elite_orc_9
+  - first:
+      213: 7179569948642485552
+    second: elite_orc_10
+  - first:
+      213: -7850123436262370976
+    second: elite_orc_11
+  - first:
+      213: 4397685506025350307
+    second: elite_orc_12
+  - first:
+      213: -2904543887602467068
+    second: elite_orc_13
+  - first:
+      213: -5233154835355920523
+    second: elite_orc_14
+  - first:
+      213: -3708821971348799536
+    second: elite_orc_15
+  - first:
+      213: 3618520610500588461
+    second: elite_orc_16
+  - first:
+      213: -279505107748573938
+    second: elite_orc_17
+  - first:
+      213: 6324447453927076343
+    second: elite_orc_18
+  - first:
+      213: -7363640795489310409
+    second: elite_orc_19
+  - first:
+      213: 7706689898692035326
+    second: elite_orc_20
+  - first:
+      213: 1389363046225403815
+    second: elite_orc_21
+  - first:
+      213: -4846258467230758861
+    second: elite_orc_22
+  - first:
+      213: -7768944193817847457
+    second: elite_orc_23
+  - first:
+      213: 383154174325299982
+    second: elite_orc_24
+  - first:
+      213: -8762448680135495456
+    second: elite_orc_25
+  - first:
+      213: -4498955978864295
+    second: elite_orc_26
+  - first:
+      213: 5237214407624895965
+    second: elite_orc_27
+  - first:
+      213: -8905451851671674132
+    second: elite_orc_28
+  - first:
+      213: 6823819666451367889
+    second: elite_orc_29
+  - first:
+      213: 3843017855171492171
+    second: elite_orc_30
+  - first:
+      213: -5688180961931706182
+    second: elite_orc_31
+  - first:
+      213: 2794412772108340820
+    second: elite_orc_32
+  - first:
+      213: -171733476658384039
+    second: elite_orc_33
+  - first:
+      213: -9132560886968073653
+    second: elite_orc_34
+  - first:
+      213: -5808283361360141128
+    second: elite_orc_35
+  - first:
+      213: -637986697493518603
+    second: elite_orc_36
+  - first:
+      213: -5520046106283207621
+    second: elite_orc_37
+  - first:
+      213: -2628643321340249828
+    second: elite_orc_38
+  - first:
+      213: -4321751777474347545
+    second: elite_orc_39
+  - first:
+      213: 985134000296903437
+    second: elite_orc_40
+  - first:
+      213: -989796514076651672
+    second: elite_orc_41
+  - first:
+      213: -6123878659303353816
+    second: elite_orc_42
+  - first:
+      213: 4261603733089514578
+    second: elite_orc_43
+  - first:
+      213: 7837261713880214957
+    second: elite_orc_44
+  - first:
+      213: -4484402021701454886
+    second: elite_orc_45
+  - first:
+      213: 3471220555705515553
+    second: elite_orc_46
+  - first:
+      213: 6860084388376896830
+    second: elite_orc_47
+  - first:
+      213: 8588046182989732818
+    second: elite_orc_48
+  - first:
+      213: -3612156368424824398
+    second: elite_orc_49
+  - first:
+      213: -6409220864156539670
+    second: elite_orc_50
+  - first:
+      213: -7992519872252328567
+    second: elite_orc_51
+  - first:
+      213: 4904665184793421932
+    second: elite_orc_52
+  - first:
+      213: -2640476800438242074
+    second: elite_orc_53
+  - first:
+      213: -6184240631207388817
+    second: elite_orc_54
+  - first:
+      213: -3384329225493238168
+    second: elite_orc_55
+  - first:
+      213: 3857878717364124856
+    second: elite_orc_56
+  - first:
+      213: -5600137456956423300
+    second: elite_orc_57
+  - first:
+      213: 5292586829049527469
+    second: elite_orc_58
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 50
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: elite_orc_0
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 639
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf4cccad361696c90800000000000000
+      internalID: -7176097449737665285
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_1
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 639
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c8e5593fa98645db0800000000000000
+      internalID: -4804099887776571764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_2
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 639
+        width: 30
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2d4f49e7c00c59a0800000000000000
+      internalID: -6243114124829569750
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_3
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 639
+        width: 30
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e4613487f03e11ed0800000000000000
+      internalID: -2444923467103791538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_4
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 639
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d4d6b54b4ec80870800000000000000
+      internalID: 8649389907052516563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_5
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 639
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0584f33e58b02cf70800000000000000
+      internalID: 9205933257969846352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_6
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 539
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0623782de3c9da550800000000000000
+      internalID: 6173762457828799072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_7
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 539
+        width: 30
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 049b08b5ea7d58050800000000000000
+      internalID: 5802280838796196160
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_8
+      rect:
+        serializedVersion: 2
+        x: 241
+        y: 539
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e05a675f2323c2b60800000000000000
+      internalID: 7722602655481505038
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_9
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 539
+        width: 30
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0df44e3c1c379bab0800000000000000
+      internalID: -4991831435911082032
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_10
+      rect:
+        serializedVersion: 2
+        x: 441
+        y: 539
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 035a7ec44d4f2a360800000000000000
+      internalID: 7179569948642485552
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_11
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 539
+        width: 30
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 061dc929352ce0390800000000000000
+      internalID: -7850123436262370976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_12
+      rect:
+        serializedVersion: 2
+        x: 641
+        y: 539
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a46684faa7b70d30800000000000000
+      internalID: 4397685506025350307
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_13
+      rect:
+        serializedVersion: 2
+        x: 741
+        y: 539
+        width: 30
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 40f3ce029bcf0b7d0800000000000000
+      internalID: -2904543887602467068
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_14
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 439
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5771ef757691067b0800000000000000
+      internalID: -5233154835355920523
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_15
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 439
+        width: 31
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0df3796311e978cc0800000000000000
+      internalID: -3708821971348799536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_16
+      rect:
+        serializedVersion: 2
+        x: 231
+        y: 439
+        width: 29
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da33151d251973230800000000000000
+      internalID: 3618520610500588461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_17
+      rect:
+        serializedVersion: 2
+        x: 339
+        y: 434
+        width: 43
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0d2dbbd59ffe1cf0800000000000000
+      internalID: -279505107748573938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_18
+      rect:
+        serializedVersion: 2
+        x: 439
+        y: 434
+        width: 38
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f172f37373f4c750800000000000000
+      internalID: 6324447453927076343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_19
+      rect:
+        serializedVersion: 2
+        x: 539
+        y: 436
+        width: 23
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 739e843f5b71fc990800000000000000
+      internalID: -7363640795489310409
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_20
+      rect:
+        serializedVersion: 2
+        x: 639
+        y: 436
+        width: 22
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef241ad81a9a3fa60800000000000000
+      internalID: 7706689898692035326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_21
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 339
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7afd1525452084310800000000000000
+      internalID: 1389363046225403815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_22
+      rect:
+        serializedVersion: 2
+        x: 141
+        y: 339
+        width: 41
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3384bf2c991aebcb0800000000000000
+      internalID: -4846258467230758861
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_23
+      rect:
+        serializedVersion: 2
+        x: 222
+        y: 339
+        width: 54
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5957a7da6a2f2490800000000000000
+      internalID: -7768944193817847457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_24
+      rect:
+        serializedVersion: 2
+        x: 322
+        y: 339
+        width: 47
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0b1ed601bc315500800000000000000
+      internalID: 383154174325299982
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_25
+      rect:
+        serializedVersion: 2
+        x: 432
+        y: 339
+        width: 47
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e0fee1d957856680800000000000000
+      internalID: -8762448680135495456
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_26
+      rect:
+        serializedVersion: 2
+        x: 541
+        y: 339
+        width: 41
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 959050f293400fff0800000000000000
+      internalID: -4498955978864295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_27
+      rect:
+        serializedVersion: 2
+        x: 622
+        y: 339
+        width: 54
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ddd2a0b71c25ea840800000000000000
+      internalID: 5237214407624895965
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_28
+      rect:
+        serializedVersion: 2
+        x: 722
+        y: 339
+        width: 47
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce2e3c859ba796480800000000000000
+      internalID: -8905451851671674132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_29
+      rect:
+        serializedVersion: 2
+        x: 832
+        y: 339
+        width: 47
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d7882e15d313be50800000000000000
+      internalID: 6823819666451367889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_30
+      rect:
+        serializedVersion: 2
+        x: 941
+        y: 339
+        width: 41
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b49fafac064255530800000000000000
+      internalID: 3843017855171492171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_31
+      rect:
+        serializedVersion: 2
+        x: 1042
+        y: 335
+        width: 31
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab0cbe96d858f01b0800000000000000
+      internalID: -5688180961931706182
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_32
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 239
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45e055d5c9fb7c620800000000000000
+      internalID: 2794412772108340820
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_33
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 247
+        width: 22
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 953fbb71051ed9df0800000000000000
+      internalID: -171733476658384039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_34
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 248
+        width: 24
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4244aa7240a24180800000000000000
+      internalID: -9132560886968073653
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_35
+      rect:
+        serializedVersion: 2
+        x: 331
+        y: 249
+        width: 30
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b421537e05d46fa0800000000000000
+      internalID: -5808283361360141128
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_36
+      rect:
+        serializedVersion: 2
+        x: 444
+        y: 239
+        width: 38
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f669749a7a6527f0800000000000000
+      internalID: -637986697493518603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_37
+      rect:
+        serializedVersion: 2
+        x: 544
+        y: 238
+        width: 41
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b341633105bd463b0800000000000000
+      internalID: -5520046106283207621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_38
+      rect:
+        serializedVersion: 2
+        x: 644
+        y: 238
+        width: 41
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c19bf4e83de258bd0800000000000000
+      internalID: -2628643321340249828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_39
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 239
+        width: 30
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ed7a30f7ad0604c0800000000000000
+      internalID: -4321751777474347545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_40
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 239
+        width: 30
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d034bdf5726ebad00800000000000000
+      internalID: 985134000296903437
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_41
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 239
+        width: 15
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86f8a8a80598342f0800000000000000
+      internalID: -989796514076651672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_42
+      rect:
+        serializedVersion: 2
+        x: 245
+        y: 239
+        width: 15
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 822d0a81ecc930ba0800000000000000
+      internalID: -6123878659303353816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_43
+      rect:
+        serializedVersion: 2
+        x: 346
+        y: 239
+        width: 15
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 254774c2402442b30800000000000000
+      internalID: 4261603733089514578
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_44
+      rect:
+        serializedVersion: 2
+        x: 475
+        y: 240
+        width: 9
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dad6993510c83cc60800000000000000
+      internalID: 7837261713880214957
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_45
+      rect:
+        serializedVersion: 2
+        x: 39
+        y: 139
+        width: 31
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad3f072ee1434c1c0800000000000000
+      internalID: -4484402021701454886
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_46
+      rect:
+        serializedVersion: 2
+        x: 139
+        y: 139
+        width: 31
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12e7cdf34b04c2030800000000000000
+      internalID: 3471220555705515553
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_47
+      rect:
+        serializedVersion: 2
+        x: 239
+        y: 139
+        width: 31
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e35686aa76ae33f50800000000000000
+      internalID: 6860084388376896830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_48
+      rect:
+        serializedVersion: 2
+        x: 339
+        y: 139
+        width: 31
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2db90c3808ede2770800000000000000
+      internalID: 8588046182989732818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_49
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 39
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b19fd2cbea0fddc0800000000000000
+      internalID: -3612156368424824398
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_50
+      rect:
+        serializedVersion: 2
+        x: 143
+        y: 39
+        width: 19
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae46de0e49fdd07a0800000000000000
+      internalID: -6409220864156539670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_51
+      rect:
+        serializedVersion: 2
+        x: 162
+        y: 50
+        width: 13
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 985462ab58dd41190800000000000000
+      internalID: -7992519872252328567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_52
+      rect:
+        serializedVersion: 2
+        x: 171
+        y: 52
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6866d1effed01440800000000000000
+      internalID: 4904665184793421932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_53
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 54
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e4f73007542b5bd0800000000000000
+      internalID: -2640476800438242074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_54
+      rect:
+        serializedVersion: 2
+        x: 245
+        y: 39
+        width: 21
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f69985359e92d2aa0800000000000000
+      internalID: -6184240631207388817
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_55
+      rect:
+        serializedVersion: 2
+        x: 266
+        y: 45
+        width: 13
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86ea08710827801d0800000000000000
+      internalID: -3384329225493238168
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_56
+      rect:
+        serializedVersion: 2
+        x: 277
+        y: 49
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8bc3707e040f98530800000000000000
+      internalID: 3857878717364124856
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_57
+      rect:
+        serializedVersion: 2
+        x: 345
+        y: 39
+        width: 26
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c73c0c857a05842b0800000000000000
+      internalID: -5600137456956423300
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: elite_orc_58
+      rect:
+        serializedVersion: 2
+        x: 366
+        y: 42
+        width: 16
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dac78600eab037940800000000000000
+      internalID: 5292586829049527469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      elite_orc_0: -7176097449737665285
+      elite_orc_1: -4804099887776571764
+      elite_orc_10: 7179569948642485552
+      elite_orc_11: -7850123436262370976
+      elite_orc_12: 4397685506025350307
+      elite_orc_13: -2904543887602467068
+      elite_orc_14: -5233154835355920523
+      elite_orc_15: -3708821971348799536
+      elite_orc_16: 3618520610500588461
+      elite_orc_17: -279505107748573938
+      elite_orc_18: 6324447453927076343
+      elite_orc_19: -7363640795489310409
+      elite_orc_2: -6243114124829569750
+      elite_orc_20: 7706689898692035326
+      elite_orc_21: 1389363046225403815
+      elite_orc_22: -4846258467230758861
+      elite_orc_23: -7768944193817847457
+      elite_orc_24: 383154174325299982
+      elite_orc_25: -8762448680135495456
+      elite_orc_26: -4498955978864295
+      elite_orc_27: 5237214407624895965
+      elite_orc_28: -8905451851671674132
+      elite_orc_29: 6823819666451367889
+      elite_orc_3: -2444923467103791538
+      elite_orc_30: 3843017855171492171
+      elite_orc_31: -5688180961931706182
+      elite_orc_32: 2794412772108340820
+      elite_orc_33: -171733476658384039
+      elite_orc_34: -9132560886968073653
+      elite_orc_35: -5808283361360141128
+      elite_orc_36: -637986697493518603
+      elite_orc_37: -5520046106283207621
+      elite_orc_38: -2628643321340249828
+      elite_orc_39: -4321751777474347545
+      elite_orc_4: 8649389907052516563
+      elite_orc_40: 985134000296903437
+      elite_orc_41: -989796514076651672
+      elite_orc_42: -6123878659303353816
+      elite_orc_43: 4261603733089514578
+      elite_orc_44: 7837261713880214957
+      elite_orc_45: -4484402021701454886
+      elite_orc_46: 3471220555705515553
+      elite_orc_47: 6860084388376896830
+      elite_orc_48: 8588046182989732818
+      elite_orc_49: -3612156368424824398
+      elite_orc_5: 9205933257969846352
+      elite_orc_50: -6409220864156539670
+      elite_orc_51: -7992519872252328567
+      elite_orc_52: 4904665184793421932
+      elite_orc_53: -2640476800438242074
+      elite_orc_54: -6184240631207388817
+      elite_orc_55: -3384329225493238168
+      elite_orc_56: 3857878717364124856
+      elite_orc_57: -5600137456956423300
+      elite_orc_58: 5292586829049527469
+      elite_orc_6: 6173762457828799072
+      elite_orc_7: 5802280838796196160
+      elite_orc_8: 7722602655481505038
+      elite_orc_9: -4991831435911082032
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,0 +1,1638 @@
+fileFormatVersion: 2
+guid: cb856719ed22c6e438fa41377e1bd060
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 884888757512819095
+    second: orc_rider_0
+  - first:
+      213: -8018908804930139692
+    second: orc_rider_1
+  - first:
+      213: -8652321365012530070
+    second: orc_rider_2
+  - first:
+      213: 3436076995250449160
+    second: orc_rider_3
+  - first:
+      213: -5005026310855142432
+    second: orc_rider_4
+  - first:
+      213: -6548413062694445573
+    second: orc_rider_5
+  - first:
+      213: 2984933065941213623
+    second: orc_rider_6
+  - first:
+      213: 4539545051929558092
+    second: orc_rider_7
+  - first:
+      213: 1303209087917408676
+    second: orc_rider_8
+  - first:
+      213: 8391213547382077105
+    second: orc_rider_9
+  - first:
+      213: 2658366859677955576
+    second: orc_rider_10
+  - first:
+      213: -301512476017448955
+    second: orc_rider_11
+  - first:
+      213: 8994508790287042226
+    second: orc_rider_12
+  - first:
+      213: 3574102755151016513
+    second: orc_rider_13
+  - first:
+      213: 6375215998581972828
+    second: orc_rider_14
+  - first:
+      213: -2910070397491654132
+    second: orc_rider_15
+  - first:
+      213: 7052250206330735138
+    second: orc_rider_16
+  - first:
+      213: -7412855971031538537
+    second: orc_rider_17
+  - first:
+      213: -7804817154913669540
+    second: orc_rider_18
+  - first:
+      213: -1073535922480656422
+    second: orc_rider_19
+  - first:
+      213: -7494570902872418610
+    second: orc_rider_20
+  - first:
+      213: 2773649503752854466
+    second: orc_rider_21
+  - first:
+      213: -2764477189680571984
+    second: orc_rider_22
+  - first:
+      213: 2901644504171830212
+    second: orc_rider_23
+  - first:
+      213: -6911456080920875727
+    second: orc_rider_24
+  - first:
+      213: -1808575153689914427
+    second: orc_rider_25
+  - first:
+      213: -3275166405776721655
+    second: orc_rider_26
+  - first:
+      213: 5131828925967314506
+    second: orc_rider_27
+  - first:
+      213: 4395091177389188155
+    second: orc_rider_28
+  - first:
+      213: 8655448748954887893
+    second: orc_rider_29
+  - first:
+      213: 4273722163686318615
+    second: orc_rider_30
+  - first:
+      213: -5204339374708183563
+    second: orc_rider_31
+  - first:
+      213: 2728348696581122634
+    second: orc_rider_32
+  - first:
+      213: -4711637061588345096
+    second: orc_rider_33
+  - first:
+      213: 3562741612175491558
+    second: orc_rider_34
+  - first:
+      213: -5131622464129528167
+    second: orc_rider_35
+  - first:
+      213: 8092513842227511808
+    second: orc_rider_36
+  - first:
+      213: 1279655784658719704
+    second: orc_rider_37
+  - first:
+      213: -41575908021783896
+    second: orc_rider_38
+  - first:
+      213: 8390738629940545116
+    second: orc_rider_39
+  - first:
+      213: -2556072432283279456
+    second: orc_rider_40
+  - first:
+      213: 923594231936575312
+    second: orc_rider_41
+  - first:
+      213: -48107925649742116
+    second: orc_rider_42
+  - first:
+      213: 6918663496450306738
+    second: orc_rider_43
+  - first:
+      213: -7171659862362988502
+    second: orc_rider_44
+  - first:
+      213: -7445117295052043761
+    second: orc_rider_45
+  - first:
+      213: 1970145322789997836
+    second: orc_rider_46
+  - first:
+      213: 674017767576347484
+    second: orc_rider_47
+  - first:
+      213: -966913149802881049
+    second: orc_rider_48
+  - first:
+      213: 3102143575735750676
+    second: orc_rider_49
+  - first:
+      213: -4538550028411471299
+    second: orc_rider_50
+  - first:
+      213: 6641081714729064861
+    second: orc_rider_51
+  - first:
+      213: -7343076001151592729
+    second: orc_rider_52
+  - first:
+      213: 5045169794271812164
+    second: orc_rider_53
+  - first:
+      213: 1326896343471600620
+    second: orc_rider_54
+  - first:
+      213: 3003891097934395359
+    second: orc_rider_55
+  - first:
+      213: -8997698192899264370
+    second: orc_rider_56
+  - first:
+      213: -8889458836174915751
+    second: orc_rider_57
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 50
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: orc_rider_0
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 739
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 791d949f2a1c74c00800000000000000
+      internalID: 884888757512819095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_1
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 739
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d903eb8dec17b090800000000000000
+      internalID: -8018908804930139692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_2
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 739
+        width: 33
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6cb7eb7f87cce780800000000000000
+      internalID: -8652321365012530070
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_3
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 739
+        width: 33
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80b6bc272d56faf20800000000000000
+      internalID: 3436076995250449160
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_4
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 739
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e3def986139a8ab0800000000000000
+      internalID: -5005026310855142432
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_5
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 739
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bfdd193b30d5f15a0800000000000000
+      internalID: -6548413062694445573
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_6
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 639
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b16eb10fcc9c6920800000000000000
+      internalID: 2984933065941213623
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_7
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 639
+        width: 33
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4cb4265c24bffe30800000000000000
+      internalID: 4539545051929558092
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_8
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 639
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a1c061c2cde51210800000000000000
+      internalID: 1303209087917408676
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_9
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 639
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b677264344937470800000000000000
+      internalID: 8391213547382077105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_10
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 639
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f576c1039a64e420800000000000000
+      internalID: 2658366859677955576
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_11
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 639
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 508a1a32000d0dbf0800000000000000
+      internalID: -301512476017448955
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_12
+      rect:
+        serializedVersion: 2
+        x: 636
+        y: 639
+        width: 34
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b6003ef61ae2dc70800000000000000
+      internalID: 8994508790287042226
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_13
+      rect:
+        serializedVersion: 2
+        x: 736
+        y: 639
+        width: 35
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1427587f483c99130800000000000000
+      internalID: 3574102755151016513
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_14
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 539
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5f9dd16c21597850800000000000000
+      internalID: 6375215998581972828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_15
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 539
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c025126446a5d97d0800000000000000
+      internalID: -2910070397491654132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_16
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 539
+        width: 32
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 22ac48fb230aed160800000000000000
+      internalID: 7052250206330735138
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_17
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 539
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7942883f4ce302990800000000000000
+      internalID: -7412855971031538537
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_18
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 539
+        width: 45
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5eee783628bfa390800000000000000
+      internalID: -7804817154913669540
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_19
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 539
+        width: 45
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: adf4bee24c80a11f0800000000000000
+      internalID: -1073535922480656422
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_20
+      rect:
+        serializedVersion: 2
+        x: 636
+        y: 539
+        width: 44
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec69f46c87fedf790800000000000000
+      internalID: -7494570902872418610
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_21
+      rect:
+        serializedVersion: 2
+        x: 736
+        y: 539
+        width: 35
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cb90aa378bfd7620800000000000000
+      internalID: 2773649503752854466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_22
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 439
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b95b6f84aa92a9d0800000000000000
+      internalID: -2764477189680571984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_23
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 439
+        width: 33
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4cb50af8d46b44820800000000000000
+      internalID: 2901644504171830212
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_24
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 439
+        width: 33
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 13d6ff710539510a0800000000000000
+      internalID: -6911456080920875727
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_25
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 439
+        width: 34
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c317beda76a6e6e0800000000000000
+      internalID: -1808575153689914427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_26
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 439
+        width: 33
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 909b26ba1854c82d0800000000000000
+      internalID: -3275166405776721655
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_27
+      rect:
+        serializedVersion: 2
+        x: 455
+        y: 467
+        width: 32
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4e2b54f73be73740800000000000000
+      internalID: 5131828925967314506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_28
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 463
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b346cbfb3208efc30800000000000000
+      internalID: 4395091177389188155
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_29
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 439
+        width: 38
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d62e0557c45e1870800000000000000
+      internalID: 8655448748954887893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_30
+      rect:
+        serializedVersion: 2
+        x: 573
+        y: 426
+        width: 24
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 712ac3b2aaf4f4b30800000000000000
+      internalID: 4273722163686318615
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_31
+      rect:
+        serializedVersion: 2
+        x: 636
+        y: 439
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5fda0f799e876c7b0800000000000000
+      internalID: -5204339374708183563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_32
+      rect:
+        serializedVersion: 2
+        x: 736
+        y: 439
+        width: 51
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a4a2e132faa0dd520800000000000000
+      internalID: 2728348696581122634
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_33
+      rect:
+        serializedVersion: 2
+        x: 836
+        y: 439
+        width: 35
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8fe16794e07ec9eb0800000000000000
+      internalID: -4711637061588345096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_34
+      rect:
+        serializedVersion: 2
+        x: 673
+        y: 429
+        width: 20
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e1093cbe96617130800000000000000
+      internalID: 3562741612175491558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_35
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 339
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 99e0520be80d8c8b0800000000000000
+      internalID: -5131622464129528167
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_36
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 339
+        width: 33
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00207e9a6726e4070800000000000000
+      internalID: 8092513842227511808
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_37
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 339
+        width: 33
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d35b5ff72042c110800000000000000
+      internalID: 1279655784658719704
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_38
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 339
+        width: 34
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a2b5239eea4c6ff0800000000000000
+      internalID: -41575908021783896
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_39
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 339
+        width: 40
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c5601c0f354e17470800000000000000
+      internalID: 8390738629940545116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_40
+      rect:
+        serializedVersion: 2
+        x: 536
+        y: 339
+        width: 59
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0af169d5aa1078cd0800000000000000
+      internalID: -2556072432283279456
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_41
+      rect:
+        serializedVersion: 2
+        x: 608
+        y: 339
+        width: 87
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 057ed2f7f0441dc00800000000000000
+      internalID: 923594231936575312
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_42
+      rect:
+        serializedVersion: 2
+        x: 708
+        y: 339
+        width: 61
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd624c4b816155ff0800000000000000
+      internalID: -48107925649742116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_43
+      rect:
+        serializedVersion: 2
+        x: 811
+        y: 339
+        width: 60
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b2f16a1bc7040060800000000000000
+      internalID: 6918663496450306738
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_44
+      rect:
+        serializedVersion: 2
+        x: 936
+        y: 339
+        width: 59
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a206ded2a55297c90800000000000000
+      internalID: -7171659862362988502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_45
+      rect:
+        serializedVersion: 2
+        x: 1036
+        y: 339
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0a4e4d1441ada890800000000000000
+      internalID: -7445117295052043761
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_46
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 239
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c0d8bc89bbc575b10800000000000000
+      internalID: 1970145322789997836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_47
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 239
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c53a0b8a6979a5900800000000000000
+      internalID: 674017767576347484
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_48
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 239
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ef5859fc95d492f0800000000000000
+      internalID: -966913149802881049
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_49
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 239
+        width: 34
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4105df175270d0b20800000000000000
+      internalID: 3102143575735750676
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_50
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 139
+        width: 34
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3af131abc4d301c0800000000000000
+      internalID: -4538550028411471299
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_51
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 139
+        width: 34
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9994c232acd92c50800000000000000
+      internalID: 6641081714729064861
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_52
+      rect:
+        serializedVersion: 2
+        x: 236
+        y: 139
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e6d9a04847281a90800000000000000
+      internalID: -7343076001151592729
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_53
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 139
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44a1a1b823b040640800000000000000
+      internalID: 5045169794271812164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_54
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 39
+        width: 34
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce3b366b1351a6210800000000000000
+      internalID: 1326896343471600620
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_55
+      rect:
+        serializedVersion: 2
+        x: 136
+        y: 39
+        width: 33
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd7765cc907ffa920800000000000000
+      internalID: 3003891097934395359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_56
+      rect:
+        serializedVersion: 2
+        x: 232
+        y: 39
+        width: 45
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e80b0185a21c12380800000000000000
+      internalID: -8997698192899264370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orc_rider_57
+      rect:
+        serializedVersion: 2
+        x: 327
+        y: 39
+        width: 54
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9573650794c42a480800000000000000
+      internalID: -8889458836174915751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      orc_rider_0: 884888757512819095
+      orc_rider_1: -8018908804930139692
+      orc_rider_10: 2658366859677955576
+      orc_rider_11: -301512476017448955
+      orc_rider_12: 8994508790287042226
+      orc_rider_13: 3574102755151016513
+      orc_rider_14: 6375215998581972828
+      orc_rider_15: -2910070397491654132
+      orc_rider_16: 7052250206330735138
+      orc_rider_17: -7412855971031538537
+      orc_rider_18: -7804817154913669540
+      orc_rider_19: -1073535922480656422
+      orc_rider_2: -8652321365012530070
+      orc_rider_20: -7494570902872418610
+      orc_rider_21: 2773649503752854466
+      orc_rider_22: -2764477189680571984
+      orc_rider_23: 2901644504171830212
+      orc_rider_24: -6911456080920875727
+      orc_rider_25: -1808575153689914427
+      orc_rider_26: -3275166405776721655
+      orc_rider_27: 5131828925967314506
+      orc_rider_28: 4395091177389188155
+      orc_rider_29: 8655448748954887893
+      orc_rider_3: 3436076995250449160
+      orc_rider_30: 4273722163686318615
+      orc_rider_31: -5204339374708183563
+      orc_rider_32: 2728348696581122634
+      orc_rider_33: -4711637061588345096
+      orc_rider_34: 3562741612175491558
+      orc_rider_35: -5131622464129528167
+      orc_rider_36: 8092513842227511808
+      orc_rider_37: 1279655784658719704
+      orc_rider_38: -41575908021783896
+      orc_rider_39: 8390738629940545116
+      orc_rider_4: -5005026310855142432
+      orc_rider_40: -2556072432283279456
+      orc_rider_41: 923594231936575312
+      orc_rider_42: -48107925649742116
+      orc_rider_43: 6918663496450306738
+      orc_rider_44: -7171659862362988502
+      orc_rider_45: -7445117295052043761
+      orc_rider_46: 1970145322789997836
+      orc_rider_47: 674017767576347484
+      orc_rider_48: -966913149802881049
+      orc_rider_49: 3102143575735750676
+      orc_rider_5: -6548413062694445573
+      orc_rider_50: -4538550028411471299
+      orc_rider_51: 6641081714729064861
+      orc_rider_52: -7343076001151592729
+      orc_rider_53: 5045169794271812164
+      orc_rider_54: 1326896343471600620
+      orc_rider_55: 3003891097934395359
+      orc_rider_56: -8997698192899264370
+      orc_rider_57: -8889458836174915751
+      orc_rider_6: 2984933065941213623
+      orc_rider_7: 4539545051929558092
+      orc_rider_8: 1303209087917408676
+      orc_rider_9: 8391213547382077105
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
