@@ -60,8 +60,8 @@ public class TowerBattleController : MonoBehaviour
     private readonly List<ActiveModifier> heroModifiers = new();
     private readonly List<ActiveModifier> monsterModifiers = new();
 
-    private TextMesh heroLabel;
-    private TextMesh monsterLabel;
+    private TMP_Text heroNameText;
+    private TMP_Text monsterNameText;
     private TextMesh heroHpWorldText;
     private TextMesh monsterHpWorldText;
 
@@ -1149,14 +1149,14 @@ public class TowerBattleController : MonoBehaviour
 
     private void RefreshLabels()
     {
-        if (heroLabel != null)
+        if (heroNameText != null)
         {
-            heroLabel.text = $"{RunSession.GetHeroDisplayName()} Lv.{hero?.Level ?? 1}";
+            heroNameText.text = RunSession.GetHeroDisplayName();
         }
 
-        if (monsterLabel != null)
+        if (monsterNameText != null)
         {
-            monsterLabel.text = currentMonster != null ? currentMonster.name : "Monster";
+            monsterNameText.text = currentMonster != null ? currentMonster.name : "Monster";
         }
 
         if (heroHpWorldText != null && hero != null)
@@ -1993,12 +1993,18 @@ public class TowerBattleController : MonoBehaviour
 
     private void AutoBindScene()
     {
-        heroLabel = FindTextMesh("HeroLabel");
-        monsterLabel = FindTextMesh("MonsterLabel");
+        heroNameText = FindComponent<TMP_Text>("Canvas/Hero/Hero Name") ??
+                       FindComponent<TMP_Text>("Hero/Hero Name");
+        monsterNameText = FindComponent<TMP_Text>("Canvas/Monster/Monster Name") ??
+                          FindComponent<TMP_Text>("Monster/Monster Name");
         heroHpWorldText = FindTextMesh("HeroHPText");
         monsterHpWorldText = FindTextMesh("MonsterHPText");
-        heroCharacterPresenter = FindComponent<BattleCharacterPresenter>("Hero Character");
-        monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Monster Character");
+        heroCharacterPresenter = FindComponent<BattleCharacterPresenter>("Canvas/Hero/Hero Character") ??
+                                 FindComponent<BattleCharacterPresenter>("Hero/Hero Character") ??
+                                 FindComponent<BattleCharacterPresenter>("Hero Character");
+        monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Canvas/Monster/Monster Character") ??
+                                    FindComponent<BattleCharacterPresenter>("Monster/Monster Character") ??
+                                    FindComponent<BattleCharacterPresenter>("Monster Character");
         heroUiAnimator = heroCharacterPresenter != null ? heroCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
         monsterUiAnimator = monsterCharacterPresenter != null ? monsterCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
         endPanelRoot = FindGameObject("Canvas/End Panel");
