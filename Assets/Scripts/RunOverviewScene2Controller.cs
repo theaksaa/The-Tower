@@ -5,8 +5,13 @@ using TMPro;
 using TheTower;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 {
@@ -17,10 +22,13 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private static readonly Color HoverSelectorTint = new(0.72f, 0.72f, 0.72f, 1f);
     private const string MapContinueLabel = "Continue";
     private const string MapReviveLabel = "Revive monster";
+    private const string PauseExitGameHoverText = "Exit the game application.";
+    private const string PauseExitMainMenuHoverText = "Return to the main menu.";
 
     [Header("Navigation")]
     [SerializeField] private string battleSceneName = "BattleScene";
     [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
 
     [Header("Hero")]
     [SerializeField] private float heroIdleFramesPerSecond = 10f;
@@ -83,6 +91,11 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private Button mapPanelCloseButton;
     private Button mapStartButton;
     private TMP_Text mapStartButtonText;
+    private GameObject pauseMenuPanelRoot;
+    private TMP_Text pauseMenuHoverText;
+    private Button pauseMenuResumeButton;
+    private Button pauseMenuExitGameButton;
+    private Button pauseMenuExitToMainMenuButton;
     private Coroutine pendingDropRefresh;
     private string hoveredMoveId;
     private int hoveredEncounterIndex = -1;
@@ -90,6 +103,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private int initialBottomEquippedSlotCount;
     private int initialPanelEquippedSlotCount;
     private int initialInventorySlotCount;
+    private bool pauseMenuOpen;
     private readonly List<MoveSlotView> bottomEquippedSlots = new();
     private readonly List<MoveSlotView> panelEquippedSlots = new();
     private readonly List<MoveSlotView> inventorySlots = new();
@@ -155,6 +169,33 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
         private void OnDisable()
         {
+        }
+    }
+
+    private sealed class PauseMenuHoverTextTarget : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private RunOverviewScene2Controller owner;
+        private string hoverMessage;
+
+        public void Initialize(RunOverviewScene2Controller controller, string message)
+        {
+            owner = controller;
+            hoverMessage = message;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            owner?.SetPauseMenuHoverMessage(hoverMessage);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            owner?.SetPauseMenuHoverMessage(null);
+        }
+
+        private void OnDisable()
+        {
+            owner?.SetPauseMenuHoverMessage(null);
         }
     }
 
@@ -332,6 +373,29 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         SetLevelPanelVisible(false);
         SetMapPanelVisible(false);
         SetMovesPanelVisible(false);
+        SetPauseMenuVisible(false);
+    }
+
+    private void Update()
+    {
+        if (pauseMenuPanelRoot == null)
+        {
+            return;
+        }
+
+        var keyboard = Keyboard.current;
+        if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
+        {
+            return;
+        }
+
+        if (pauseMenuOpen)
+        {
+            ResumeFromPauseMenu();
+            return;
+        }
+
+        OpenPauseMenu();
     }
 
     private void AutoBindScene()
@@ -378,6 +442,11 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         mapPanelCloseButton = FindComponent<Button>("Map Panel/Close Button");
         mapStartButton = FindComponent<Button>("Map Panel/Start Button");
         mapStartButtonText = FindComponent<TMP_Text>("Map Panel/Start Button/Text");
+        pauseMenuPanelRoot = FindChild("Pause Menu Panel")?.gameObject;
+        pauseMenuHoverText = FindComponent<TMP_Text>("Pause Menu Panel/Buttons Hover Text");
+        pauseMenuResumeButton = FindComponent<Button>("Pause Menu Panel/Buttons/Resume Button");
+        pauseMenuExitGameButton = FindComponent<Button>("Pause Menu Panel/Buttons/Exit Game Button");
+        pauseMenuExitToMainMenuButton = FindComponent<Button>("Pause Menu Panel/Buttons/Exit To Main Menu Button");
 
         xpBarButton = EnsureButton(FindChild("XP Bar"));
         if (xpBarButton == null)
@@ -467,6 +536,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         initialBottomEquippedSlotCount = bottomEquippedSlots.Count;
         initialPanelEquippedSlotCount = panelEquippedSlots.Count;
         initialInventorySlotCount = inventorySlots.Count;
+        ConfigurePauseMenuButtons();
     }
 
     private void ConfigureHeroAnimation()
@@ -695,6 +765,102 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         {
             movesPanelRoot.SetActive(isVisible);
         }
+    }
+
+    private void ConfigurePauseMenuButtons()
+    {
+        SetPauseMenuHoverMessage(null);
+
+        if (pauseMenuResumeButton != null)
+        {
+            ConfigurePressedButtonFeedback(pauseMenuResumeButton);
+            pauseMenuResumeButton.onClick.RemoveAllListeners();
+            pauseMenuResumeButton.onClick.AddListener(ResumeFromPauseMenu);
+            ConfigurePauseMenuHoverTextTarget(pauseMenuResumeButton, null);
+        }
+
+        if (pauseMenuExitGameButton != null)
+        {
+            ConfigurePressedButtonFeedback(pauseMenuExitGameButton);
+            pauseMenuExitGameButton.onClick.RemoveAllListeners();
+            pauseMenuExitGameButton.onClick.AddListener(ExitGameFromPauseMenu);
+            ConfigurePauseMenuHoverTextTarget(pauseMenuExitGameButton, PauseExitGameHoverText);
+        }
+
+        if (pauseMenuExitToMainMenuButton != null)
+        {
+            ConfigurePressedButtonFeedback(pauseMenuExitToMainMenuButton);
+            pauseMenuExitToMainMenuButton.onClick.RemoveAllListeners();
+            pauseMenuExitToMainMenuButton.onClick.AddListener(ExitToMainMenuFromPauseMenu);
+            ConfigurePauseMenuHoverTextTarget(pauseMenuExitToMainMenuButton, PauseExitMainMenuHoverText);
+        }
+    }
+
+    private void ConfigurePauseMenuHoverTextTarget(Button button, string message)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        var hoverTarget = button.GetComponent<PauseMenuHoverTextTarget>();
+        if (hoverTarget == null)
+        {
+            hoverTarget = button.gameObject.AddComponent<PauseMenuHoverTextTarget>();
+        }
+
+        hoverTarget.Initialize(this, message);
+    }
+
+    private void SetPauseMenuHoverMessage(string message)
+    {
+        if (pauseMenuHoverText == null)
+        {
+            return;
+        }
+
+        var hasMessage = !string.IsNullOrWhiteSpace(message);
+        pauseMenuHoverText.text = hasMessage ? message : string.Empty;
+        pauseMenuHoverText.gameObject.SetActive(hasMessage && pauseMenuOpen);
+    }
+
+    private void OpenPauseMenu()
+    {
+        SetPauseMenuVisible(true);
+    }
+
+    private void ResumeFromPauseMenu()
+    {
+        SetPauseMenuVisible(false);
+    }
+
+    private void ExitGameFromPauseMenu()
+    {
+        RunSaveService.SaveCurrentRun();
+#if UNITY_EDITOR
+        EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    private void ExitToMainMenuFromPauseMenu()
+    {
+        RunSaveService.SaveCurrentRun();
+        SetPauseMenuVisible(false);
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    private void SetPauseMenuVisible(bool isVisible)
+    {
+        pauseMenuOpen = isVisible && pauseMenuPanelRoot != null;
+
+        if (pauseMenuPanelRoot != null)
+        {
+            pauseMenuPanelRoot.SetActive(pauseMenuOpen);
+        }
+
+        SetPauseMenuHoverMessage(null);
     }
 
     private void RefreshMovesUi()

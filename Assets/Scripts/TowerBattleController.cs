@@ -11,12 +11,15 @@ using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using Random = UnityEngine.Random;
 
 public class TowerBattleController : MonoBehaviour
 {
     private const string DefaultMonsterSpriteKey = "";
     private const string DefaultHeroSpriteKey = "";
+    private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
+    private const string PauseExitMainMenuHoverText = "Exit to main menu without saving the current battle.";
 
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
@@ -24,6 +27,7 @@ public class TowerBattleController : MonoBehaviour
 
     [Header("Navigation")]
     [SerializeField] private string overviewSceneName = "RunOverviewScene2";
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
 
     [Header("Turn Timing")]
     [SerializeField] private float heroAttackDelay = 1f;
@@ -98,7 +102,9 @@ public class TowerBattleController : MonoBehaviour
     private GameObject endPanelRoot;
     private GameObject defeatPanelRoot;
     private GameObject battleLogPanelRoot;
+    private GameObject pauseMenuPanelRoot;
     private TMP_Text battleLogTemplateText;
+    private TMP_Text pauseMenuHoverText;
     private ScrollRect battleLogScrollRect;
     private RectTransform battleLogContentRoot;
     private Scrollbar battleLogScrollbar;
@@ -122,6 +128,9 @@ public class TowerBattleController : MonoBehaviour
     private Button continueButton;
     private Button defeatReviveButton;
     private Button defeatMapButton;
+    private Button pauseMenuResumeButton;
+    private Button pauseMenuExitBattleButton;
+    private Button pauseMenuExitToMainMenuButton;
 
     private RunConfig runConfig;
     private Monster currentMonster;
@@ -135,6 +144,10 @@ public class TowerBattleController : MonoBehaviour
     private string returnLabel = "Back to map";
     private bool usingBattleSceneUi;
     private int hoveredMoveIndex = -1;
+    private bool pauseMenuOpen;
+    private bool requestedMoveButtonsInteractable;
+    private UiSpriteSheetAnimator heroUiAnimator;
+    private UiSpriteSheetAnimator monsterUiAnimator;
 
     private readonly List<string> monsterMoveHistory = new();
     private readonly Color inactiveEffectColor = Color.black;
@@ -297,11 +310,73 @@ public class TowerBattleController : MonoBehaviour
         }
     }
 
+    private sealed class PauseMenuHoverTextTarget : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private TowerBattleController owner;
+        private string hoverMessage;
+
+        public void Initialize(TowerBattleController controller, string message)
+        {
+            owner = controller;
+            hoverMessage = message;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            owner?.SetPauseMenuHoverMessage(hoverMessage);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            owner?.SetPauseMenuHoverMessage(null);
+        }
+
+        private void OnDisable()
+        {
+            owner?.SetPauseMenuHoverMessage(null);
+        }
+    }
+
     private void Start()
     {
         AutoBindScene();
         CreateRuntimeHud();
         StartCoroutine(BootstrapEncounter());
+    }
+
+    private void Update()
+    {
+        if (!usingBattleSceneUi || pauseMenuPanelRoot == null)
+        {
+            return;
+        }
+
+        var keyboard = Keyboard.current;
+        if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
+        {
+            return;
+        }
+
+        if (pauseMenuOpen)
+        {
+            ResumeBattleFromPauseMenu();
+            return;
+        }
+
+        if (CanOpenPauseMenu())
+        {
+            OpenPauseMenu();
+        }
+    }
+
+    private void OnDisable()
+    {
+        ReleasePauseState();
+    }
+
+    private void OnDestroy()
+    {
+        ReleasePauseState();
     }
 
     public void UseMoveSlot(int slot)
@@ -508,6 +583,7 @@ public class TowerBattleController : MonoBehaviour
         {
             request.timeout = 5;
             yield return request.SendWebRequest();
+            yield return WaitWhilePauseMenuOpen();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
@@ -1225,15 +1301,196 @@ public class TowerBattleController : MonoBehaviour
 
     private void SetButtonsInteractable(bool interactable)
     {
+        requestedMoveButtonsInteractable = interactable;
+        ApplyMoveButtonsInteractableState();
+    }
+
+    private void ApplyMoveButtonsInteractableState()
+    {
+        var canInteract = requestedMoveButtonsInteractable && !pauseMenuOpen;
         foreach (var button in moveButtons)
         {
             if (button != null)
             {
-                button.interactable = interactable;
+                button.interactable = canInteract;
             }
         }
 
         UpdateMoveHoverSelectors();
+    }
+
+    private void ConfigurePauseMenuButtons()
+    {
+        SetPauseMenuHoverMessage(null);
+
+        if (pauseMenuResumeButton != null)
+        {
+            ConfigureEndPanelButton(pauseMenuResumeButton, ResumeBattleFromPauseMenu);
+            ConfigurePauseMenuHoverTextTarget(pauseMenuResumeButton, null);
+        }
+
+        if (pauseMenuExitBattleButton != null)
+        {
+            ConfigureEndPanelButton(pauseMenuExitBattleButton, ExitBattleWithoutSaving);
+            ConfigurePauseMenuHoverTextTarget(pauseMenuExitBattleButton, PauseExitBattleHoverText);
+        }
+
+        if (pauseMenuExitToMainMenuButton != null)
+        {
+            ConfigureEndPanelButton(pauseMenuExitToMainMenuButton, ExitToMainMenuWithoutSaving);
+            ConfigurePauseMenuHoverTextTarget(pauseMenuExitToMainMenuButton, PauseExitMainMenuHoverText);
+        }
+    }
+
+    private void ConfigurePauseMenuHoverTextTarget(Button button, string message)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        var hoverTarget = button.GetComponent<PauseMenuHoverTextTarget>();
+        if (hoverTarget == null)
+        {
+            hoverTarget = button.gameObject.AddComponent<PauseMenuHoverTextTarget>();
+        }
+
+        hoverTarget.Initialize(this, message);
+    }
+
+    private void SetPauseMenuHoverMessage(string message)
+    {
+        if (pauseMenuHoverText == null)
+        {
+            return;
+        }
+
+        var hasMessage = !string.IsNullOrWhiteSpace(message);
+        pauseMenuHoverText.text = hasMessage ? message : string.Empty;
+        pauseMenuHoverText.gameObject.SetActive(hasMessage && pauseMenuOpen);
+    }
+
+    private bool CanOpenPauseMenu()
+    {
+        if (!usingBattleSceneUi || pauseMenuPanelRoot == null || returnReady)
+        {
+            return false;
+        }
+
+        if (endPanelRoot != null && endPanelRoot.activeSelf)
+        {
+            return false;
+        }
+
+        if (defeatPanelRoot != null && defeatPanelRoot.activeSelf)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void OpenPauseMenu()
+    {
+        SetPauseMenuVisible(true);
+    }
+
+    private void ResumeBattleFromPauseMenu()
+    {
+        SetPauseMenuVisible(false);
+    }
+
+    private void ExitBattleWithoutSaving()
+    {
+        RestoreSavedRunState();
+        ReleasePauseState();
+        SceneManager.LoadScene(overviewSceneName);
+    }
+
+    private void ExitToMainMenuWithoutSaving()
+    {
+        RestoreSavedRunState();
+        ReleasePauseState();
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    private void RestoreSavedRunState()
+    {
+        if (!RunSession.HasActiveRun || string.IsNullOrWhiteSpace(RunSession.CurrentSaveId))
+        {
+            return;
+        }
+
+        if (!RunSaveService.TryLoadRun(RunSession.CurrentSaveId))
+        {
+            Debug.LogWarning($"Could not restore saved run '{RunSession.CurrentSaveId}' before exiting the battle.");
+        }
+    }
+
+    private IEnumerator WaitWhilePauseMenuOpen()
+    {
+        while (pauseMenuOpen)
+        {
+            yield return null;
+        }
+    }
+
+    private void SetPauseMenuVisible(bool visible)
+    {
+        pauseMenuOpen = visible && pauseMenuPanelRoot != null;
+
+        if (pauseMenuPanelRoot != null)
+        {
+            pauseMenuPanelRoot.SetActive(pauseMenuOpen);
+            if (pauseMenuOpen)
+            {
+                pauseMenuPanelRoot.transform.SetAsLastSibling();
+            }
+        }
+
+        SetPauseMenuHoverMessage(null);
+
+        ApplyPauseState();
+    }
+
+    private void ApplyPauseState()
+    {
+        Time.timeScale = pauseMenuOpen ? 0f : 1f;
+
+        if (heroUiAnimator != null)
+        {
+            heroUiAnimator.enabled = !pauseMenuOpen;
+        }
+
+        if (monsterUiAnimator != null)
+        {
+            monsterUiAnimator.enabled = !pauseMenuOpen;
+        }
+
+        ApplyMoveButtonsInteractableState();
+    }
+
+    private void ReleasePauseState()
+    {
+        pauseMenuOpen = false;
+        Time.timeScale = 1f;
+
+        if (pauseMenuPanelRoot != null)
+        {
+            pauseMenuPanelRoot.SetActive(false);
+        }
+
+        if (heroUiAnimator != null)
+        {
+            heroUiAnimator.enabled = true;
+        }
+
+        if (monsterUiAnimator != null)
+        {
+            monsterUiAnimator.enabled = true;
+        }
+
+        ApplyMoveButtonsInteractableState();
     }
 
     private void ConfigureMoveHoverListener(GameObject moveRoot, int index)
@@ -1720,6 +1977,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void ReturnToOverview()
     {
+        ReleasePauseState();
         SceneManager.LoadScene(overviewSceneName);
     }
 
@@ -1741,13 +1999,20 @@ public class TowerBattleController : MonoBehaviour
         monsterHpWorldText = FindTextMesh("MonsterHPText");
         heroCharacterPresenter = FindComponent<BattleCharacterPresenter>("Hero Character");
         monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Monster Character");
+        heroUiAnimator = heroCharacterPresenter != null ? heroCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
+        monsterUiAnimator = monsterCharacterPresenter != null ? monsterCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
         endPanelRoot = FindGameObject("Canvas/End Panel");
         defeatPanelRoot = FindGameObject("Canvas/Defeat Panel");
         battleLogPanelRoot = FindGameObject("Canvas/Battle Log Panel");
+        pauseMenuPanelRoot = FindGameObject("Canvas/Pause Menu Panel");
         battleLogTemplateText = FindComponent<TMP_Text>("Canvas/Battle Log Panel/Battle Log Text");
+        pauseMenuHoverText = FindComponent<TMP_Text>("Canvas/Pause Menu Panel/Buttons Hover Text");
         battleLogScrollbar = FindComponent<Scrollbar>("Canvas/Battle Log Panel/Scroll Bar");
         battleLogOpenButton = FindComponent<Button>("Canvas/Battle Log Button");
         battleLogCloseButton = FindComponent<Button>("Canvas/Battle Log Panel/Close Button");
+        pauseMenuResumeButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Resume Button");
+        pauseMenuExitBattleButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Exit Battle Button");
+        pauseMenuExitToMainMenuButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Exit To Main Menu Button");
         usingBattleSceneUi = FindGameObject("Canvas/Moves Bar/Moves/Move 1") != null ||
                              endPanelRoot != null ||
                              defeatPanelRoot != null;
@@ -1858,11 +2123,13 @@ public class TowerBattleController : MonoBehaviour
             ConfigureEndPanelButton(defeatMapButton, OnDefeatMapButtonPressed);
         }
 
+        ConfigurePauseMenuButtons();
         ConfigureBattleLogButtons();
 
         SetEndPanelVisible(false);
         SetDefeatPanelVisible(false);
         SetBattleLogVisible(false);
+        SetPauseMenuVisible(false);
 
         for (var index = 0; index < 4; index++)
         {
