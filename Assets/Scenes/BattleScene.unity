@@ -13373,6 +13373,9 @@ MonoBehaviour:
   battleSceneEndPanelHoverTint: {r: 0.9, g: 0.9, b: 0.9, a: 1}
   battleSceneEndPanelPressedTint: {r: 0.82, g: 0.82, b: 0.82, a: 1}
   battleSceneEndPanelPressedTextOffset: {x: 0, y: -6}
+  currentMoveStatsAnimationDuration: 0.18
+  currentMoveStatsHideDelay: 0.5
+  healthBarSmoothSpeed: 4
 --- !u!1 &2128063093
 GameObject:
   m_ObjectHideFlags: 0

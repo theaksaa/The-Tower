@@ -46,6 +46,7 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private Vector2 battleSceneEndPanelPressedTextOffset = new(0f, -6f);
     [SerializeField] private float currentMoveStatsAnimationDuration = 0.18f;
     [SerializeField] private float currentMoveStatsHideDelay = 0.25f;
+    [SerializeField] private float healthBarSmoothSpeed = 4f;
 
     private readonly string[] buttonObjectNames =
     {
@@ -156,6 +157,9 @@ public class TowerBattleController : MonoBehaviour
     private Coroutine currentMoveStatsAnimation;
     private Coroutine currentMoveStatsHideDelayRoutine;
     private bool currentMoveStatsVisible;
+    private float heroHealthBarTargetFill = 1f;
+    private float monsterHealthBarTargetFill = 1f;
+    private bool pendingInstantHealthBarSync = true;
 
     private readonly List<string> monsterMoveHistory = new();
     private readonly Color inactiveEffectColor = Color.black;
@@ -354,6 +358,8 @@ public class TowerBattleController : MonoBehaviour
 
     private void Update()
     {
+        UpdateHealthBarAnimations();
+
         if (!usingBattleSceneUi || pauseMenuPanelRoot == null)
         {
             return;
@@ -470,6 +476,7 @@ public class TowerBattleController : MonoBehaviour
         heroLastMoveId = null;
         turnNumber = 1;
         returnReady = false;
+        pendingInstantHealthBarSync = true;
 
         var intro = RunSession.UsingFallbackData
             ? "Offline fallback data loaded."
@@ -879,7 +886,6 @@ public class TowerBattleController : MonoBehaviour
         var wasFinalEncounter = IsPendingEncounterFinal();
         var rewards = AwardVictoryRewards();
         RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
-        RestoreHeroToFullHealth();
         RunSaveService.SaveCurrentRun();
         monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
@@ -961,16 +967,6 @@ public class TowerBattleController : MonoBehaviour
             LearnedMoveId = learnedMove,
             HasLearnedMove = !string.IsNullOrEmpty(learnedMoveText)
         };
-    }
-
-    private void RestoreHeroToFullHealth()
-    {
-        if (hero == null)
-        {
-            return;
-        }
-
-        hero.CurrentHp = GetHeroBaseStats().health;
     }
 
     private string PickLearnableMove(Monster monster)
@@ -1191,14 +1187,16 @@ public class TowerBattleController : MonoBehaviour
         if (heroHealthBarImage != null && hero != null)
         {
             var heroMaxHp = Mathf.Max(1, GetHeroBaseStats().health);
-            heroHealthBarImage.fillAmount = Mathf.Clamp01(hero.CurrentHp / (float)heroMaxHp);
+            SetHeroHealthBarTarget(Mathf.Clamp01(hero.CurrentHp / (float)heroMaxHp), pendingInstantHealthBarSync);
         }
 
         if (monsterHealthBarImage != null)
         {
             var monsterMaxHp = Mathf.Max(1, currentMonster?.stats.health ?? 1);
-            monsterHealthBarImage.fillAmount = Mathf.Clamp01(currentMonsterHp / (float)monsterMaxHp);
+            SetMonsterHealthBarTarget(Mathf.Clamp01(currentMonsterHp / (float)monsterMaxHp), pendingInstantHealthBarSync);
         }
+
+        pendingInstantHealthBarSync = false;
 
         var heroStats = hero != null ? GetEffectiveHeroStats() : null;
         if (heroAttackText != null)
@@ -2148,6 +2146,43 @@ public class TowerBattleController : MonoBehaviour
         image.fillOrigin = (int)Image.OriginHorizontal.Left;
         image.fillClockwise = true;
         image.preserveAspect = false;
+    }
+
+    private void SetHeroHealthBarTarget(float fillAmount, bool instant)
+    {
+        heroHealthBarTargetFill = fillAmount;
+        if (instant && heroHealthBarImage != null)
+        {
+            heroHealthBarImage.fillAmount = fillAmount;
+        }
+    }
+
+    private void SetMonsterHealthBarTarget(float fillAmount, bool instant)
+    {
+        monsterHealthBarTargetFill = fillAmount;
+        if (instant && monsterHealthBarImage != null)
+        {
+            monsterHealthBarImage.fillAmount = fillAmount;
+        }
+    }
+
+    private void UpdateHealthBarAnimations()
+    {
+        if (heroHealthBarImage != null)
+        {
+            heroHealthBarImage.fillAmount = Mathf.MoveTowards(
+                heroHealthBarImage.fillAmount,
+                heroHealthBarTargetFill,
+                healthBarSmoothSpeed * Time.deltaTime);
+        }
+
+        if (monsterHealthBarImage != null)
+        {
+            monsterHealthBarImage.fillAmount = Mathf.MoveTowards(
+                monsterHealthBarImage.fillAmount,
+                monsterHealthBarTargetFill,
+                healthBarSmoothSpeed * Time.deltaTime);
+        }
     }
 
     private Sprite ResolveMoveIconSprite(Move move)
