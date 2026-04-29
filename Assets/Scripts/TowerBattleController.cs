@@ -796,6 +796,7 @@ public class TowerBattleController : MonoBehaviour
         var rewards = AwardVictoryRewards();
         RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
         RestoreHeroToFullHealth();
+        RunSaveService.SaveCurrentRun();
         monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
         pendingVictoryRewards = rewards;

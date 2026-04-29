@@ -1173,6 +1173,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             RunSession.ClearPendingLearnedMove();
         }
 
+        RunSaveService.SaveCurrentRun();
         return true;
     }
 

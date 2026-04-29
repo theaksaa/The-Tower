@@ -1,4 +1,7 @@
 using TMPro;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -8,6 +11,8 @@ public class StartGameSceneController : MonoBehaviour
 {
     [Header("Navigation")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
+    [SerializeField] private string runOverviewSceneName = "RunOverviewScene2";
 
     [Header("Mode Preview")]
     [SerializeField] private string storyModeTitle = "Story mode";
@@ -33,9 +38,10 @@ public class StartGameSceneController : MonoBehaviour
     private Button continueButton;
     private Button storyModeButton;
     private Button endlessModeButton;
+    private RectTransform continueGamesRoot;
+    private readonly List<ContinueRunCardView> continueRunCards = new();
 
     private VisiblePanel activePanel;
-    private ModePreview selectedMode = ModePreview.Story;
 
     private enum VisiblePanel
     {
@@ -48,6 +54,18 @@ public class StartGameSceneController : MonoBehaviour
     {
         Story,
         Endless
+    }
+
+    private sealed class ContinueRunCardView
+    {
+        public RectTransform Root;
+        public Button OpenButton;
+        public Button DeleteButton;
+        public Image HeroImage;
+        public TMP_Text ModeText;
+        public TMP_Text ProgressText;
+        public TMP_Text LastSaveText;
+        public Sprite DefaultHeroSprite;
     }
 
     private sealed class PressedButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
@@ -227,6 +245,8 @@ public class StartGameSceneController : MonoBehaviour
         ConfigureModeHover(storyModeButton, ModePreview.Story);
         ConfigureModeHover(endlessModeButton, ModePreview.Endless);
         ConfigurePressedButtonFeedback();
+        CacheContinueRunCards();
+        RefreshContinuePanel();
         ShowPanel(VisiblePanel.Game);
         HideModePreview();
     }
@@ -248,6 +268,7 @@ public class StartGameSceneController : MonoBehaviour
         currentModeRoot = FindObject("New Game Panel/Current Mode");
         currentModeTitleText = FindComponent<TMP_Text>("New Game Panel/Current Mode/Title");
         currentModeDescriptionText = FindComponent<TMP_Text>("New Game Panel/Current Mode/Description");
+        continueGamesRoot = FindObject("Continue Panel/Games")?.GetComponent<RectTransform>();
 
         backButton = FindComponent<Button>("Back Button");
         newGameButton = FindComponent<Button>("Game Panel/Buttons/New Game Button");
@@ -280,17 +301,18 @@ public class StartGameSceneController : MonoBehaviour
 
     private void OpenContinuePanel()
     {
+        RefreshContinuePanel();
         ShowPanel(VisiblePanel.Continue);
     }
 
     private void SelectStoryMode()
     {
-        selectedMode = ModePreview.Story;
+        RunSession.ClearActiveRun();
+        SceneManager.LoadScene(heroSelectSceneName);
     }
 
     private void SelectEndlessMode()
     {
-        selectedMode = ModePreview.Endless;
     }
 
     private void ShowPanel(VisiblePanel panel)
@@ -417,5 +439,182 @@ public class StartGameSceneController : MonoBehaviour
     {
         var target = transform.Find(path);
         return target != null ? target.gameObject : null;
+    }
+
+    private void CacheContinueRunCards()
+    {
+        continueRunCards.Clear();
+        if (continueGamesRoot == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < continueGamesRoot.childCount; index++)
+        {
+            if (continueGamesRoot.GetChild(index) is not RectTransform child)
+            {
+                continue;
+            }
+
+            continueRunCards.Add(BuildContinueRunCard(child));
+        }
+    }
+
+    private ContinueRunCardView BuildContinueRunCard(RectTransform root)
+    {
+        var backgroundImage = root.Find("Background")?.GetComponent<Image>();
+        var button = EnsureButton(root, backgroundImage);
+        var deleteButton = EnsureButton(root.Find("Delete Button") as RectTransform);
+        return new ContinueRunCardView
+        {
+            Root = root,
+            OpenButton = button,
+            DeleteButton = deleteButton,
+            HeroImage = root.Find("Content/Hero")?.GetComponent<Image>(),
+            ModeText = root.Find("Content/Mode/Mode Text")?.GetComponent<TMP_Text>(),
+            ProgressText = root.Find("Content/Progress/Progress Text")?.GetComponent<TMP_Text>(),
+            LastSaveText = root.Find("Content/Last Save/Last Date Text")?.GetComponent<TMP_Text>(),
+            DefaultHeroSprite = root.Find("Content/Hero")?.GetComponent<Image>()?.sprite
+        };
+    }
+
+    private void RefreshContinuePanel()
+    {
+        var saves = RunSaveService.GetAllRuns();
+        EnsureContinueRunCardCount(saves.Count);
+
+        for (var index = 0; index < continueRunCards.Count; index++)
+        {
+            var hasSave = index < saves.Count;
+            var card = continueRunCards[index];
+            card.Root.gameObject.SetActive(hasSave);
+            if (!hasSave)
+            {
+                continue;
+            }
+
+            BindContinueRunCard(card, saves[index]);
+        }
+
+        if (continueButton != null)
+        {
+            continueButton.interactable = saves.Count > 0;
+        }
+    }
+
+    private void EnsureContinueRunCardCount(int requiredCount)
+    {
+        if (continueGamesRoot == null || continueRunCards.Count == 0)
+        {
+            return;
+        }
+
+        while (continueRunCards.Count < requiredCount)
+        {
+            var clone = Instantiate(continueRunCards[0].Root.gameObject, continueGamesRoot, false);
+            clone.name = $"Game {continueRunCards.Count + 1}";
+            continueRunCards.Add(BuildContinueRunCard(clone.GetComponent<RectTransform>()));
+        }
+    }
+
+    private void BindContinueRunCard(ContinueRunCardView card, RunSaveService.RunSaveSummary save)
+    {
+        if (card == null || save == null)
+        {
+            return;
+        }
+
+        if (card.HeroImage != null)
+        {
+            card.HeroImage.sprite = ResolveRunHeroSprite(save, card.DefaultHeroSprite);
+            card.HeroImage.preserveAspect = true;
+            card.HeroImage.color = Color.white;
+        }
+
+        if (card.ModeText != null)
+        {
+            var modeName = string.IsNullOrWhiteSpace(save.Mode) ? "Story" : save.Mode;
+            card.ModeText.text = modeName;
+        }
+
+        if (card.ProgressText != null)
+        {
+            var progressPercent = save.TotalEncounterCount > 0
+                ? Mathf.Clamp(Mathf.RoundToInt((save.CompletedEncounterCount / (float)save.TotalEncounterCount) * 100f), 0, 100)
+                : 0;
+            card.ProgressText.text = $"{progressPercent}%";
+        }
+
+        if (card.LastSaveText != null)
+        {
+            var localTimestamp = save.LastUpdatedUtc.Kind == DateTimeKind.Utc
+                ? save.LastUpdatedUtc.ToLocalTime()
+                : save.LastUpdatedUtc;
+            card.LastSaveText.text = localTimestamp.ToString("g");
+        }
+
+        if (card.OpenButton != null)
+        {
+            card.OpenButton.onClick.RemoveAllListeners();
+            card.OpenButton.onClick.AddListener(() => OpenSavedRun(save.SaveId));
+        }
+
+        if (card.DeleteButton != null)
+        {
+            card.DeleteButton.onClick.RemoveAllListeners();
+            card.DeleteButton.onClick.AddListener(() => DeleteSavedRun(save.SaveId));
+        }
+    }
+
+    private void OpenSavedRun(string saveId)
+    {
+        if (!RunSaveService.TryLoadRun(saveId))
+        {
+            RefreshContinuePanel();
+            return;
+        }
+
+        SceneManager.LoadScene(runOverviewSceneName);
+    }
+
+    private void DeleteSavedRun(string saveId)
+    {
+        if (!RunSaveService.DeleteRun(saveId))
+        {
+            return;
+        }
+
+        RefreshContinuePanel();
+    }
+
+    private static Sprite ResolveRunHeroSprite(RunSaveService.RunSaveSummary save, Sprite fallbackSprite)
+    {
+        var idleFrames = SpriteKeyLookup.LoadCharacterAnimationOrDefault(
+            save.HeroSpriteKey,
+            BattleAnimationState.Idle,
+            CharacterSpriteKind.Hero);
+        return idleFrames.FirstOrDefault(sprite => sprite != null) ?? fallbackSprite;
+    }
+
+    private static Button EnsureButton(RectTransform target, Image fallbackGraphic = null)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        var button = target.GetComponent<Button>();
+        if (button == null)
+        {
+            button = target.gameObject.AddComponent<Button>();
+        }
+
+        var targetGraphic = fallbackGraphic != null ? fallbackGraphic : target.GetComponent<Image>();
+        if (targetGraphic != null)
+        {
+            button.targetGraphic = targetGraphic;
+        }
+
+        return button;
     }
 }

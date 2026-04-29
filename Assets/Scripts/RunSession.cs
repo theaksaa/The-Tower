@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using TheTower;
 using UnityEngine;
 
@@ -29,21 +32,34 @@ public static class RunSession
     public static bool IsDefeated { get; private set; }
     public static string StatusMessage { get; private set; }
     public static string PendingLearnedMoveId { get; private set; }
+    public static string CurrentSaveId { get; private set; }
+    public static string CurrentMode { get; private set; } = "Story";
+    public static long CreatedAtUtcTicks { get; private set; }
+    public static long LastUpdatedAtUtcTicks { get; private set; }
 
     public static bool HasActiveRun => CurrentRunConfig != null && Hero != null && CompletedEncounters != null;
     public static bool HasPendingLearnedMove => !string.IsNullOrEmpty(PendingLearnedMoveId);
 
     public static void InitializeNewRun(RunConfig runConfig, bool usingFallbackData)
     {
-        InitializeNewRun(runConfig, usingFallbackData, GetAvailableHeroes(runConfig).FirstOrDefault());
+        InitializeNewRun(runConfig, usingFallbackData, GetAvailableHeroes(runConfig).FirstOrDefault(), "Story");
     }
 
     public static void InitializeNewRun(RunConfig runConfig, bool usingFallbackData, HeroDefinition selectedHero)
+    {
+        InitializeNewRun(runConfig, usingFallbackData, selectedHero, "Story");
+    }
+
+    public static void InitializeNewRun(RunConfig runConfig, bool usingFallbackData, HeroDefinition selectedHero, string mode)
     {
         CurrentRunConfig = runConfig;
         UsingFallbackData = usingFallbackData;
         IsDefeated = false;
         PendingLearnedMoveId = null;
+        CurrentMode = string.IsNullOrWhiteSpace(mode) ? "Story" : mode;
+        CurrentSaveId = Guid.NewGuid().ToString("N");
+        CreatedAtUtcTicks = DateTime.UtcNow.Ticks;
+        LastUpdatedAtUtcTicks = CreatedAtUtcTicks;
         SelectedHeroDefinition = selectedHero ?? GetAvailableHeroes(runConfig).FirstOrDefault();
         var runLabel = string.IsNullOrEmpty(runConfig.runId)
             ? "run"
@@ -62,6 +78,7 @@ public static class RunSession
             CompletedEncounters = null;
             SelectedEncounterIndex = -1;
             StatusMessage = "No hero configuration was found in the run config.";
+            ClearSaveMetadata();
             return;
         }
 
@@ -78,6 +95,80 @@ public static class RunSession
 
         CompletedEncounters = Enumerable.Repeat(false, runConfig.encounters.Count).ToList();
         SelectedEncounterIndex = GetFirstAvailableEncounterIndex();
+        RunSaveService.SaveCurrentRun();
+    }
+
+    public static bool RestoreSavedRun(RunSaveService.PersistedRunData runData)
+    {
+        if (runData?.RunConfig == null || runData.Hero == null)
+        {
+            return false;
+        }
+
+        CurrentRunConfig = runData.RunConfig;
+        UsingFallbackData = runData.UsingFallbackData;
+        IsDefeated = runData.IsDefeated;
+        StatusMessage = runData.StatusMessage;
+        PendingLearnedMoveId = runData.PendingLearnedMoveId;
+        CurrentSaveId = runData.SaveId;
+        CurrentMode = string.IsNullOrWhiteSpace(runData.Mode) ? "Story" : runData.Mode;
+        CreatedAtUtcTicks = runData.CreatedAtUtcTicks > 0 ? runData.CreatedAtUtcTicks : DateTime.UtcNow.Ticks;
+        LastUpdatedAtUtcTicks = runData.UpdatedAtUtcTicks > 0 ? runData.UpdatedAtUtcTicks : CreatedAtUtcTicks;
+
+        SelectedHeroDefinition = ResolveSavedHeroDefinition(runData);
+        Hero = new HeroRuntimeState
+        {
+            HeroId = runData.Hero.HeroId,
+            HeroName = string.IsNullOrWhiteSpace(runData.Hero.HeroName)
+                ? SelectedHeroDefinition?.name ?? "Hero"
+                : runData.Hero.HeroName,
+            Level = Mathf.Max(1, runData.Hero.Level),
+            Xp = Mathf.Max(0, runData.Hero.Xp),
+            CurrentHp = Mathf.Max(0, runData.Hero.CurrentHp),
+            BonusAttack = runData.Hero.BonusAttack,
+            BonusDefense = runData.Hero.BonusDefense,
+            BonusMagic = runData.Hero.BonusMagic,
+            EquippedMoves = runData.Hero.EquippedMoves?.ToList() ?? new List<string>(),
+            KnownMoves = runData.Hero.KnownMoves != null
+                ? new HashSet<string>(runData.Hero.KnownMoves)
+                : new HashSet<string>()
+        };
+
+        if (Hero.KnownMoves.Count == 0 && SelectedHeroDefinition?.moves != null)
+        {
+            Hero.KnownMoves = new HashSet<string>(SelectedHeroDefinition.moves);
+        }
+
+        CompletedEncounters = runData.CompletedEncounters?.ToList() ?? new List<bool>();
+        NormalizeCompletedEncounters();
+
+        var firstAvailableEncounter = GetFirstAvailableEncounterIndex();
+        SelectedEncounterIndex = runData.SelectedEncounterIndex;
+        if (SelectedEncounterIndex < 0 || SelectedEncounterIndex >= CompletedEncounters.Count)
+        {
+            SelectedEncounterIndex = firstAvailableEncounter;
+        }
+
+        if (SelectedEncounterIndex >= 0 && IsEncounterCompleted(SelectedEncounterIndex))
+        {
+            SelectedEncounterIndex = firstAvailableEncounter;
+        }
+
+        return true;
+    }
+
+    public static void ClearActiveRun()
+    {
+        CurrentRunConfig = null;
+        Hero = null;
+        SelectedHeroDefinition = null;
+        CompletedEncounters = null;
+        SelectedEncounterIndex = -1;
+        UsingFallbackData = false;
+        IsDefeated = false;
+        StatusMessage = null;
+        PendingLearnedMoveId = null;
+        ClearSaveMetadata();
     }
 
     public static IReadOnlyList<HeroDefinition> GetAvailableHeroes(RunConfig runConfig)
@@ -218,6 +309,7 @@ public static class RunSession
         }
 
         StatusMessage = $"The hero retreated from encounter {encounterIndex + 1}. Choose your next fight from the map.";
+        RunSaveService.SaveCurrentRun();
     }
 
     public static void SetPendingLearnedMove(string moveId)
@@ -321,6 +413,7 @@ public static class RunSession
         Hero.CurrentHp += healthGain;
         Hero.CurrentHp = Mathf.Min(Hero.CurrentHp, GetHeroBaseStats().health);
         StatusMessage = $"{GetHeroDisplayName()} leveled up {stat.Trim().ToUpperInvariant()}.";
+        RunSaveService.SaveCurrentRun();
         return true;
     }
 
@@ -340,5 +433,327 @@ public static class RunSession
         baseStats.defense += Hero.BonusDefense;
         baseStats.magic += Hero.BonusMagic;
         return baseStats;
+    }
+
+    public static void SetLastUpdatedAt(long updatedAtUtcTicks)
+    {
+        LastUpdatedAtUtcTicks = Math.Max(0L, updatedAtUtcTicks);
+    }
+
+    private static HeroDefinition ResolveSavedHeroDefinition(RunSaveService.PersistedRunData runData)
+    {
+        if (runData?.SelectedHeroDefinition != null)
+        {
+            return new HeroDefinition
+            {
+                id = runData.SelectedHeroDefinition.id,
+                name = runData.SelectedHeroDefinition.name,
+                description = runData.SelectedHeroDefinition.description,
+                portraitKey = runData.SelectedHeroDefinition.portraitKey,
+                spriteKey = runData.SelectedHeroDefinition.spriteKey,
+                baseStats = runData.SelectedHeroDefinition.baseStats?.Clone(),
+                statsPerLevel = runData.SelectedHeroDefinition.statsPerLevel?.Clone(),
+                moves = runData.SelectedHeroDefinition.moves?.ToList() ?? new List<string>()
+            };
+        }
+
+        var matchingHero = GetAvailableHeroes(runData?.RunConfig)
+            .FirstOrDefault(hero => string.Equals(hero.id, runData?.Hero?.HeroId, StringComparison.OrdinalIgnoreCase));
+
+        return matchingHero != null
+            ? new HeroDefinition
+            {
+                id = matchingHero.id,
+                name = matchingHero.name,
+                description = matchingHero.description,
+                portraitKey = matchingHero.portraitKey,
+                spriteKey = matchingHero.spriteKey,
+                baseStats = matchingHero.baseStats?.Clone(),
+                statsPerLevel = matchingHero.statsPerLevel?.Clone(),
+                moves = matchingHero.moves?.ToList() ?? new List<string>()
+            }
+            : null;
+    }
+
+    private static void NormalizeCompletedEncounters()
+    {
+        var encounterCount = CurrentRunConfig?.encounters?.Count ?? 0;
+        if (CompletedEncounters == null)
+        {
+            CompletedEncounters = Enumerable.Repeat(false, encounterCount).ToList();
+            return;
+        }
+
+        if (CompletedEncounters.Count < encounterCount)
+        {
+            CompletedEncounters.AddRange(Enumerable.Repeat(false, encounterCount - CompletedEncounters.Count));
+        }
+        else if (CompletedEncounters.Count > encounterCount)
+        {
+            CompletedEncounters = CompletedEncounters.Take(encounterCount).ToList();
+        }
+    }
+
+    private static void ClearSaveMetadata()
+    {
+        CurrentSaveId = null;
+        CurrentMode = "Story";
+        CreatedAtUtcTicks = 0L;
+        LastUpdatedAtUtcTicks = 0L;
+    }
+}
+
+public static class RunSaveService
+{
+    private const string SavesFolderName = "SavedRuns";
+
+    [Serializable]
+    public sealed class PersistedRunData
+    {
+        public string SaveId;
+        public string Mode;
+        public long CreatedAtUtcTicks;
+        public long UpdatedAtUtcTicks;
+        public RunConfig RunConfig;
+        public HeroRuntimeState Hero;
+        public HeroDefinition SelectedHeroDefinition;
+        public List<bool> CompletedEncounters = new();
+        public int SelectedEncounterIndex = -1;
+        public bool UsingFallbackData;
+        public bool IsDefeated;
+        public string StatusMessage;
+        public string PendingLearnedMoveId;
+    }
+
+    public sealed class RunSaveSummary
+    {
+        public string SaveId;
+        public string Mode;
+        public string HeroName;
+        public string HeroSpriteKey;
+        public int CompletedEncounterCount;
+        public int TotalEncounterCount;
+        public bool IsComplete;
+        public bool IsDefeated;
+        public DateTime LastUpdatedUtc;
+    }
+
+    public static IReadOnlyList<RunSaveSummary> GetAllRuns()
+    {
+        EnsureSavesDirectory();
+
+        var saves = new List<RunSaveSummary>();
+        foreach (var filePath in Directory.GetFiles(GetSavesDirectory(), "*.json"))
+        {
+            if (!TryReadRun(filePath, out var runData) || runData == null)
+            {
+                continue;
+            }
+
+            saves.Add(BuildSummary(runData));
+        }
+
+        return saves
+            .OrderByDescending(save => save.LastUpdatedUtc)
+            .ToList();
+    }
+
+    public static bool SaveCurrentRun()
+    {
+        if (!RunSession.HasActiveRun || string.IsNullOrWhiteSpace(RunSession.CurrentSaveId))
+        {
+            return false;
+        }
+
+        EnsureSavesDirectory();
+
+        var updatedAtUtcTicks = DateTime.UtcNow.Ticks;
+        RunSession.SetLastUpdatedAt(updatedAtUtcTicks);
+
+        var runData = new PersistedRunData
+        {
+            SaveId = RunSession.CurrentSaveId,
+            Mode = RunSession.CurrentMode,
+            CreatedAtUtcTicks = RunSession.CreatedAtUtcTicks,
+            UpdatedAtUtcTicks = updatedAtUtcTicks,
+            RunConfig = RunSession.CurrentRunConfig,
+            Hero = CloneHero(RuntimeHeroOrNull()),
+            SelectedHeroDefinition = CloneHeroDefinition(RunSession.SelectedHeroDefinition),
+            CompletedEncounters = RunSession.CompletedEncounters?.ToList() ?? new List<bool>(),
+            SelectedEncounterIndex = RunSession.SelectedEncounterIndex,
+            UsingFallbackData = RunSession.UsingFallbackData,
+            IsDefeated = RunSession.IsDefeated,
+            StatusMessage = RunSession.StatusMessage,
+            PendingLearnedMoveId = RunSession.PendingLearnedMoveId
+        };
+
+        try
+        {
+            var json = JsonConvert.SerializeObject(runData, Formatting.Indented);
+            File.WriteAllText(GetSaveFilePath(runData.SaveId), json);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"Failed to save run '{RunSession.CurrentSaveId}': {exception.Message}");
+            return false;
+        }
+    }
+
+    public static bool TryLoadRun(string saveId)
+    {
+        if (string.IsNullOrWhiteSpace(saveId))
+        {
+            return false;
+        }
+
+        return TryReadRun(GetSaveFilePath(saveId), out var runData) &&
+               runData != null &&
+               RunSession.RestoreSavedRun(runData);
+    }
+
+    public static bool DeleteRun(string saveId)
+    {
+        if (string.IsNullOrWhiteSpace(saveId))
+        {
+            return false;
+        }
+
+        var filePath = GetSaveFilePath(saveId);
+        if (!File.Exists(filePath))
+        {
+            return false;
+        }
+
+        File.Delete(filePath);
+        if (string.Equals(RunSession.CurrentSaveId, saveId, StringComparison.Ordinal))
+        {
+            RunSession.ClearActiveRun();
+        }
+
+        return true;
+    }
+
+    private static HeroRuntimeState RuntimeHeroOrNull()
+    {
+        return RunSession.Hero == null
+            ? null
+            : new HeroRuntimeState
+            {
+                HeroId = RunSession.Hero.HeroId,
+                HeroName = RunSession.Hero.HeroName,
+                Level = RunSession.Hero.Level,
+                Xp = RunSession.Hero.Xp,
+                CurrentHp = RunSession.Hero.CurrentHp,
+                BonusAttack = RunSession.Hero.BonusAttack,
+                BonusDefense = RunSession.Hero.BonusDefense,
+                BonusMagic = RunSession.Hero.BonusMagic,
+                EquippedMoves = RunSession.Hero.EquippedMoves?.ToList() ?? new List<string>(),
+                KnownMoves = RunSession.Hero.KnownMoves != null
+                    ? new HashSet<string>(RunSession.Hero.KnownMoves)
+                    : new HashSet<string>()
+            };
+    }
+
+    private static HeroRuntimeState CloneHero(HeroRuntimeState hero)
+    {
+        return hero == null
+            ? null
+            : new HeroRuntimeState
+            {
+                HeroId = hero.HeroId,
+                HeroName = hero.HeroName,
+                Level = hero.Level,
+                Xp = hero.Xp,
+                CurrentHp = hero.CurrentHp,
+                BonusAttack = hero.BonusAttack,
+                BonusDefense = hero.BonusDefense,
+                BonusMagic = hero.BonusMagic,
+                EquippedMoves = hero.EquippedMoves?.ToList() ?? new List<string>(),
+                KnownMoves = hero.KnownMoves != null
+                    ? new HashSet<string>(hero.KnownMoves)
+                    : new HashSet<string>()
+            };
+    }
+
+    private static HeroDefinition CloneHeroDefinition(HeroDefinition hero)
+    {
+        if (hero == null)
+        {
+            return null;
+        }
+
+        return new HeroDefinition
+        {
+            id = hero.id,
+            name = hero.name,
+            description = hero.description,
+            portraitKey = hero.portraitKey,
+            spriteKey = hero.spriteKey,
+            baseStats = hero.baseStats?.Clone(),
+            statsPerLevel = hero.statsPerLevel?.Clone(),
+            moves = hero.moves?.ToList() ?? new List<string>()
+        };
+    }
+
+    private static RunSaveSummary BuildSummary(PersistedRunData runData)
+    {
+        var totalEncounters = runData.RunConfig?.encounters?.Count ?? 0;
+        var completedCount = runData.CompletedEncounters?.Count(completed => completed) ?? 0;
+        var heroName = !string.IsNullOrWhiteSpace(runData.Hero?.HeroName)
+            ? runData.Hero.HeroName
+            : !string.IsNullOrWhiteSpace(runData.SelectedHeroDefinition?.name)
+                ? runData.SelectedHeroDefinition.name
+                : "Hero";
+
+        return new RunSaveSummary
+        {
+            SaveId = runData.SaveId,
+            Mode = string.IsNullOrWhiteSpace(runData.Mode) ? "Story" : runData.Mode,
+            HeroName = heroName,
+            HeroSpriteKey = runData.SelectedHeroDefinition?.spriteKey,
+            CompletedEncounterCount = completedCount,
+            TotalEncounterCount = totalEncounters,
+            IsComplete = totalEncounters > 0 && completedCount >= totalEncounters,
+            IsDefeated = runData.IsDefeated,
+            LastUpdatedUtc = new DateTime(Math.Max(0L, runData.UpdatedAtUtcTicks), DateTimeKind.Utc)
+        };
+    }
+
+    private static bool TryReadRun(string filePath, out PersistedRunData runData)
+    {
+        runData = null;
+
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            return false;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(filePath);
+            runData = JsonConvert.DeserializeObject<PersistedRunData>(json);
+            return runData != null;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"Failed to read run save '{filePath}': {exception.Message}");
+            return false;
+        }
+    }
+
+    private static void EnsureSavesDirectory()
+    {
+        Directory.CreateDirectory(GetSavesDirectory());
+    }
+
+    private static string GetSavesDirectory()
+    {
+        return Path.Combine(Application.persistentDataPath, SavesFolderName);
+    }
+
+    private static string GetSaveFilePath(string saveId)
+    {
+        return Path.Combine(GetSavesDirectory(), $"{saveId}.json");
     }
 }
