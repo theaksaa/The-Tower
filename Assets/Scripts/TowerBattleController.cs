@@ -97,6 +97,19 @@ public class TowerBattleController : MonoBehaviour
     private Image monsterEffectMagicIcon;
     private GameObject endPanelRoot;
     private GameObject defeatPanelRoot;
+    private GameObject battleLogPanelRoot;
+    private TMP_Text battleLogTemplateText;
+    private ScrollRect battleLogScrollRect;
+    private RectTransform battleLogContentRoot;
+    private Scrollbar battleLogScrollbar;
+    private RectTransform battleLogScrollbarSlidingAreaRect;
+    private RectTransform battleLogScrollbarTrackRect;
+    private RectTransform battleLogScrollbarHandleRect;
+    private float battleLogScrollbarHandleHeight;
+    private Button battleLogOpenButton;
+    private Button battleLogCloseButton;
+    private bool battleLogVisible;
+    private bool suppressBattleLogScrollbarCallbacks;
     private TMP_Text endPanelTitleText;
     private TMP_Text reward1Text;
     private TMP_Text reward2Text;
@@ -130,6 +143,22 @@ public class TowerBattleController : MonoBehaviour
     private readonly Color activeMoveIconColor = Color.white;
     private readonly Color inactiveMoveIconColor = new(0.35f, 0.35f, 0.35f, 1f);
     private VictoryRewards pendingVictoryRewards;
+
+    private sealed class BattleLogDescriptor
+    {
+        public bool ShowActorIcon;
+        public bool ActorIsHero;
+        public string PrefixText;
+        public string MoveName;
+        public Sprite MoveSprite;
+        public bool ShowTargetIcon;
+        public bool TargetIsHero;
+        public string SuffixText;
+        public bool ShowSecondaryTargetIcon;
+        public bool SecondaryTargetIsHero;
+        public Sprite SecondaryDetailSprite;
+        public string SecondaryText;
+    }
 
     private sealed class VictoryRewards
     {
@@ -363,6 +392,7 @@ public class TowerBattleController : MonoBehaviour
             ? "Offline fallback data loaded."
             : $"Run {GetRunLabel()} active.";
         SetStatus($"{intro}\nEncounter {encounterIndex + 1}/{runConfig.encounters.Count}: {currentMonster.name}\n{currentMonster.description}");
+        ClearBattleLog();
         PreloadBattleAssets();
         ConfigureBattlePresenters();
         RefreshAllUi();
@@ -528,6 +558,17 @@ public class TowerBattleController : MonoBehaviour
                 var damage = ComputeDamage(move, sourceStats, targetStats);
                 ApplyDamage(!actorIsHero, damage);
                 summary = $"{actorName} used {move.name} for {damage} damage.";
+                AddBattleLogMove(new BattleLogDescriptor
+                {
+                    ShowActorIcon = true,
+                    ActorIsHero = actorIsHero,
+                    PrefixText = "used",
+                    MoveName = move.name,
+                    MoveSprite = ResolveMoveIconSprite(move),
+                    ShowTargetIcon = true,
+                    TargetIsHero = !actorIsHero,
+                    SuffixText = BuildBattleLogDamageSummary(move, damage)
+                });
                 break;
             }
             case "heal":
@@ -535,6 +576,15 @@ public class TowerBattleController : MonoBehaviour
                 var healAmount = ComputeHeal(move, sourceStats);
                 ApplyHeal(actorIsHero, healAmount);
                 summary = $"{actorName} used {move.name} and healed {healAmount} HP.";
+                AddBattleLogMove(new BattleLogDescriptor
+                {
+                    ShowActorIcon = true,
+                    ActorIsHero = actorIsHero,
+                    PrefixText = "used",
+                    MoveName = move.name,
+                    MoveSprite = ResolveMoveIconSprite(move),
+                    SuffixText = $"healed {healAmount} HP."
+                });
                 break;
             }
             case "drain":
@@ -543,6 +593,17 @@ public class TowerBattleController : MonoBehaviour
                 ApplyDamage(!actorIsHero, drainAmount);
                 ApplyHeal(actorIsHero, drainAmount);
                 summary = $"{actorName} drained {drainAmount} HP with {move.name}.";
+                AddBattleLogMove(new BattleLogDescriptor
+                {
+                    ShowActorIcon = true,
+                    ActorIsHero = actorIsHero,
+                    PrefixText = "used",
+                    MoveName = move.name,
+                    MoveSprite = ResolveMoveIconSprite(move),
+                    ShowTargetIcon = true,
+                    TargetIsHero = !actorIsHero,
+                    SuffixText = $"{BuildBattleLogDamageSummary(move, drainAmount)} Restored {drainAmount} HP."
+                });
                 break;
             }
             case "stat_modifier":
@@ -550,6 +611,21 @@ public class TowerBattleController : MonoBehaviour
                 var targetIsHero = move.target == "self" ? actorIsHero : !actorIsHero;
                 ApplyModifier(targetIsHero, move.statModifier);
                 summary = $"{actorName} used {move.name}. {BuildModifierSummary(targetIsHero, move.statModifier)}";
+                AddBattleLogMove(new BattleLogDescriptor
+                {
+                    ShowActorIcon = true,
+                    ActorIsHero = actorIsHero,
+                    PrefixText = "used",
+                    MoveName = move.name,
+                    MoveSprite = ResolveMoveIconSprite(move),
+                    ShowTargetIcon = true,
+                    TargetIsHero = targetIsHero,
+                    SuffixText = "applied effect,",
+                    SecondaryDetailSprite = ResolveBattleLogStatSprite(move.statModifier?.stat),
+                    SecondaryText = BuildModifierBattleLogSummary(move.statModifier),
+                    ShowSecondaryTargetIcon = true,
+                    SecondaryTargetIsHero = targetIsHero
+                });
                 break;
             }
             case "damage_and_stat_modifier":
@@ -559,10 +635,33 @@ public class TowerBattleController : MonoBehaviour
                 var modifierTargetIsHero = move.target == "self" ? actorIsHero : !actorIsHero;
                 ApplyModifier(modifierTargetIsHero, move.statModifier);
                 summary = $"{actorName} used {move.name} for {hybridDamage} damage. {BuildModifierSummary(modifierTargetIsHero, move.statModifier)}";
+                AddBattleLogMove(new BattleLogDescriptor
+                {
+                    ShowActorIcon = true,
+                    ActorIsHero = actorIsHero,
+                    PrefixText = "used",
+                    MoveName = move.name,
+                    MoveSprite = ResolveMoveIconSprite(move),
+                    ShowTargetIcon = true,
+                    TargetIsHero = !actorIsHero,
+                    SuffixText = BuildBattleLogDamageSummary(move, hybridDamage, true),
+                    SecondaryDetailSprite = ResolveBattleLogStatSprite(move.statModifier?.stat),
+                    SecondaryText = BuildModifierBattleLogSummary(move.statModifier),
+                    ShowSecondaryTargetIcon = true,
+                    SecondaryTargetIsHero = modifierTargetIsHero
+                });
                 break;
             }
             default:
                 summary = $"{actorName} used {move.name}.";
+                AddBattleLogMove(new BattleLogDescriptor
+                {
+                    ShowActorIcon = true,
+                    ActorIsHero = actorIsHero,
+                    PrefixText = "used",
+                    MoveName = move.name,
+                    MoveSprite = ResolveMoveIconSprite(move)
+                });
                 break;
         }
 
@@ -712,7 +811,6 @@ public class TowerBattleController : MonoBehaviour
         }
 
         SetStatus(statusBuilder.ToString());
-
         if (usingBattleSceneUi && endPanelRoot != null)
         {
             ShowVictoryEndPanel(rewards, wasFinalEncounter);
@@ -1644,6 +1742,11 @@ public class TowerBattleController : MonoBehaviour
         monsterCharacterPresenter = FindComponent<BattleCharacterPresenter>("Monster Character");
         endPanelRoot = FindGameObject("Canvas/End Panel");
         defeatPanelRoot = FindGameObject("Canvas/Defeat Panel");
+        battleLogPanelRoot = FindGameObject("Canvas/Battle Log Panel");
+        battleLogTemplateText = FindComponent<TMP_Text>("Canvas/Battle Log Panel/Battle Log Text");
+        battleLogScrollbar = FindComponent<Scrollbar>("Canvas/Battle Log Panel/Scroll Bar");
+        battleLogOpenButton = FindComponent<Button>("Canvas/Battle Log Button");
+        battleLogCloseButton = FindComponent<Button>("Canvas/Battle Log Panel/Close Button");
         usingBattleSceneUi = FindGameObject("Canvas/Moves Bar/Moves/Move 1") != null ||
                              endPanelRoot != null ||
                              defeatPanelRoot != null;
@@ -1754,8 +1857,11 @@ public class TowerBattleController : MonoBehaviour
             ConfigureEndPanelButton(defeatMapButton, OnDefeatMapButtonPressed);
         }
 
+        ConfigureBattleLogButtons();
+
         SetEndPanelVisible(false);
         SetDefeatPanelVisible(false);
+        SetBattleLogVisible(false);
 
         for (var index = 0; index < 4; index++)
         {
@@ -2000,6 +2106,12 @@ public class TowerBattleController : MonoBehaviour
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
+        if (usingBattleSceneUi)
+        {
+            InitializeBattleLogUi();
+            return;
+        }
+
         statusText = CreateUiText("StatusText", canvas.transform, font, 28, TextAnchor.UpperCenter);
         ConfigureTextRect(
             statusText.rectTransform,
@@ -2016,6 +2128,663 @@ public class TowerBattleController : MonoBehaviour
             ConfigureTextRect(progressText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(26f, -24f), new Vector2(420f, 120f));
             ConfigureTextRect(effectsText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-26f, -24f), new Vector2(420f, 160f));
         }
+    }
+
+    private void InitializeBattleLogUi()
+    {
+        if (battleLogPanelRoot == null || battleLogTemplateText == null || battleLogScrollRect != null)
+        {
+            return;
+        }
+
+        var templateRect = battleLogTemplateText.rectTransform;
+        var backgroundRect = FindComponent<RectTransform>("Canvas/Battle Log Panel/Background");
+        var templateWorldCorners = new Vector3[4];
+        templateRect.GetWorldCorners(templateWorldCorners);
+        var viewportObject = new GameObject("Battle Log Viewport", typeof(RectTransform), typeof(RectMask2D));
+        var viewport = viewportObject.GetComponent<RectTransform>();
+        if (backgroundRect != null)
+        {
+            viewportObject.transform.SetParent(backgroundRect, false);
+
+            var topLeft = (Vector2)backgroundRect.InverseTransformPoint(templateWorldCorners[1]);
+            var bottomRight = (Vector2)backgroundRect.InverseTransformPoint(templateWorldCorners[3]);
+            var viewportCenter = (topLeft + bottomRight) * 0.5f;
+            var viewportSize = new Vector2(bottomRight.x - topLeft.x, topLeft.y - bottomRight.y);
+
+            viewport.anchorMin = new Vector2(0.5f, 0.5f);
+            viewport.anchorMax = new Vector2(0.5f, 0.5f);
+            viewport.pivot = new Vector2(0.5f, 0.5f);
+            viewport.anchoredPosition = viewportCenter;
+            viewport.sizeDelta = viewportSize;
+        }
+        else
+        {
+            viewportObject.transform.SetParent(battleLogPanelRoot.transform, false);
+            viewport.anchorMin = templateRect.anchorMin;
+            viewport.anchorMax = templateRect.anchorMax;
+            viewport.pivot = templateRect.pivot;
+            viewport.anchoredPosition = templateRect.anchoredPosition;
+            viewport.sizeDelta = templateRect.sizeDelta;
+            viewport.SetSiblingIndex(templateRect.GetSiblingIndex());
+        }
+
+        battleLogTemplateText.text = string.Empty;
+        battleLogTemplateText.enabled = false;
+        templateRect.SetParent(viewport, false);
+        templateRect.anchorMin = new Vector2(0f, 1f);
+        templateRect.anchorMax = new Vector2(0f, 1f);
+        templateRect.pivot = new Vector2(0f, 1f);
+        templateRect.anchoredPosition = Vector2.zero;
+        templateRect.sizeDelta = Vector2.zero;
+
+        var contentObject = new GameObject("Battle Log Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        contentObject.transform.SetParent(viewport, false);
+        battleLogContentRoot = contentObject.GetComponent<RectTransform>();
+        battleLogContentRoot.anchorMin = new Vector2(0f, 1f);
+        battleLogContentRoot.anchorMax = new Vector2(1f, 1f);
+        battleLogContentRoot.pivot = new Vector2(0.5f, 1f);
+        battleLogContentRoot.anchoredPosition = Vector2.zero;
+        battleLogContentRoot.sizeDelta = new Vector2(0f, 0f);
+
+        var layoutGroup = contentObject.GetComponent<VerticalLayoutGroup>();
+        layoutGroup.spacing = 14f;
+        layoutGroup.padding = new RectOffset(18, 18, 18, 18);
+        layoutGroup.childAlignment = TextAnchor.UpperLeft;
+        layoutGroup.childControlHeight = true;
+        layoutGroup.childControlWidth = true;
+        layoutGroup.childForceExpandHeight = false;
+        layoutGroup.childForceExpandWidth = true;
+
+        var sizeFitter = contentObject.GetComponent<ContentSizeFitter>();
+        sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        battleLogScrollRect = battleLogPanelRoot.GetComponent<ScrollRect>();
+        if (battleLogScrollRect == null)
+        {
+            battleLogScrollRect = battleLogPanelRoot.AddComponent<ScrollRect>();
+        }
+
+        battleLogScrollRect.viewport = viewport;
+        battleLogScrollRect.content = battleLogContentRoot;
+        battleLogScrollRect.horizontal = false;
+        battleLogScrollRect.vertical = true;
+        battleLogScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        battleLogScrollRect.scrollSensitivity = 40f;
+        battleLogScrollRect.inertia = true;
+        battleLogScrollRect.verticalNormalizedPosition = 1f;
+
+        var trackImage = FindComponent<Image>("Canvas/Battle Log Panel/Scroll Bar/Scroll Back");
+        if (trackImage != null)
+        {
+            battleLogScrollbarTrackRect = trackImage.rectTransform;
+        }
+
+        var handleRect = FindComponent<RectTransform>("Canvas/Battle Log Panel/Scroll Bar/Scroll");
+        var handleImage = FindComponent<Image>("Canvas/Battle Log Panel/Scroll Bar/Scroll");
+        if (handleRect != null)
+        {
+            battleLogScrollbarHandleRect = handleRect;
+            battleLogScrollbarHandleHeight = Mathf.Max(handleRect.sizeDelta.y, handleRect.rect.height);
+        }
+
+        if (battleLogScrollbar == null)
+        {
+            var scrollbarObject = FindGameObject("Canvas/Battle Log Panel/Scroll Bar");
+            if (scrollbarObject != null)
+            {
+                battleLogScrollbar = scrollbarObject.GetComponent<Scrollbar>();
+                if (battleLogScrollbar == null)
+                {
+                    battleLogScrollbar = scrollbarObject.AddComponent<Scrollbar>();
+                }
+
+                if (trackImage != null)
+                {
+                    battleLogScrollbar.targetGraphic = handleImage != null ? handleImage : trackImage;
+                }
+
+                if (handleRect != null)
+                {
+                    var slidingArea = EnsureBattleLogScrollbarSlidingArea();
+                    if (slidingArea != null && handleRect.parent != slidingArea)
+                    {
+                        handleRect.SetParent(slidingArea, false);
+                    }
+
+                    ConfigureBattleLogScrollbarHandleLayout(handleRect);
+                    battleLogScrollbarHandleRect = handleRect;
+                    battleLogScrollbar.handleRect = handleRect;
+                }
+
+                battleLogScrollbar.direction = Scrollbar.Direction.BottomToTop;
+                battleLogScrollbar.numberOfSteps = 0;
+                battleLogScrollbar.value = 1f;
+            }
+        }
+
+        var ensuredSlidingArea = EnsureBattleLogScrollbarSlidingArea();
+        if (battleLogScrollbarHandleRect != null && ensuredSlidingArea != null && battleLogScrollbarHandleRect.parent != ensuredSlidingArea)
+        {
+            battleLogScrollbarHandleRect.SetParent(ensuredSlidingArea, false);
+        }
+
+        if (battleLogScrollbar != null)
+        {
+            battleLogScrollbar.targetGraphic = handleImage != null ? handleImage : trackImage;
+            battleLogScrollbar.handleRect = battleLogScrollbarHandleRect;
+        }
+
+        if (battleLogScrollbarHandleRect != null)
+        {
+            ConfigureBattleLogScrollbarHandleLayout(battleLogScrollbarHandleRect);
+        }
+
+        if (battleLogScrollbar != null)
+        {
+            battleLogScrollbar.onValueChanged.RemoveListener(OnBattleLogScrollbarValueChanged);
+            battleLogScrollbar.onValueChanged.AddListener(OnBattleLogScrollbarValueChanged);
+        }
+
+        battleLogScrollRect.onValueChanged.RemoveListener(OnBattleLogScrollRectValueChanged);
+        battleLogScrollRect.onValueChanged.AddListener(OnBattleLogScrollRectValueChanged);
+        SyncBattleLogScrollbarHandle();
+    }
+
+    private void ConfigureBattleLogButtons()
+    {
+        if (battleLogOpenButton == null)
+        {
+            var openButtonObject = FindGameObject("Canvas/Battle Log Button");
+            if (openButtonObject != null)
+            {
+                battleLogOpenButton = openButtonObject.GetComponent<Button>();
+                if (battleLogOpenButton == null)
+                {
+                    battleLogOpenButton = openButtonObject.AddComponent<Button>();
+                }
+
+                var image = openButtonObject.GetComponent<Image>();
+                if (image != null)
+                {
+                    battleLogOpenButton.targetGraphic = image;
+                }
+            }
+        }
+
+        if (battleLogOpenButton != null)
+        {
+            battleLogOpenButton.onClick.RemoveAllListeners();
+            battleLogOpenButton.onClick.AddListener(OnBattleLogOpenButtonPressed);
+        }
+
+        if (battleLogCloseButton == null)
+        {
+            var closeButtonObject = FindGameObject("Canvas/Battle Log Panel/Close Button");
+            if (closeButtonObject != null)
+            {
+                battleLogCloseButton = closeButtonObject.GetComponent<Button>();
+                if (battleLogCloseButton == null)
+                {
+                    battleLogCloseButton = closeButtonObject.AddComponent<Button>();
+                }
+
+                var image = closeButtonObject.GetComponent<Image>();
+                if (image != null)
+                {
+                    battleLogCloseButton.targetGraphic = image;
+                }
+            }
+        }
+
+        if (battleLogCloseButton != null)
+        {
+            battleLogCloseButton.onClick.RemoveAllListeners();
+            battleLogCloseButton.onClick.AddListener(OnBattleLogCloseButtonPressed);
+        }
+    }
+
+    private void ClearBattleLog()
+    {
+        if (battleLogContentRoot == null)
+        {
+            return;
+        }
+
+        for (var index = battleLogContentRoot.childCount - 1; index >= 0; index--)
+        {
+            var child = battleLogContentRoot.GetChild(index);
+            child.SetParent(null, false);
+            Destroy(child.gameObject);
+        }
+
+        SyncBattleLogScrollbarHandle();
+    }
+
+    private void AddBattleLogMove(BattleLogDescriptor descriptor)
+    {
+        if (descriptor == null || battleLogContentRoot == null || !usingBattleSceneUi)
+        {
+            return;
+        }
+
+        var entry = CreateBattleLogEntryContainer();
+        var row = CreateBattleLogRow(entry.transform, "Entry");
+
+        if (descriptor.ShowActorIcon)
+        {
+            CreateBattleLogIcon(row.transform, ResolveBattleLogCharacterSprite(descriptor.ActorIsHero), descriptor.ActorIsHero ? "Hero" : "Monster");
+        }
+
+        if (!string.IsNullOrWhiteSpace(descriptor.PrefixText))
+        {
+            CreateBattleLogTextSegment(row.transform, descriptor.PrefixText);
+        }
+
+        if (!string.IsNullOrWhiteSpace(descriptor.MoveName))
+        {
+            CreateBattleLogTextSegment(row.transform, descriptor.MoveName);
+        }
+
+        if (descriptor.MoveSprite != null)
+        {
+            CreateBattleLogIcon(row.transform, descriptor.MoveSprite, descriptor.MoveName ?? "Move");
+        }
+
+        if (descriptor.ShowTargetIcon)
+        {
+            CreateBattleLogTextSegment(row.transform, "and");
+            CreateBattleLogIcon(row.transform, ResolveBattleLogCharacterSprite(descriptor.TargetIsHero), descriptor.TargetIsHero ? "Hero" : "Monster");
+        }
+
+        if (!string.IsNullOrWhiteSpace(descriptor.SuffixText))
+        {
+            CreateBattleLogTextSegment(row.transform, descriptor.SuffixText, true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(descriptor.SecondaryText) || descriptor.SecondaryDetailSprite != null || descriptor.ShowSecondaryTargetIcon)
+        {
+            var secondaryRow = CreateBattleLogRow(entry.transform, "Detail");
+
+            if (descriptor.ShowSecondaryTargetIcon)
+            {
+                CreateBattleLogIcon(
+                    secondaryRow.transform,
+                    ResolveBattleLogCharacterSprite(descriptor.SecondaryTargetIsHero),
+                    descriptor.SecondaryTargetIsHero ? "Hero" : "Monster");
+            }
+
+            if (descriptor.SecondaryDetailSprite != null)
+            {
+                CreateBattleLogIcon(secondaryRow.transform, descriptor.SecondaryDetailSprite, "Stat");
+            }
+
+            if (!string.IsNullOrWhiteSpace(descriptor.SecondaryText))
+            {
+                CreateBattleLogTextSegment(secondaryRow.transform, descriptor.SecondaryText, true);
+            }
+        }
+
+        ScrollBattleLogToLatest();
+    }
+
+    private GameObject CreateBattleLogEntryContainer()
+    {
+        var entry = new GameObject("Battle Log Item", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
+        entry.transform.SetParent(battleLogContentRoot, false);
+        entry.transform.SetAsFirstSibling();
+
+        var entryRect = entry.GetComponent<RectTransform>();
+        entryRect.anchorMin = new Vector2(0f, 1f);
+        entryRect.anchorMax = new Vector2(1f, 1f);
+        entryRect.pivot = new Vector2(0.5f, 1f);
+        entryRect.sizeDelta = Vector2.zero;
+
+        var layout = entry.GetComponent<VerticalLayoutGroup>();
+        layout.spacing = 4f;
+        layout.padding = new RectOffset(0, 0, 0, 0);
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.childControlHeight = true;
+        layout.childControlWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.childForceExpandWidth = true;
+
+        var fitter = entry.GetComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var element = entry.GetComponent<LayoutElement>();
+        element.flexibleWidth = 1f;
+
+        return entry;
+    }
+
+    private GameObject CreateBattleLogRow(Transform parent, string suffix)
+    {
+        var row = new GameObject($"Battle Log {suffix}", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
+        row.transform.SetParent(parent, false);
+
+        var rowRect = row.GetComponent<RectTransform>();
+        rowRect.anchorMin = new Vector2(0f, 1f);
+        rowRect.anchorMax = new Vector2(1f, 1f);
+        rowRect.pivot = new Vector2(0.5f, 1f);
+        rowRect.sizeDelta = Vector2.zero;
+
+        var layout = row.GetComponent<HorizontalLayoutGroup>();
+        layout.spacing = 10f;
+        layout.padding = new RectOffset(0, 0, 0, 0);
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlHeight = true;
+        layout.childControlWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.childForceExpandWidth = false;
+
+        var fitter = row.GetComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var element = row.GetComponent<LayoutElement>();
+        element.flexibleWidth = 1f;
+        element.minHeight = 42f;
+
+        return row;
+    }
+
+    private Image CreateBattleLogIcon(Transform parent, Sprite sprite, string iconName)
+    {
+        if (sprite == null)
+        {
+            return null;
+        }
+
+        var iconObject = new GameObject($"{iconName} Icon", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        iconObject.transform.SetParent(parent, false);
+
+        var image = iconObject.GetComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+
+        var layout = iconObject.GetComponent<LayoutElement>();
+        var iconSize = string.Equals(iconName, "Stat", StringComparison.OrdinalIgnoreCase) ? 32f : 42f;
+        layout.preferredWidth = iconSize;
+        layout.preferredHeight = iconSize;
+        layout.minWidth = iconSize;
+        layout.minHeight = iconSize;
+
+        return image;
+    }
+
+    private TMP_Text CreateBattleLogTextSegment(Transform parent, string text, bool flexibleWidth = false)
+    {
+        var textObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+        textObject.transform.SetParent(parent, false);
+
+        var segment = textObject.GetComponent<TextMeshProUGUI>();
+        segment.text = text;
+        segment.font = battleLogTemplateText.font;
+        segment.fontSharedMaterial = battleLogTemplateText.fontSharedMaterial;
+        segment.color = battleLogTemplateText.color;
+        segment.fontSize = 28f;
+        segment.enableAutoSizing = false;
+        segment.alignment = TextAlignmentOptions.MidlineLeft;
+        segment.textWrappingMode = flexibleWidth ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+        segment.overflowMode = TextOverflowModes.Overflow;
+        segment.raycastTarget = false;
+
+        var layout = textObject.GetComponent<LayoutElement>();
+        layout.flexibleWidth = flexibleWidth ? 1f : 0f;
+        layout.minWidth = 0f;
+
+        return segment;
+    }
+
+    private void ScrollBattleLogToLatest()
+    {
+        if (battleLogScrollRect == null || battleLogContentRoot == null)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(battleLogContentRoot);
+        battleLogScrollRect.verticalNormalizedPosition = 1f;
+        SyncBattleLogScrollbarHandle();
+    }
+
+    private void OnBattleLogScrollbarValueChanged(float value)
+    {
+        if (suppressBattleLogScrollbarCallbacks || battleLogScrollRect == null)
+        {
+            return;
+        }
+
+        battleLogScrollRect.verticalNormalizedPosition = Mathf.Clamp01(value);
+        SyncBattleLogScrollbarHandle();
+    }
+
+    private void OnBattleLogScrollRectValueChanged(Vector2 normalizedPosition)
+    {
+        SyncBattleLogScrollbarHandle(normalizedPosition.y);
+    }
+
+    private void SyncBattleLogScrollbarHandle()
+    {
+        SyncBattleLogScrollbarHandle(battleLogScrollRect != null ? battleLogScrollRect.verticalNormalizedPosition : 1f);
+    }
+
+    private void SyncBattleLogScrollbarHandle(float normalizedValue)
+    {
+        if (battleLogScrollbar == null)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(battleLogContentRoot);
+
+        var viewportHeight = battleLogScrollRect != null && battleLogScrollRect.viewport != null
+            ? battleLogScrollRect.viewport.rect.height
+            : 0f;
+        var contentHeight = battleLogContentRoot != null ? battleLogContentRoot.rect.height : 0f;
+        var needsScroll = contentHeight > viewportHeight + 1f;
+
+        battleLogScrollbar.gameObject.SetActive(needsScroll);
+        if (battleLogScrollbarTrackRect != null)
+        {
+            battleLogScrollbarTrackRect.gameObject.SetActive(needsScroll);
+        }
+
+        if (!needsScroll)
+        {
+            normalizedValue = 1f;
+        }
+
+        suppressBattleLogScrollbarCallbacks = true;
+        var trackHeight = battleLogScrollbarTrackRect != null ? battleLogScrollbarTrackRect.rect.height : 0f;
+        var handleHeight = GetBattleLogScrollbarHandleHeight();
+        battleLogScrollbar.size = trackHeight > 0f
+            ? Mathf.Clamp01(handleHeight / trackHeight)
+            : 1f;
+        battleLogScrollbar.SetValueWithoutNotify(Mathf.Clamp01(normalizedValue));
+        suppressBattleLogScrollbarCallbacks = false;
+
+        if (battleLogScrollbarHandleRect == null)
+        {
+            return;
+        }
+
+        ConfigureBattleLogScrollbarHandleLayout(battleLogScrollbarHandleRect);
+
+        var availableTravel = Mathf.Max(0f, trackHeight - handleHeight);
+        var anchoredY = -(1f - Mathf.Clamp01(normalizedValue)) * availableTravel;
+        battleLogScrollbarHandleRect.anchoredPosition = new Vector2(0f, anchoredY);
+    }
+
+    private void OnBattleLogOpenButtonPressed()
+    {
+        SetBattleLogVisible(true);
+    }
+
+    private void OnBattleLogCloseButtonPressed()
+    {
+        SetBattleLogVisible(false);
+    }
+
+    private void SetBattleLogVisible(bool visible)
+    {
+        battleLogVisible = visible;
+
+        if (battleLogPanelRoot != null)
+        {
+            battleLogPanelRoot.SetActive(visible);
+            if (visible)
+            {
+                battleLogPanelRoot.transform.SetAsLastSibling();
+            }
+        }
+
+        if (battleLogCloseButton != null)
+        {
+            battleLogCloseButton.gameObject.SetActive(visible);
+            if (visible)
+            {
+                battleLogCloseButton.transform.SetAsLastSibling();
+            }
+        }
+
+        if (battleLogOpenButton != null)
+        {
+            battleLogOpenButton.gameObject.SetActive(!visible);
+            if (!visible)
+            {
+                battleLogOpenButton.transform.SetAsLastSibling();
+            }
+        }
+
+        if (visible)
+        {
+            ScrollBattleLogToLatest();
+        }
+    }
+
+    private Sprite ResolveBattleLogCharacterSprite(bool isHero)
+    {
+        var spriteKey = isHero ? ResolveHeroSpriteKey() : ResolveMonsterSpriteKey();
+        var spriteKind = isHero ? CharacterSpriteKind.Hero : CharacterSpriteKind.Monster;
+        var frames = SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Idle, spriteKind);
+        return frames.FirstOrDefault(sprite => sprite != null);
+    }
+
+    private Sprite ResolveBattleLogStatSprite(string statName)
+    {
+        if (string.Equals(statName, "magic", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
+        }
+
+        if (string.Equals(statName, "defense", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectDefenseIcon?.sprite ?? monsterEffectDefenseIcon?.sprite;
+        }
+
+        return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
+    }
+
+    private static string BuildBattleLogDamageSummary(Move move, int damage, bool continueSentence = false)
+    {
+        var damageKind = string.Equals(move?.type, "magic", StringComparison.OrdinalIgnoreCase)
+            ? "magic damage"
+            : "damage";
+        return continueSentence
+            ? $"dealt {damage} {damageKind},"
+            : $"dealt {damage} {damageKind}.";
+    }
+
+    private static string BuildModifierBattleLogSummary(StatModifier modifier)
+    {
+        if (modifier == null)
+        {
+            return "effect applied.";
+        }
+
+        var statName = string.IsNullOrWhiteSpace(modifier.stat) ? "stat" : modifier.stat;
+        var label = statName.ToLowerInvariant();
+        var signedAmount = modifier.value >= 0 ? $"+{modifier.value}" : modifier.value.ToString();
+        var turns = Mathf.Max(1, modifier.durationTurns);
+        var turnLabel = turns == 1 ? "turn" : "turns";
+        return $"{label} {signedAmount} for {turns} {turnLabel}.";
+    }
+
+    private RectTransform EnsureBattleLogScrollbarSlidingArea()
+    {
+        if (battleLogScrollbarTrackRect == null)
+        {
+            return null;
+        }
+
+        if (battleLogScrollbarSlidingAreaRect != null)
+        {
+            return battleLogScrollbarSlidingAreaRect;
+        }
+
+        Transform existingChild = null;
+        for (var index = 0; index < battleLogScrollbarTrackRect.childCount; index++)
+        {
+            var child = battleLogScrollbarTrackRect.GetChild(index);
+            if (child.name == "Sliding Area")
+            {
+                existingChild = child;
+                break;
+            }
+        }
+
+        if (existingChild == null)
+        {
+            var slidingAreaObject = new GameObject("Sliding Area", typeof(RectTransform));
+            slidingAreaObject.transform.SetParent(battleLogScrollbarTrackRect, false);
+            existingChild = slidingAreaObject.transform;
+        }
+
+        battleLogScrollbarSlidingAreaRect = existingChild as RectTransform;
+        if (battleLogScrollbarSlidingAreaRect == null)
+        {
+            return null;
+        }
+
+        battleLogScrollbarSlidingAreaRect.anchorMin = Vector2.zero;
+        battleLogScrollbarSlidingAreaRect.anchorMax = Vector2.one;
+        battleLogScrollbarSlidingAreaRect.pivot = new Vector2(0.5f, 0.5f);
+        battleLogScrollbarSlidingAreaRect.offsetMin = Vector2.zero;
+        battleLogScrollbarSlidingAreaRect.offsetMax = Vector2.zero;
+
+        return battleLogScrollbarSlidingAreaRect;
+    }
+
+    private void ConfigureBattleLogScrollbarHandleLayout(RectTransform handleRect)
+    {
+        if (handleRect == null)
+        {
+            return;
+        }
+
+        var handleHeight = GetBattleLogScrollbarHandleHeight();
+        handleRect.anchorMin = new Vector2(0f, 1f);
+        handleRect.anchorMax = new Vector2(1f, 1f);
+        handleRect.pivot = new Vector2(0.5f, 1f);
+        handleRect.offsetMin = new Vector2(0f, -handleHeight);
+        handleRect.offsetMax = new Vector2(0f, 0f);
+    }
+
+    private float GetBattleLogScrollbarHandleHeight()
+    {
+        if (battleLogScrollbarHandleHeight <= 0f && battleLogScrollbarHandleRect != null)
+        {
+            battleLogScrollbarHandleHeight = Mathf.Max(battleLogScrollbarHandleRect.sizeDelta.y, battleLogScrollbarHandleRect.rect.height);
+        }
+
+        return Mathf.Max(1f, battleLogScrollbarHandleHeight);
     }
 
     private static Text CreateUiText(string name, Transform parent, Font font, int fontSize, TextAnchor anchor)
