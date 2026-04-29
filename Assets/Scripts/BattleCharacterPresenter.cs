@@ -52,8 +52,8 @@ public class BattleCharacterPresenter : MonoBehaviour
     private Coroutine attackMotionRoutine;
     private RectTransform cachedRectTransform;
     private RectTransform cachedMotionRect;
-    private Vector3 homeWorldPosition;
-    private bool hasHomeWorldPosition;
+    private Vector3 homeMotionPosition;
+    private bool hasHomeMotionPosition;
 
     private void Reset()
     {
@@ -119,10 +119,10 @@ public class BattleCharacterPresenter : MonoBehaviour
             cachedMotionRect = motionRoot != null ? motionRoot : cachedRectTransform;
         }
 
-        if (cachedMotionRect != null && !hasHomeWorldPosition)
+        if (cachedMotionRect != null && !hasHomeMotionPosition)
         {
-            homeWorldPosition = cachedMotionRect.position;
-            hasHomeWorldPosition = true;
+            homeMotionPosition = GetMotionPosition();
+            hasHomeMotionPosition = true;
         }
     }
 
@@ -215,8 +215,8 @@ public class BattleCharacterPresenter : MonoBehaviour
 
         StopTransientAnimation();
 
-        homeWorldPosition = cachedMotionRect.position;
-        hasHomeWorldPosition = true;
+        homeMotionPosition = GetMotionPosition();
+        hasHomeMotionPosition = true;
 
         var targetPosition = CalculateAttackTargetPosition(targetPresenter);
         var attackDuration = Mathf.Max(0.05f, GetAnimationDuration(attackState));
@@ -253,13 +253,13 @@ public class BattleCharacterPresenter : MonoBehaviour
             return;
         }
 
-        if (!hasHomeWorldPosition)
+        if (!hasHomeMotionPosition)
         {
-            homeWorldPosition = cachedMotionRect.position;
-            hasHomeWorldPosition = true;
+            homeMotionPosition = GetMotionPosition();
+            hasHomeMotionPosition = true;
         }
 
-        cachedMotionRect.position = homeWorldPosition;
+        SetMotionPosition(homeMotionPosition);
     }
 
     public void SetVisualStateFrame(BattleAnimationState state, bool useLastFrame)
@@ -300,8 +300,8 @@ public class BattleCharacterPresenter : MonoBehaviour
 
         StopTransientAnimation();
 
-        homeWorldPosition = cachedMotionRect.position;
-        hasHomeWorldPosition = true;
+        homeMotionPosition = GetMotionPosition();
+        hasHomeMotionPosition = true;
 
         var targetPosition = CalculateAttackTargetPosition(targetPresenter);
         var impactDelay = Mathf.Max(0.01f, attackAdvanceDuration);
@@ -331,12 +331,12 @@ public class BattleCharacterPresenter : MonoBehaviour
         }
 
         StopTransientAnimation();
-        homeWorldPosition = cachedMotionRect.position;
-        hasHomeWorldPosition = true;
+        homeMotionPosition = GetMotionPosition();
+        hasHomeMotionPosition = true;
 
         var travelDuration = Mathf.Max(0.01f, attackAdvanceDuration);
         attackMotionRoutine = StartCoroutine(PlayMoveToOffsetRoutine(
-            homeWorldPosition + worldOffset,
+            homeMotionPosition + worldOffset,
             travelDuration,
             moveState,
             endState));
@@ -454,9 +454,9 @@ public class BattleCharacterPresenter : MonoBehaviour
             attackMotionRoutine = null;
         }
 
-        if (cachedMotionRect != null && hasHomeWorldPosition)
+        if (cachedMotionRect != null && hasHomeMotionPosition)
         {
-            cachedMotionRect.position = homeWorldPosition;
+            SetMotionPosition(homeMotionPosition);
         }
     }
 
@@ -479,11 +479,11 @@ public class BattleCharacterPresenter : MonoBehaviour
 
         currentState = moveState;
         ApplyPresentation();
-        yield return MoveToPosition(homeWorldPosition, returnDuration);
+        yield return MoveToPosition(homeMotionPosition, returnDuration);
 
         if (cachedMotionRect != null)
         {
-            cachedMotionRect.position = homeWorldPosition;
+            SetMotionPosition(homeMotionPosition);
         }
 
         currentState = returnState;
@@ -498,10 +498,10 @@ public class BattleCharacterPresenter : MonoBehaviour
             yield break;
         }
 
-        var startPosition = cachedMotionRect.position;
+        var startPosition = GetMotionPosition();
         if (duration <= 0f)
         {
-            cachedMotionRect.position = targetPosition;
+            SetMotionPosition(targetPosition);
             yield break;
         }
 
@@ -511,22 +511,22 @@ public class BattleCharacterPresenter : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             var progress = Mathf.Clamp01(elapsed / duration);
             var easedProgress = 1f - Mathf.Pow(1f - progress, 3f);
-            cachedMotionRect.position = Vector3.LerpUnclamped(startPosition, targetPosition, easedProgress);
+            SetMotionPosition(Vector3.LerpUnclamped(startPosition, targetPosition, easedProgress));
             yield return null;
         }
 
-        cachedMotionRect.position = targetPosition;
+        SetMotionPosition(targetPosition);
     }
 
     private Vector3 CalculateAttackTargetPosition(BattleCharacterPresenter targetPresenter)
     {
         if (cachedMotionRect == null || targetPresenter == null || targetPresenter.cachedMotionRect == null)
         {
-            return hasHomeWorldPosition ? homeWorldPosition : transform.position;
+            return hasHomeMotionPosition ? homeMotionPosition : GetMotionPosition();
         }
 
-        var startPosition = homeWorldPosition;
-        var targetPosition = targetPresenter.cachedMotionRect.position;
+        var startPosition = homeMotionPosition;
+        var targetPosition = ConvertToMotionSpace(targetPresenter.cachedMotionRect);
         var direction = targetPosition - startPosition;
         var distance = direction.magnitude;
         if (distance <= 0.01f)
@@ -537,6 +537,49 @@ public class BattleCharacterPresenter : MonoBehaviour
         var stopDistance = Mathf.Clamp(attackStopDistance, 0f, Mathf.Max(0f, distance - 1f));
         var attackDistance = Mathf.Max(0f, distance - stopDistance);
         return startPosition + direction.normalized * attackDistance;
+    }
+
+    private Vector3 GetMotionPosition()
+    {
+        if (cachedMotionRect == null)
+        {
+            return Vector3.zero;
+        }
+
+        return cachedMotionRect.parent is RectTransform ? cachedMotionRect.anchoredPosition3D : cachedMotionRect.position;
+    }
+
+    private void SetMotionPosition(Vector3 position)
+    {
+        if (cachedMotionRect == null)
+        {
+            return;
+        }
+
+        if (cachedMotionRect.parent is RectTransform)
+        {
+            cachedMotionRect.anchoredPosition3D = position;
+            return;
+        }
+
+        cachedMotionRect.position = position;
+    }
+
+    private Vector3 ConvertToMotionSpace(RectTransform sourceRect)
+    {
+        if (cachedMotionRect == null || sourceRect == null)
+        {
+            return GetMotionPosition();
+        }
+
+        if (cachedMotionRect.parent is RectTransform parentRect)
+        {
+            var targetWorldPosition = sourceRect.position;
+            var localPosition = parentRect.InverseTransformPoint(targetWorldPosition);
+            return new Vector3(localPosition.x, localPosition.y, cachedMotionRect.anchoredPosition3D.z);
+        }
+
+        return sourceRect.position;
     }
 
     private static bool ShouldLoopState(BattleAnimationState state)

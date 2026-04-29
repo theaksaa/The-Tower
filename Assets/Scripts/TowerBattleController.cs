@@ -149,6 +149,12 @@ public class TowerBattleController : MonoBehaviour
     private RectTransform monsterRootRect;
     private RectTransform heroCharacterRect;
     private RectTransform monsterCharacterRect;
+    private ParticleSystem heroHealParticleSystem;
+    private ParticleSystem monsterHealParticleSystem;
+    private Texture heroParticleDefaultTexture;
+    private Texture monsterParticleDefaultTexture;
+    private ParticleSystem.MinMaxGradient heroParticleDefaultColor;
+    private ParticleSystem.MinMaxGradient monsterParticleDefaultColor;
 
     private RunConfig runConfig;
     private Monster currentMonster;
@@ -380,6 +386,7 @@ public class TowerBattleController : MonoBehaviour
     {
         AutoBindScene();
         CreateRuntimeHud();
+        PrepareHealParticleSystems();
         StartCoroutine(BootstrapEncounter());
     }
 
@@ -541,10 +548,17 @@ public class TowerBattleController : MonoBehaviour
         SetStatus($"Hero prepares {move.name}...");
         var heroRecoveryDelay = 0f;
         var heroImpactDelay = PlayActorAnimation(actorIsHero: true, move, out heroRecoveryDelay);
+        PlayMoveStartEffects(actorIsHero: true, move);
         RefreshAllUi();
 
-        var heroActionDelay = heroImpactDelay > 0f ? heroImpactDelay : heroAttackDelay;
-        if (heroActionDelay > 0f)
+        var resolveMoveImmediately = ShouldResolveMoveImmediately(move);
+        var heroActionDelay = heroImpactDelay > 0f
+            ? heroImpactDelay
+            : resolveMoveImmediately
+                ? 0f
+                : heroAttackDelay;
+
+        if (!resolveMoveImmediately && heroActionDelay > 0f)
         {
             yield return new WaitForSeconds(heroActionDelay);
         }
@@ -555,6 +569,11 @@ public class TowerBattleController : MonoBehaviour
         SetStatus(heroTurnSummary);
         RefreshAllUi();
 
+        if (resolveMoveImmediately && heroRecoveryDelay > 0f)
+        {
+            yield return new WaitForSeconds(heroRecoveryDelay);
+        }
+
         if (currentMonsterHp <= 0)
         {
             HandleVictory(heroTurnSummary);
@@ -562,7 +581,9 @@ public class TowerBattleController : MonoBehaviour
             yield break;
         }
 
-        var monsterReactionDelay = Mathf.Max(GetReactionAnimationDelay(actorIsHero: true, move), heroRecoveryDelay);
+        var monsterReactionDelay = resolveMoveImmediately
+            ? GetReactionAnimationDelay(actorIsHero: true, move)
+            : Mathf.Max(GetReactionAnimationDelay(actorIsHero: true, move), heroRecoveryDelay);
         if (monsterReactionDelay > 0f)
         {
             yield return new WaitForSeconds(monsterReactionDelay);
@@ -584,6 +605,7 @@ public class TowerBattleController : MonoBehaviour
         SetStatus($"{heroTurnSummary}\n{currentMonster.name} prepares {monsterResponse.move?.name ?? "an attack"}...");
         var monsterRecoveryDelay = 0f;
         var monsterImpactDelay = PlayActorAnimation(actorIsHero: false, monsterResponse.move, out monsterRecoveryDelay);
+        PlayMoveStartEffects(actorIsHero: false, monsterResponse.move);
 
         var monsterActionDelay = monsterImpactDelay > 0f ? monsterImpactDelay : monsterAttackDelay;
         if (monsterActionDelay > 0f)
@@ -839,6 +861,11 @@ public class TowerBattleController : MonoBehaviour
 
     private void ApplyHeal(bool targetIsHero, int amount)
     {
+        if (amount <= 0)
+        {
+            return;
+        }
+
         if (targetIsHero)
         {
             hero.CurrentHp = Mathf.Min(GetHeroBaseStats().health, hero.CurrentHp + amount);
@@ -1780,7 +1807,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void SetCurrentMoveStatsVisible(bool visible)
     {
-        if (currentMoveStatsRoot == null)
+        if (currentMoveStatsRoot == null || !isActiveAndEnabled || !gameObject.activeInHierarchy)
         {
             return;
         }
@@ -2791,8 +2818,12 @@ public class TowerBattleController : MonoBehaviour
     private void AutoBindScene()
     {
         canvasRect = FindComponent<RectTransform>("Canvas");
-        heroRootRect = FindComponent<RectTransform>("Canvas/Hero") ?? FindComponent<RectTransform>("Hero");
-        monsterRootRect = FindComponent<RectTransform>("Canvas/Monster") ?? FindComponent<RectTransform>("Monster");
+        heroRootRect = FindComponent<RectTransform>("Canvas/Hero UI/Hero") ??
+                       FindComponent<RectTransform>("Canvas/Hero") ??
+                       FindComponent<RectTransform>("Hero");
+        monsterRootRect = FindComponent<RectTransform>("Canvas/Monster UI/Monster") ??
+                          FindComponent<RectTransform>("Canvas/Monster") ??
+                          FindComponent<RectTransform>("Monster");
         heroNameText = FindComponent<TMP_Text>("Canvas/Hero/Hero Name") ??
                        FindComponent<TMP_Text>("Hero/Hero Name");
         monsterNameText = FindComponent<TMP_Text>("Canvas/Monster/Monster Name") ??
@@ -2809,6 +2840,10 @@ public class TowerBattleController : MonoBehaviour
         monsterUiAnimator = monsterCharacterPresenter != null ? monsterCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
         heroCharacterRect = heroCharacterPresenter != null ? heroCharacterPresenter.GetComponent<RectTransform>() : null;
         monsterCharacterRect = monsterCharacterPresenter != null ? monsterCharacterPresenter.GetComponent<RectTransform>() : null;
+        heroHealParticleSystem = FindComponent<ParticleSystem>("Main Camera/Hero Heal Hearts") ??
+                                 FindComponent<ParticleSystem>("Hero Heal Hearts");
+        monsterHealParticleSystem = FindComponent<ParticleSystem>("Main Camera/Monster Heal Hearts") ??
+                                    FindComponent<ParticleSystem>("Monster Heal Hearts");
         endPanelRoot = FindGameObject("Canvas/End Panel");
         defeatPanelRoot = FindGameObject("Canvas/Defeat Panel");
         monsterDropsRoot = FindComponent<RectTransform>("Canvas/Monster Drops");
@@ -2986,6 +3021,157 @@ public class TowerBattleController : MonoBehaviour
         UpdateMoveHoverSelectors();
     }
 
+    private void PrepareHealParticleSystems()
+    {
+        EnsureParticleRendererMaterialInstance(
+            heroHealParticleSystem,
+            ref heroParticleDefaultTexture,
+            ref heroParticleDefaultColor);
+        EnsureParticleRendererMaterialInstance(
+            monsterHealParticleSystem,
+            ref monsterParticleDefaultTexture,
+            ref monsterParticleDefaultColor);
+
+        if (heroHealParticleSystem != null)
+        {
+            heroHealParticleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        if (monsterHealParticleSystem != null)
+        {
+            monsterHealParticleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+    }
+
+    private void PlayHealParticleEffect(bool targetIsHero)
+    {
+        PlayParticleEffect(
+            targetIsHero,
+            defaultTexture: targetIsHero ? heroParticleDefaultTexture : monsterParticleDefaultTexture,
+            startColor: targetIsHero ? heroParticleDefaultColor : monsterParticleDefaultColor);
+    }
+
+    private void PlayModifierParticleEffect(bool targetIsHero, StatModifier modifier, Color particleColor)
+    {
+        if (modifier == null || modifier.value == 0)
+        {
+            return;
+        }
+
+        var iconSprite = ResolveStatParticleSprite(modifier.stat);
+        if (iconSprite == null)
+        {
+            return;
+        }
+
+        PlayParticleEffect(targetIsHero, iconSprite.texture, particleColor);
+    }
+
+    private void PlayParticleEffect(
+        bool targetIsHero,
+        Texture defaultTexture = null,
+        Color? particleColor = null,
+        ParticleSystem.MinMaxGradient? startColor = null)
+    {
+        var particleSystem = targetIsHero ? heroHealParticleSystem : monsterHealParticleSystem;
+        if (particleSystem == null)
+        {
+            return;
+        }
+
+        var renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+        if (renderer != null && renderer.material != null)
+        {
+            renderer.material.mainTexture = defaultTexture;
+        }
+
+        var main = particleSystem.main;
+        main.startColor = startColor ?? new ParticleSystem.MinMaxGradient(particleColor ?? Color.white);
+
+        particleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        particleSystem.Play(withChildren: true);
+    }
+
+    private static void EnsureParticleRendererMaterialInstance(
+        ParticleSystem particleSystem,
+        ref Texture defaultTexture,
+        ref ParticleSystem.MinMaxGradient defaultColor)
+    {
+        if (particleSystem == null)
+        {
+            return;
+        }
+
+        var renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+        if (renderer == null || renderer.sharedMaterial == null)
+        {
+            return;
+        }
+
+        renderer.material = new Material(renderer.sharedMaterial);
+        defaultTexture = renderer.material.mainTexture;
+        defaultColor = particleSystem.main.startColor;
+    }
+
+    private Sprite ResolveStatParticleSprite(string statName)
+    {
+        if (string.Equals(statName, "magic", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
+        }
+
+        if (string.Equals(statName, "defense", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectDefenseIcon?.sprite ?? monsterEffectDefenseIcon?.sprite;
+        }
+
+        if (string.Equals(statName, "attack", StringComparison.OrdinalIgnoreCase))
+        {
+            return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
+        }
+
+        return null;
+    }
+
+    private void PlayMoveStartEffects(bool actorIsHero, Move move)
+    {
+        if (move?.effect == "heal")
+        {
+            PlayHealParticleEffect(actorIsHero);
+            return;
+        }
+
+        if ((move?.effect == "stat_modifier" || move?.effect == "damage_and_stat_modifier") &&
+            move.statModifier != null &&
+            move.statModifier.value != 0)
+        {
+            var targetIsHero = move.target == "self" ? actorIsHero : !actorIsHero;
+            var particleColor = ResolveModifierParticleColor(actorIsHero, move, move.statModifier);
+            PlayModifierParticleEffect(targetIsHero, move.statModifier, particleColor);
+        }
+    }
+
+    private Color ResolveModifierParticleColor(bool actorIsHero, Move move, StatModifier modifier)
+    {
+        if (modifier == null)
+        {
+            return Color.white;
+        }
+
+        var targetIsHero = move.target == "self" ? actorIsHero : !actorIsHero;
+        if (targetIsHero == actorIsHero && modifier.value > 0)
+        {
+            return buffEffectColor;
+        }
+
+        if (targetIsHero != actorIsHero && modifier.value < 0)
+        {
+            return debuffEffectColor;
+        }
+
+        return modifier.value > 0 ? buffEffectColor : debuffEffectColor;
+    }
+
     private void ConfigureBattlePresenters()
     {
         if (heroCharacterPresenter != null)
@@ -3063,7 +3249,15 @@ public class TowerBattleController : MonoBehaviour
         }
 
         actorPresenter.PlayTemporaryState(actorState, returnState: BattleAnimationState.Idle);
+        recoveryDelay = actorPresenter.GetStateDuration(actorState);
         return 0f;
+    }
+
+    private static bool ShouldResolveMoveImmediately(Move move)
+    {
+        // Healing should respect the same turn pacing as other moves so the
+        // next action does not begin before the move animation has time to read.
+        return false;
     }
 
     private void PlayReactionAnimation(bool actorIsHero, Move move)
