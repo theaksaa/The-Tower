@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -8,31 +10,176 @@ using UnityEditor;
 
 public class MainMenuController : MonoBehaviour
 {
-    [SerializeField] private string battleSceneName = "HeroSelectScene";
-    [SerializeField] private string statusMessage = "Settings are not implemented yet.";
-    [SerializeField] private float buttonHeight = 88f;
+    [SerializeField] private string startGameSceneName = "StartGameScene";
+    [SerializeField] private Sprite pressedButtonSprite;
+    [SerializeField] private Color buttonHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
+    [SerializeField] private Color buttonPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
+    [SerializeField] private Vector2 pressedButtonTextOffset = new(0f, -6f);
 
     private Button startGameButton;
     private Button settingsButton;
     private Button exitButton;
-    private Text statusText;
+
+    private sealed class PressedButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+    {
+        private Button button;
+        private Image backgroundImage;
+        private RectTransform labelRect;
+        private TMP_Text labelText;
+        private Sprite normalSprite;
+        private Sprite pressedSprite;
+        private Color normalColor;
+        private Color disabledColor;
+        private Color labelNormalColor;
+        private Color hoverColor;
+        private Color pressedColor;
+        private Vector2 labelBasePosition;
+        private Vector2 pressedLabelOffset;
+        private bool isHovered;
+        private bool isPressed;
+        private bool wasInteractable;
+
+        public void Initialize(
+            Button targetButton,
+            Image targetImage,
+            RectTransform targetLabelRect,
+            Sprite targetPressedSprite,
+            Color targetHoverColor,
+            Color targetPressedColor,
+            Vector2 targetPressedLabelOffset)
+        {
+            button = targetButton;
+            backgroundImage = targetImage;
+            labelRect = targetLabelRect;
+            labelText = targetLabelRect != null ? targetLabelRect.GetComponent<TMP_Text>() : null;
+            pressedSprite = targetPressedSprite;
+            hoverColor = targetHoverColor;
+            pressedColor = targetPressedColor;
+            pressedLabelOffset = targetPressedLabelOffset;
+            disabledColor = targetButton != null ? targetButton.colors.disabledColor : new Color(0.78431374f, 0.78431374f, 0.78431374f, 0.5019608f);
+
+            if (backgroundImage != null)
+            {
+                normalSprite = backgroundImage.sprite;
+                normalColor = backgroundImage.color;
+            }
+
+            if (labelRect != null)
+            {
+                labelBasePosition = labelRect.anchoredPosition;
+            }
+
+            if (labelText != null)
+            {
+                labelNormalColor = labelText.color;
+            }
+
+            wasInteractable = button == null || button.IsInteractable();
+            ApplyVisualState();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (button == null || !button.IsInteractable())
+            {
+                return;
+            }
+
+            isPressed = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        private void LateUpdate()
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var isInteractable = button.IsInteractable();
+            if (isInteractable == wasInteractable)
+            {
+                return;
+            }
+
+            wasInteractable = isInteractable;
+            if (!isInteractable)
+            {
+                isHovered = false;
+                isPressed = false;
+            }
+
+            ApplyVisualState();
+        }
+
+        private void ApplyVisualState()
+        {
+            var isInteractable = button == null || button.IsInteractable();
+
+            if (backgroundImage != null)
+            {
+                backgroundImage.sprite = isInteractable && isPressed && pressedSprite != null ? pressedSprite : normalSprite;
+                backgroundImage.color = !isInteractable
+                    ? disabledColor
+                    : isPressed
+                        ? pressedColor
+                        : isHovered ? hoverColor : normalColor;
+            }
+
+            if (labelRect != null)
+            {
+                labelRect.anchoredPosition = labelBasePosition + (isInteractable && isPressed ? pressedLabelOffset : Vector2.zero);
+            }
+
+            if (labelText != null)
+            {
+                labelText.color = isInteractable ? labelNormalColor : disabledColor;
+            }
+        }
+    }
 
     private void Awake()
     {
-        ConfigureMenuLayout();
         AutoBindScene();
         BindButtons();
-        SetStatus(string.Empty);
+        ConfigurePressedButtonFeedback(startGameButton);
+        ConfigurePressedButtonFeedback(settingsButton);
+        ConfigurePressedButtonFeedback(exitButton);
     }
 
     public void StartGame()
     {
-        SceneManager.LoadScene(battleSceneName);
+        SceneManager.LoadScene(startGameSceneName);
     }
 
     public void OpenSettings()
     {
-        SetStatus(statusMessage);
     }
 
     public void ExitGame()
@@ -46,10 +193,9 @@ public class MainMenuController : MonoBehaviour
 
     private void AutoBindScene()
     {
-        startGameButton = FindButton("StartGameButton");
-        settingsButton = FindButton("SettingsButton");
-        exitButton = FindButton("ExitButton");
-        statusText = FindText("StatusText");
+        startGameButton = FindButton("Start Game Button", "StartGameButton");
+        settingsButton = FindButton("Settings Button", "SettingsButton");
+        exitButton = FindButton("Exit Button", "ExitButton");
     }
 
     private void BindButtons()
@@ -59,7 +205,7 @@ public class MainMenuController : MonoBehaviour
         BindButton(exitButton, ExitGame);
     }
 
-    private void BindButton(Button button, UnityEngine.Events.UnityAction action)
+    private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
     {
         if (button == null)
         {
@@ -70,74 +216,55 @@ public class MainMenuController : MonoBehaviour
         button.onClick.AddListener(action);
     }
 
-    private Button FindButton(string objectName)
+    private void ConfigurePressedButtonFeedback(Button button)
     {
-        var target = GameObject.Find(objectName);
-        return target != null ? target.GetComponent<Button>() : null;
-    }
-
-    private Text FindText(string objectName)
-    {
-        var target = GameObject.Find(objectName);
-        return target != null ? target.GetComponent<Text>() : null;
-    }
-
-    private void SetStatus(string message)
-    {
-        if (statusText != null)
-        {
-            statusText.text = message;
-        }
-    }
-
-    private void ConfigureMenuLayout()
-    {
-        var panelObject = GameObject.Find("ButtonPanel");
-        if (panelObject == null)
+        if (button == null)
         {
             return;
         }
 
-        var layout = panelObject.GetComponent<VerticalLayoutGroup>();
-        if (layout != null)
+        button.transition = Selectable.Transition.None;
+
+        var buttonImage = button.targetGraphic as Image ?? button.GetComponent<Image>();
+        if (buttonImage != null)
         {
-            layout.childControlWidth = true;
-            layout.childForceExpandWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandHeight = false;
+            button.targetGraphic = buttonImage;
         }
 
-        ConfigureButtonRect("StartGameButton");
-        ConfigureButtonRect("SettingsButton");
-        ConfigureButtonRect("ExitButton");
+        var labelRect = button.GetComponentInChildren<TMP_Text>()?.rectTransform;
+        var feedback = button.GetComponent<PressedButtonFeedback>();
+        if (feedback == null)
+        {
+            feedback = button.gameObject.AddComponent<PressedButtonFeedback>();
+        }
+
+        feedback.Initialize(
+            button,
+            buttonImage,
+            labelRect,
+            pressedButtonSprite,
+            buttonHoverTint,
+            buttonPressedTint,
+            pressedButtonTextOffset);
     }
 
-    private void ConfigureButtonRect(string objectName)
+    private static Button FindButton(params string[] objectNames)
     {
-        var target = GameObject.Find(objectName);
-        if (target == null)
+        foreach (var objectName in objectNames)
         {
-            return;
+            var target = GameObject.Find(objectName);
+            if (target == null)
+            {
+                continue;
+            }
+
+            var button = target.GetComponent<Button>();
+            if (button != null)
+            {
+                return button;
+            }
         }
 
-        var rect = target.GetComponent<RectTransform>();
-        if (rect != null)
-        {
-            rect.anchorMin = new Vector2(0f, rect.anchorMin.y);
-            rect.anchorMax = new Vector2(1f, rect.anchorMax.y);
-            rect.offsetMin = new Vector2(0f, rect.offsetMin.y);
-            rect.offsetMax = new Vector2(0f, rect.offsetMax.y);
-            rect.sizeDelta = new Vector2(0f, buttonHeight);
-        }
-
-        var layoutElement = target.GetComponent<LayoutElement>();
-        if (layoutElement == null)
-        {
-            layoutElement = target.AddComponent<LayoutElement>();
-        }
-
-        layoutElement.minHeight = buttonHeight;
-        layoutElement.preferredHeight = buttonHeight;
-        layoutElement.flexibleWidth = 1f;
+        return null;
     }
 }

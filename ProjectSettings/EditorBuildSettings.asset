@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: 45ccec009f514e94c9f5e6c9c7bffd7e
   - enabled: 1
+    path: Assets/Scenes/StartGameScene.unity
+    guid: 1d3a0f41cc03fce48a6b5a168c7adfa5
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   - enabled: 1
@@ -16,7 +19,7 @@ EditorBuildSettings:
     guid: 7dd9a91820e6795468590fb74d45b6b0
   - enabled: 1
     path: Assets/Scenes/RunOverviewScene2.unity
-    guid: 06ebc176966bc9547bb4276720913dfa
+    guid: aec898a05bab54f4985f67baa7707b54
   - enabled: 1
     path: Assets/Scenes/BattleScene.unity
     guid: b5c2aa7493ef1d8408f0d803807c1b8a
