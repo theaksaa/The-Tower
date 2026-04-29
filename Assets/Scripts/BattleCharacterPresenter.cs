@@ -12,6 +12,18 @@ using UnityEditor;
 [RequireComponent(typeof(UiSpriteSheetAnimator))]
 public class BattleCharacterPresenter : MonoBehaviour
 {
+    public readonly struct AttackMotionTiming
+    {
+        public AttackMotionTiming(float impactDelay, float totalDuration)
+        {
+            ImpactDelay = Mathf.Max(0f, impactDelay);
+            TotalDuration = Mathf.Max(0f, totalDuration);
+        }
+
+        public float ImpactDelay { get; }
+        public float TotalDuration { get; }
+    }
+
     [Header("Animation Source")]
     [SerializeField] private Texture2D spriteSheetTexture;
     [SerializeField] private Sprite[] animationFrames;
@@ -25,12 +37,21 @@ public class BattleCharacterPresenter : MonoBehaviour
     [SerializeField] private bool preserveAspect = true;
     [SerializeField] private Color tint = Color.white;
 
+    [Header("Attack Motion")]
+    [SerializeField] private float attackAdvanceDuration = 1.5f;
+    [SerializeField] private float attackReturnDuration = 1.7f;
+    [SerializeField] private float attackStopDistance = 140f;
+
     [Header("References")]
     [SerializeField] private Image targetImage;
     [SerializeField] private UiSpriteSheetAnimator spriteAnimator;
 
     private BattleAnimationState currentState;
     private Coroutine temporaryStateRoutine;
+    private Coroutine attackMotionRoutine;
+    private RectTransform cachedRectTransform;
+    private Vector3 homeWorldPosition;
+    private bool hasHomeWorldPosition;
 
     private void Reset()
     {
@@ -71,6 +92,11 @@ public class BattleCharacterPresenter : MonoBehaviour
 
     private void CacheReferences()
     {
+        if (cachedRectTransform == null)
+        {
+            cachedRectTransform = GetComponent<RectTransform>();
+        }
+
         if (targetImage == null)
         {
             targetImage = GetComponent<Image>();
@@ -79,6 +105,12 @@ public class BattleCharacterPresenter : MonoBehaviour
         if (spriteAnimator == null)
         {
             spriteAnimator = GetComponent<UiSpriteSheetAnimator>();
+        }
+
+        if (cachedRectTransform != null && !hasHomeWorldPosition)
+        {
+            homeWorldPosition = cachedRectTransform.position;
+            hasHomeWorldPosition = true;
         }
     }
 
@@ -89,7 +121,7 @@ public class BattleCharacterPresenter : MonoBehaviour
             return;
         }
 
-        var rectTransform = (RectTransform)transform;
+        var rectTransform = cachedRectTransform != null ? cachedRectTransform : (RectTransform)transform;
         var scale = rectTransform.localScale;
         scale.x = Mathf.Abs(scale.x) * (faceLeft ? -1f : 1f);
         scale.y = Mathf.Abs(scale.y);
@@ -138,7 +170,7 @@ public class BattleCharacterPresenter : MonoBehaviour
 
     public void PlayState(BattleAnimationState state)
     {
-        CancelTemporaryState();
+        StopTransientAnimation();
         currentState = state;
         ApplyPresentation();
     }
@@ -151,9 +183,44 @@ public class BattleCharacterPresenter : MonoBehaviour
             return;
         }
 
-        CancelTemporaryState();
+        StopTransientAnimation();
 
         temporaryStateRoutine = StartCoroutine(PlayTemporaryStateRoutine(state, extraDuration, returnState));
+    }
+
+    public AttackMotionTiming PlayAttackLunge(
+        BattleCharacterPresenter targetPresenter,
+        BattleAnimationState moveState = BattleAnimationState.Move,
+        BattleAnimationState attackState = BattleAnimationState.Attack,
+        BattleAnimationState returnState = BattleAnimationState.Idle)
+    {
+        var fallbackDuration = GetStateDuration(attackState);
+        if (!Application.isPlaying || targetPresenter == null || cachedRectTransform == null)
+        {
+            PlayTemporaryState(attackState, returnState: returnState);
+            return new AttackMotionTiming(fallbackDuration, fallbackDuration);
+        }
+
+        StopTransientAnimation();
+
+        homeWorldPosition = cachedRectTransform.position;
+        hasHomeWorldPosition = true;
+
+        var targetPosition = CalculateAttackTargetPosition(targetPresenter);
+        var attackDuration = Mathf.Max(0.05f, GetAnimationDuration(attackState));
+        var impactDelay = Mathf.Max(0.01f, attackAdvanceDuration);
+        var totalDuration = impactDelay + attackDuration + Mathf.Max(0.01f, attackReturnDuration);
+
+        attackMotionRoutine = StartCoroutine(PlayAttackLungeRoutine(
+            targetPosition,
+            impactDelay,
+            attackDuration,
+            Mathf.Max(0.01f, attackReturnDuration),
+            moveState,
+            attackState,
+            returnState));
+
+        return new AttackMotionTiming(impactDelay, totalDuration);
     }
 
     public float GetStateDuration(BattleAnimationState state, float extraDuration = 0f)
@@ -201,6 +268,12 @@ public class BattleCharacterPresenter : MonoBehaviour
         return Mathf.Max(0.01f, frames.Length / Mathf.Max(0.01f, framesPerSecond));
     }
 
+    private void StopTransientAnimation()
+    {
+        CancelTemporaryState();
+        CancelAttackMotion();
+    }
+
     private void CancelTemporaryState()
     {
         if (temporaryStateRoutine == null)
@@ -212,9 +285,102 @@ public class BattleCharacterPresenter : MonoBehaviour
         temporaryStateRoutine = null;
     }
 
+    private void CancelAttackMotion()
+    {
+        if (attackMotionRoutine != null)
+        {
+            StopCoroutine(attackMotionRoutine);
+            attackMotionRoutine = null;
+        }
+
+        if (cachedRectTransform != null && hasHomeWorldPosition)
+        {
+            cachedRectTransform.position = homeWorldPosition;
+        }
+    }
+
+    private System.Collections.IEnumerator PlayAttackLungeRoutine(
+        Vector3 targetPosition,
+        float advanceDuration,
+        float attackDuration,
+        float returnDuration,
+        BattleAnimationState moveState,
+        BattleAnimationState attackState,
+        BattleAnimationState returnState)
+    {
+        currentState = moveState;
+        ApplyPresentation();
+        yield return MoveToPosition(targetPosition, advanceDuration);
+
+        currentState = attackState;
+        ApplyPresentation();
+        yield return new WaitForSecondsRealtime(attackDuration);
+
+        currentState = moveState;
+        ApplyPresentation();
+        yield return MoveToPosition(homeWorldPosition, returnDuration);
+
+        if (cachedRectTransform != null)
+        {
+            cachedRectTransform.position = homeWorldPosition;
+        }
+
+        currentState = returnState;
+        ApplyPresentation();
+        attackMotionRoutine = null;
+    }
+
+    private System.Collections.IEnumerator MoveToPosition(Vector3 targetPosition, float duration)
+    {
+        if (cachedRectTransform == null)
+        {
+            yield break;
+        }
+
+        var startPosition = cachedRectTransform.position;
+        if (duration <= 0f)
+        {
+            cachedRectTransform.position = targetPosition;
+            yield break;
+        }
+
+        var elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            var progress = Mathf.Clamp01(elapsed / duration);
+            var easedProgress = 1f - Mathf.Pow(1f - progress, 3f);
+            cachedRectTransform.position = Vector3.LerpUnclamped(startPosition, targetPosition, easedProgress);
+            yield return null;
+        }
+
+        cachedRectTransform.position = targetPosition;
+    }
+
+    private Vector3 CalculateAttackTargetPosition(BattleCharacterPresenter targetPresenter)
+    {
+        if (cachedRectTransform == null || targetPresenter == null || targetPresenter.cachedRectTransform == null)
+        {
+            return hasHomeWorldPosition ? homeWorldPosition : transform.position;
+        }
+
+        var startPosition = homeWorldPosition;
+        var targetPosition = targetPresenter.cachedRectTransform.position;
+        var direction = targetPosition - startPosition;
+        var distance = direction.magnitude;
+        if (distance <= 0.01f)
+        {
+            return startPosition;
+        }
+
+        var stopDistance = Mathf.Clamp(attackStopDistance, 0f, Mathf.Max(0f, distance - 1f));
+        var attackDistance = Mathf.Max(0f, distance - stopDistance);
+        return startPosition + direction.normalized * attackDistance;
+    }
+
     private static bool ShouldLoopState(BattleAnimationState state)
     {
-        return state == BattleAnimationState.Idle;
+        return state == BattleAnimationState.Idle || state == BattleAnimationState.Move;
     }
 
 #if UNITY_EDITOR

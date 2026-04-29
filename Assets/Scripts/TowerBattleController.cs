@@ -501,12 +501,14 @@ public class TowerBattleController : MonoBehaviour
         isBusy = true;
         SetButtonsInteractable(false);
         SetStatus($"Hero prepares {move.name}...");
-        PlayActorAnimation(actorIsHero: true, move);
+        var heroRecoveryDelay = 0f;
+        var heroImpactDelay = PlayActorAnimation(actorIsHero: true, move, out heroRecoveryDelay);
         RefreshAllUi();
 
-        if (heroAttackDelay > 0f)
+        var heroActionDelay = heroImpactDelay > 0f ? heroImpactDelay : heroAttackDelay;
+        if (heroActionDelay > 0f)
         {
-            yield return new WaitForSeconds(heroAttackDelay);
+            yield return new WaitForSeconds(heroActionDelay);
         }
 
         var heroTurnSummary = ResolveMove(move, actorIsHero: true);
@@ -522,7 +524,7 @@ public class TowerBattleController : MonoBehaviour
             yield break;
         }
 
-        var monsterReactionDelay = GetReactionAnimationDelay(actorIsHero: true, move);
+        var monsterReactionDelay = Mathf.Max(GetReactionAnimationDelay(actorIsHero: true, move), heroRecoveryDelay);
         if (monsterReactionDelay > 0f)
         {
             yield return new WaitForSeconds(monsterReactionDelay);
@@ -542,11 +544,13 @@ public class TowerBattleController : MonoBehaviour
         }
 
         SetStatus($"{heroTurnSummary}\n{currentMonster.name} prepares {monsterResponse.move?.name ?? "an attack"}...");
-        PlayActorAnimation(actorIsHero: false, monsterResponse.move);
+        var monsterRecoveryDelay = 0f;
+        var monsterImpactDelay = PlayActorAnimation(actorIsHero: false, monsterResponse.move, out monsterRecoveryDelay);
 
-        if (monsterAttackDelay > 0f)
+        var monsterActionDelay = monsterImpactDelay > 0f ? monsterImpactDelay : monsterAttackDelay;
+        if (monsterActionDelay > 0f)
         {
-            yield return new WaitForSeconds(monsterAttackDelay);
+            yield return new WaitForSeconds(monsterActionDelay);
         }
 
         var monsterTurnSummary = ResolveMove(monsterResponse.move, actorIsHero: false);
@@ -564,9 +568,11 @@ public class TowerBattleController : MonoBehaviour
 
         SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}");
 
-        if (nextTurnDelay > 0f)
+        var heroReactionDelay = GetReactionAnimationDelay(actorIsHero: false, monsterResponse.move);
+        var postTurnDelay = Mathf.Max(nextTurnDelay, Mathf.Max(monsterRecoveryDelay, heroReactionDelay));
+        if (postTurnDelay > 0f)
         {
-            yield return new WaitForSeconds(nextTurnDelay);
+            yield return new WaitForSeconds(postTurnDelay);
         }
 
         isBusy = false;
@@ -2461,18 +2467,34 @@ public class TowerBattleController : MonoBehaviour
     private static void PreloadAnimationStates(string spriteKey, CharacterSpriteKind kind)
     {
         SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Idle, kind);
+        SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Move, kind);
         SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Attack, kind);
         SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Hurt, kind);
         SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Defend, kind);
         SpriteKeyLookup.LoadCharacterAnimationOrDefault(spriteKey, BattleAnimationState.Death, kind);
     }
 
-    private void PlayActorAnimation(bool actorIsHero, Move move)
+    private float PlayActorAnimation(bool actorIsHero, Move move, out float recoveryDelay)
     {
         var actorPresenter = actorIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
         var actorState = ResolveAnimationStateForMove(move);
+        recoveryDelay = 0f;
 
-        actorPresenter?.PlayTemporaryState(actorState, returnState: BattleAnimationState.Idle);
+        if (actorPresenter == null)
+        {
+            return 0f;
+        }
+
+        if (IsAttackingMove(move))
+        {
+            var targetPresenter = actorIsHero ? monsterCharacterPresenter : heroCharacterPresenter;
+            var timing = actorPresenter.PlayAttackLunge(targetPresenter);
+            recoveryDelay = Mathf.Max(0f, timing.TotalDuration - timing.ImpactDelay);
+            return timing.ImpactDelay;
+        }
+
+        actorPresenter.PlayTemporaryState(actorState, returnState: BattleAnimationState.Idle);
+        return 0f;
     }
 
     private void PlayReactionAnimation(bool actorIsHero, Move move)
@@ -2566,6 +2588,11 @@ public class TowerBattleController : MonoBehaviour
         }
 
         return BattleAnimationState.Attack;
+    }
+
+    private static bool IsAttackingMove(Move move)
+    {
+        return move?.effect is "damage" or "damage_and_stat_modifier" or "drain";
     }
 
     private void ConfigureEndPanelButton(Button button, UnityEngine.Events.UnityAction clickAction)

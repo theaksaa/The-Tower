@@ -6,6 +6,7 @@ using UnityEngine;
 public enum BattleAnimationState
 {
     Idle,
+    Move,
     Attack,
     Hurt,
     Defend,
@@ -69,6 +70,11 @@ public static class SpriteKeyLookup
 
     private static string GetCharacterAnimationName(BattleAnimationState state)
     {
+        if (state == BattleAnimationState.Move)
+        {
+            return "Walk";
+        }
+
         // User requirement: Use Attack01 for all attacks.
         if (state == BattleAnimationState.Attack)
         {

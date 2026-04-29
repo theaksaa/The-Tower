@@ -9,7 +9,7 @@ Character animations:
 
 Rules:
 - The backend `spriteKey` is the filename prefix.
-- The animation state is the suffix: `Idle`, `Attack`, `Hurt`, `Defend`, `Death`.
+- The animation state is the suffix: `Idle`, `Walk`, `Attack`, `Hurt`, `Defend`, `Death`.
 - Each file can be a sliced sprite sheet or a single sprite.
 - If a state file is missing, the client falls back to `<spriteKey>_Idle`.
 
