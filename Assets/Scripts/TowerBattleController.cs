@@ -44,6 +44,8 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private Color battleSceneEndPanelHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
     [SerializeField] private Color battleSceneEndPanelPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
     [SerializeField] private Vector2 battleSceneEndPanelPressedTextOffset = new(0f, -6f);
+    [SerializeField] private float currentMoveStatsAnimationDuration = 0.18f;
+    [SerializeField] private float currentMoveStatsHideDelay = 0.25f;
 
     private readonly string[] buttonObjectNames =
     {
@@ -89,6 +91,9 @@ public class TowerBattleController : MonoBehaviour
     private TMP_Text monsterDefenseEffectText;
     private TMP_Text monsterMagicEffectText;
     private TMP_Text moveStatsEffectsAmountText;
+    private RectTransform currentMoveStatsRect;
+    private CanvasGroup currentMoveStatsCanvasGroup;
+    private Vector2 currentMoveStatsBasePosition;
     private Image heroHealthBarImage;
     private Image monsterHealthBarImage;
     private BattleCharacterPresenter heroCharacterPresenter;
@@ -148,6 +153,9 @@ public class TowerBattleController : MonoBehaviour
     private bool requestedMoveButtonsInteractable;
     private UiSpriteSheetAnimator heroUiAnimator;
     private UiSpriteSheetAnimator monsterUiAnimator;
+    private Coroutine currentMoveStatsAnimation;
+    private Coroutine currentMoveStatsHideDelayRoutine;
+    private bool currentMoveStatsVisible;
 
     private readonly List<string> monsterMoveHistory = new();
     private readonly Color inactiveEffectColor = Color.black;
@@ -1621,45 +1629,43 @@ public class TowerBattleController : MonoBehaviour
 
     private void RefreshMoveStats(Move move)
     {
-        if (currentMoveStatsRoot != null)
+        SetCurrentMoveStatsVisible(move != null);
+
+        if (move == null)
         {
-            currentMoveStatsRoot.SetActive(move != null);
+            return;
         }
 
         if (moveStatsIcon != null)
         {
             moveStatsIcon.sprite = ResolveMoveIconSprite(move) ?? moveStatsIcon.sprite;
-            moveStatsIcon.color = move == null ? new Color(1f, 1f, 1f, 0f) : Color.white;
+            moveStatsIcon.color = Color.white;
             moveStatsIcon.preserveAspect = true;
         }
 
         if (moveStatsTitleText != null)
         {
-            moveStatsTitleText.text = move?.name ?? "Move Stats";
+            moveStatsTitleText.text = move.name;
         }
 
         if (moveStatsTypeText != null)
         {
-            moveStatsTypeText.text = move == null
-                ? "Hover a move to inspect it."
-                : $"{move.type?.ToUpperInvariant() ?? "UNKNOWN"}  |  {move.target?.ToUpperInvariant() ?? "TARGET"}";
+            moveStatsTypeText.text = $"{move.type?.ToUpperInvariant() ?? "UNKNOWN"}  |  {move.target?.ToUpperInvariant() ?? "TARGET"}";
         }
 
         if (moveStatsDescriptionText != null)
         {
-            moveStatsDescriptionText.text = move == null
-                ? "Hover over a move to see its details."
-                : BuildMoveDescription(move);
+            moveStatsDescriptionText.text = BuildMoveDescription(move);
         }
 
         if (moveStatsAttackText != null)
         {
-            moveStatsAttackText.text = move == null ? "-" : BuildAttackValue(move);
+            moveStatsAttackText.text = BuildAttackValue(move);
         }
 
         if (moveStatsHealText != null)
         {
-            moveStatsHealText.text = move == null ? "-" : BuildHealValue(move);
+            moveStatsHealText.text = BuildHealValue(move);
         }
 
         SetEffectValue(heroAttackEffectText, move, "attack", targetIsHero: true);
@@ -1671,8 +1677,203 @@ public class TowerBattleController : MonoBehaviour
 
         if (moveStatsEffectsAmountText != null)
         {
-            moveStatsEffectsAmountText.text = move == null ? "-" : BuildEffectDurationLine(move);
+            moveStatsEffectsAmountText.text = BuildEffectDurationLine(move);
         }
+    }
+
+    private void ConfigureCurrentMoveStatsAnimation()
+    {
+        if (currentMoveStatsRoot == null)
+        {
+            return;
+        }
+
+        currentMoveStatsRect = currentMoveStatsRoot.GetComponent<RectTransform>();
+        if (currentMoveStatsRect != null)
+        {
+            currentMoveStatsBasePosition = currentMoveStatsRect.anchoredPosition;
+        }
+
+        currentMoveStatsCanvasGroup = currentMoveStatsRoot.GetComponent<CanvasGroup>();
+        if (currentMoveStatsCanvasGroup == null)
+        {
+            currentMoveStatsCanvasGroup = currentMoveStatsRoot.AddComponent<CanvasGroup>();
+        }
+
+        SetCurrentMoveStatsVisibleImmediate(false);
+    }
+
+    private void SetCurrentMoveStatsVisible(bool visible)
+    {
+        if (currentMoveStatsRoot == null)
+        {
+            return;
+        }
+
+        if (currentMoveStatsHideDelayRoutine != null)
+        {
+            StopCoroutine(currentMoveStatsHideDelayRoutine);
+            currentMoveStatsHideDelayRoutine = null;
+        }
+
+        if (!visible)
+        {
+            currentMoveStatsHideDelayRoutine = StartCoroutine(HideCurrentMoveStatsAfterDelay());
+            return;
+        }
+
+        var hadActiveAnimation = currentMoveStatsAnimation != null;
+        if (currentMoveStatsAnimation != null)
+        {
+            StopCoroutine(currentMoveStatsAnimation);
+            currentMoveStatsAnimation = null;
+        }
+
+        if (visible == currentMoveStatsVisible)
+        {
+            if (hadActiveAnimation || visible != currentMoveStatsRoot.activeSelf)
+            {
+                ApplyCurrentMoveStatsState(visible);
+                currentMoveStatsRoot.SetActive(visible);
+            }
+
+            return;
+        }
+
+        currentMoveStatsAnimation = StartCoroutine(AnimateCurrentMoveStatsVisibility(visible));
+    }
+
+    private IEnumerator HideCurrentMoveStatsAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(currentMoveStatsHideDelay);
+        currentMoveStatsHideDelayRoutine = null;
+
+        var hadActiveAnimation = currentMoveStatsAnimation != null;
+        if (currentMoveStatsAnimation != null)
+        {
+            StopCoroutine(currentMoveStatsAnimation);
+            currentMoveStatsAnimation = null;
+        }
+
+        if (!currentMoveStatsVisible)
+        {
+            if (hadActiveAnimation || currentMoveStatsRoot.activeSelf)
+            {
+                ApplyCurrentMoveStatsState(false);
+                currentMoveStatsRoot.SetActive(false);
+            }
+
+            yield break;
+        }
+
+        currentMoveStatsAnimation = StartCoroutine(AnimateCurrentMoveStatsVisibility(false));
+    }
+
+    private IEnumerator AnimateCurrentMoveStatsVisibility(bool visible)
+    {
+        currentMoveStatsVisible = visible;
+
+        if (currentMoveStatsRect == null || currentMoveStatsCanvasGroup == null)
+        {
+            currentMoveStatsRoot.SetActive(visible);
+            currentMoveStatsAnimation = null;
+            yield break;
+        }
+
+        var hiddenPosition = GetCurrentMoveStatsHiddenPosition();
+        var startPosition = visible ? hiddenPosition : currentMoveStatsRect.anchoredPosition;
+        var targetPosition = visible ? currentMoveStatsBasePosition : hiddenPosition;
+        var startAlpha = visible ? 0f : currentMoveStatsCanvasGroup.alpha;
+        var targetAlpha = visible ? 1f : 0f;
+
+        currentMoveStatsRoot.SetActive(true);
+
+        if (visible)
+        {
+            currentMoveStatsRect.anchoredPosition = startPosition;
+            currentMoveStatsCanvasGroup.alpha = startAlpha;
+        }
+
+        currentMoveStatsCanvasGroup.blocksRaycasts = visible;
+        currentMoveStatsCanvasGroup.interactable = visible;
+
+        var elapsed = 0f;
+        while (elapsed < currentMoveStatsAnimationDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            var progress = Mathf.Clamp01(elapsed / currentMoveStatsAnimationDuration);
+            var eased = 1f - Mathf.Pow(1f - progress, 3f);
+
+            currentMoveStatsRect.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, eased);
+            currentMoveStatsCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, eased);
+            yield return null;
+        }
+
+        currentMoveStatsRect.anchoredPosition = targetPosition;
+        currentMoveStatsCanvasGroup.alpha = targetAlpha;
+
+        if (!visible)
+        {
+            currentMoveStatsRoot.SetActive(false);
+        }
+
+        currentMoveStatsAnimation = null;
+    }
+
+    private void SetCurrentMoveStatsVisibleImmediate(bool visible)
+    {
+        if (currentMoveStatsHideDelayRoutine != null)
+        {
+            StopCoroutine(currentMoveStatsHideDelayRoutine);
+            currentMoveStatsHideDelayRoutine = null;
+        }
+
+        if (currentMoveStatsAnimation != null)
+        {
+            StopCoroutine(currentMoveStatsAnimation);
+            currentMoveStatsAnimation = null;
+        }
+
+        currentMoveStatsVisible = visible;
+        ApplyCurrentMoveStatsState(visible);
+
+        if (currentMoveStatsRoot != null)
+        {
+            currentMoveStatsRoot.SetActive(visible);
+        }
+    }
+
+    private void ApplyCurrentMoveStatsState(bool visible)
+    {
+        if (currentMoveStatsRect == null || currentMoveStatsCanvasGroup == null)
+        {
+            return;
+        }
+
+        currentMoveStatsRect.anchoredPosition = visible
+            ? currentMoveStatsBasePosition
+            : GetCurrentMoveStatsHiddenPosition();
+
+        currentMoveStatsCanvasGroup.alpha = visible ? 1f : 0f;
+        currentMoveStatsCanvasGroup.blocksRaycasts = visible;
+        currentMoveStatsCanvasGroup.interactable = visible;
+    }
+
+    private Vector2 GetCurrentMoveStatsHiddenPosition()
+    {
+        if (currentMoveStatsRect == null)
+        {
+            return currentMoveStatsBasePosition;
+        }
+
+        var parentRect = currentMoveStatsRect.parent as RectTransform;
+        if (parentRect == null)
+        {
+            return currentMoveStatsBasePosition;
+        }
+
+        var hiddenY = (parentRect.rect.height * 0.5f) + (currentMoveStatsRect.rect.height * 0.5f) + 24f;
+        return new Vector2(currentMoveStatsBasePosition.x, hiddenY);
     }
 
     private Move GetMove(string moveId)
@@ -2084,6 +2285,7 @@ public class TowerBattleController : MonoBehaviour
         monsterDefenseEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Monster Effects Stat/Defense/Defense Text");
         monsterMagicEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Monster Effects Stat/Magic/Magic Text");
         moveStatsEffectsAmountText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Effects Amount");
+        ConfigureCurrentMoveStatsAnimation();
 
         heroHealthBarImage = FindComponent<Image>("Canvas/Hero UI/Health Bar/Health Bar");
         monsterHealthBarImage = FindComponent<Image>("Canvas/Monster UI/Health Bar/Health Bar");
