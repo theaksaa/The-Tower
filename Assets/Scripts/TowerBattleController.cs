@@ -47,6 +47,9 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private float currentMoveStatsAnimationDuration = 0.18f;
     [SerializeField] private float currentMoveStatsHideDelay = 0.25f;
     [SerializeField] private float healthBarSmoothSpeed = 4f;
+    [SerializeField] private Sprite coinDropSprite;
+    [SerializeField] private Sprite keyDropSprite;
+    [SerializeField] private Sprite xpDropSprite;
 
     private readonly string[] buttonObjectNames =
     {
@@ -134,9 +137,18 @@ public class TowerBattleController : MonoBehaviour
     private Button continueButton;
     private Button defeatReviveButton;
     private Button defeatMapButton;
+    private Button continueArrowButton;
+    private Button backArrowButton;
     private Button pauseMenuResumeButton;
     private Button pauseMenuExitBattleButton;
     private Button pauseMenuExitToMainMenuButton;
+    private RectTransform monsterDropsRoot;
+    private RectTransform monsterDropTemplate;
+    private RectTransform canvasRect;
+    private RectTransform heroRootRect;
+    private RectTransform monsterRootRect;
+    private RectTransform heroCharacterRect;
+    private RectTransform monsterCharacterRect;
 
     private RunConfig runConfig;
     private Monster currentMonster;
@@ -152,6 +164,8 @@ public class TowerBattleController : MonoBehaviour
     private int hoveredMoveIndex = -1;
     private bool pauseMenuOpen;
     private bool requestedMoveButtonsInteractable;
+    private bool reviveSequencePlaying;
+    private bool encounterKeyDropConsumed;
     private UiSpriteSheetAnimator heroUiAnimator;
     private UiSpriteSheetAnimator monsterUiAnimator;
     private Coroutine currentMoveStatsAnimation;
@@ -168,6 +182,10 @@ public class TowerBattleController : MonoBehaviour
     private readonly Color activeMoveIconColor = Color.white;
     private readonly Color inactiveMoveIconColor = new(0.35f, 0.35f, 0.35f, 1f);
     private VictoryRewards pendingVictoryRewards;
+    private EncounterSnapshot encounterSnapshot;
+    private readonly List<GameObject> runtimeDropObjects = new();
+    private bool heroReviveAvailable;
+    private bool monsterReviveAvailable;
 
     private sealed class BattleLogDescriptor
     {
@@ -189,10 +207,19 @@ public class TowerBattleController : MonoBehaviour
     {
         public string Summary;
         public string CoinsText;
+        public string KeyText;
         public string LearnedMoveText;
         public string XpText;
         public string LearnedMoveId;
+        public int CoinsAmount;
+        public int KeyAmount;
+        public int XpAmount;
         public bool HasLearnedMove;
+    }
+
+    private sealed class EncounterSnapshot
+    {
+        public int HeroCurrentHp;
     }
 
     private sealed class MoveHoverListener : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -465,7 +492,7 @@ public class TowerBattleController : MonoBehaviour
         isBusy = false;
     }
 
-    private void StartEncounter(int index)
+    private void StartEncounter(int index, bool preserveEncounterFlags = false)
     {
         encounterIndex = index;
         currentMonster = runConfig.encounters[index];
@@ -477,6 +504,17 @@ public class TowerBattleController : MonoBehaviour
         turnNumber = 1;
         returnReady = false;
         pendingInstantHealthBarSync = true;
+        heroReviveAvailable = false;
+        monsterReviveAvailable = false;
+        pendingVictoryRewards = null;
+        if (!preserveEncounterFlags)
+        {
+            encounterKeyDropConsumed = RunSession.IsEncounterCompleted(index);
+        }
+        ClearMonsterDrops();
+        SetContinueArrowVisible(false);
+        SetBackArrowVisible(false);
+        CaptureEncounterSnapshot();
 
         var intro = RunSession.UsingFallbackData
             ? "Offline fallback data loaded."
@@ -891,11 +929,9 @@ public class TowerBattleController : MonoBehaviour
     {
         var wasFinalEncounter = IsPendingEncounterFinal();
         var rewards = AwardVictoryRewards();
-        RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
-        RunSaveService.SaveCurrentRun();
         monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
-        RefreshAllUi();
         pendingVictoryRewards = rewards;
+        RefreshAllUi();
 
         var statusBuilder = new StringBuilder();
         statusBuilder.AppendLine(heroTurnSummary);
@@ -910,7 +946,7 @@ public class TowerBattleController : MonoBehaviour
         SetStatus(statusBuilder.ToString());
         if (usingBattleSceneUi && endPanelRoot != null)
         {
-            ShowVictoryEndPanel(rewards, wasFinalEncounter);
+            EnterVictoryState(rewards, wasFinalEncounter);
             return;
         }
 
@@ -925,7 +961,6 @@ public class TowerBattleController : MonoBehaviour
 
     private IEnumerator HandleDefeatSequence(string heroTurnSummary, string monsterTurnSummary)
     {
-        RunSession.RegisterDefeat(encounterIndex);
         SetButtonsInteractable(false);
         heroCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
@@ -933,7 +968,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (usingBattleSceneUi && defeatPanelRoot != null)
         {
-            SetDefeatPanelVisible(true);
+            EnterDefeatState();
             yield break;
         }
 
@@ -943,61 +978,66 @@ public class TowerBattleController : MonoBehaviour
 
     private VictoryRewards AwardVictoryRewards()
     {
-        hero.Xp += currentMonster.xpReward;
-        var xpSummary = $"+{currentMonster.xpReward} xp";
+        var xpAmount = Mathf.Max(0, currentMonster?.xpReward ?? 0);
+        var coinAmount = Mathf.Max(1, Mathf.CeilToInt(xpAmount * 0.35f));
+        var keyAmount = encounterKeyDropConsumed || RunSession.IsEncounterCompleted(encounterIndex) ? 0 : 1;
+        var learnedMoveId = PickLearnableMovePreview(currentMonster);
+        var learnedMove = GetMove(learnedMoveId);
+        var learnedMoveText = learnedMove != null ? learnedMove.name : null;
 
-        var learnedMove = PickLearnableMove(currentMonster);
-        string learnedMoveText = null;
-        if (!string.IsNullOrEmpty(learnedMove))
+        var summaryParts = new List<string>
         {
-            learnedMoveText = RegisterLearnedMoveReward(learnedMove);
-        }
+            $"+{coinAmount} coins",
+            $"+{xpAmount} xp"
+        };
 
-        var summaryParts = new List<string> { xpSummary };
-        if (RunSession.CanLevelUp())
+        if (keyAmount > 0)
         {
-            summaryParts.Add("level up ready");
+            summaryParts.Add($"+{keyAmount} key");
         }
 
         if (!string.IsNullOrEmpty(learnedMoveText))
         {
-            summaryParts.Add(learnedMoveText);
+            summaryParts.Add($"learned {learnedMoveText}");
+        }
+
+        var nextThreshold = RunSession.GetNextLevelXpThreshold();
+        if (nextThreshold >= 0 && hero != null && hero.Xp + xpAmount >= nextThreshold)
+        {
+            summaryParts.Add("level up ready");
         }
 
         return new VictoryRewards
         {
             Summary = string.Join(" | ", summaryParts),
-            CoinsText = "+0",
+            CoinsText = $"+{coinAmount}",
+            KeyText = keyAmount > 0 ? $"+{keyAmount} key" : null,
             LearnedMoveText = learnedMoveText,
-            XpText = xpSummary,
-            LearnedMoveId = learnedMove,
+            XpText = $"+{xpAmount} xp",
+            LearnedMoveId = learnedMoveId,
+            CoinsAmount = coinAmount,
+            KeyAmount = keyAmount,
+            XpAmount = xpAmount,
             HasLearnedMove = !string.IsNullOrEmpty(learnedMoveText)
         };
     }
 
-    private string PickLearnableMove(Monster monster)
+    private string PickLearnableMovePreview(Monster monster)
     {
+        if (monster?.learnableMoves == null || hero?.KnownMoves == null)
+        {
+            return null;
+        }
+
         foreach (var moveId in monster.learnableMoves)
         {
-            if (hero.KnownMoves.Add(moveId))
+            if (!hero.KnownMoves.Contains(moveId))
             {
                 return moveId;
             }
         }
 
         return null;
-    }
-
-    private string RegisterLearnedMoveReward(string newMoveId)
-    {
-        var newMove = GetMove(newMoveId);
-        if (newMove == null)
-        {
-            return "Unknown move";
-        }
-
-        RunSession.SetPendingLearnedMove(newMoveId);
-        return newMove.name;
     }
 
     private void PrepareReturn(string label)
@@ -1075,6 +1115,41 @@ public class TowerBattleController : MonoBehaviour
         SetEndPanelVisible(true);
     }
 
+    private void EnterVictoryState(VictoryRewards rewards, bool wasFinalEncounter)
+    {
+        pendingVictoryRewards = rewards;
+        if (rewards != null && rewards.KeyAmount > 0)
+        {
+            encounterKeyDropConsumed = true;
+        }
+        returnReady = true;
+        isBusy = false;
+        monsterReviveAvailable = true;
+        heroReviveAvailable = false;
+        SetButtonsInteractable(false);
+        SetEndPanelVisible(false);
+        SetDefeatPanelVisible(false);
+        SetContinueArrowVisible(true);
+        SetBackArrowVisible(false);
+        SpawnMonsterDrops(rewards);
+        RefreshLabels();
+    }
+
+    private void EnterDefeatState()
+    {
+        pendingVictoryRewards = null;
+        returnReady = true;
+        isBusy = false;
+        heroReviveAvailable = true;
+        monsterReviveAvailable = false;
+        ClearMonsterDrops();
+        SetEndPanelVisible(false);
+        SetDefeatPanelVisible(false);
+        SetContinueArrowVisible(false);
+        SetBackArrowVisible(true);
+        RefreshLabels();
+    }
+
     private Sprite ResolveReward2Icon(string learnedMoveId)
     {
         var learnedMove = GetMove(learnedMoveId);
@@ -1091,30 +1166,24 @@ public class TowerBattleController : MonoBehaviour
 
     private void OnReviveButtonPressed()
     {
-        if (pendingVictoryRewards == null)
+        if (!reviveSequencePlaying)
         {
-            return;
+            StartCoroutine(RestartEncounterFromReviveRoutine(isHeroRevive: false));
         }
-
-        SetEndPanelVisible(false);
-        StartEncounter(encounterIndex);
     }
 
     private void OnContinueButtonPressed()
     {
-        pendingVictoryRewards = null;
+        CommitVictoryRewardsAndReturn();
         ReturnToOverview();
     }
 
     private void OnDefeatReviveButtonPressed()
     {
-        if (runConfig == null)
+        if (!reviveSequencePlaying)
         {
-            return;
+            StartCoroutine(RestartEncounterFromReviveRoutine(isHeroRevive: true));
         }
-
-        RunSession.InitializeNewRun(runConfig, RunSession.UsingFallbackData, RunSession.SelectedHeroDefinition);
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     private void OnDefeatMapButtonPressed()
@@ -1136,7 +1205,7 @@ public class TowerBattleController : MonoBehaviour
         }
 
         endPanelRoot.SetActive(isVisible);
-        if (!isVisible)
+        if (!isVisible && !monsterReviveAvailable)
         {
             pendingVictoryRewards = null;
         }
@@ -1161,12 +1230,14 @@ public class TowerBattleController : MonoBehaviour
     {
         if (heroNameText != null)
         {
-            heroNameText.text = RunSession.GetHeroDisplayName();
+            heroNameText.text = heroReviveAvailable ? "Revive" : RunSession.GetHeroDisplayName();
         }
 
         if (monsterNameText != null)
         {
-            monsterNameText.text = currentMonster != null ? currentMonster.name : "Monster";
+            monsterNameText.text = monsterReviveAvailable
+                ? "Revive"
+                : currentMonster != null ? currentMonster.name : "Monster";
         }
 
         if (heroHpWorldText != null && hero != null)
@@ -2233,8 +2304,495 @@ public class TowerBattleController : MonoBehaviour
         return runConfig.runId.Substring(0, Mathf.Min(8, runConfig.runId.Length));
     }
 
+    private Button ConfigureImageButton(string path, UnityEngine.Events.UnityAction callback)
+    {
+        var buttonRoot = FindGameObject(path);
+        if (buttonRoot == null)
+        {
+            return null;
+        }
+
+        var button = buttonRoot.GetComponent<Button>();
+        if (button == null)
+        {
+            button = buttonRoot.AddComponent<Button>();
+        }
+
+        var image = buttonRoot.GetComponent<Image>();
+        if (button.targetGraphic == null && image != null)
+        {
+            button.targetGraphic = image;
+        }
+
+        button.transition = Selectable.Transition.ColorTint;
+        var colors = button.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.92f, 0.92f, 0.92f, 1f);
+        colors.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        colors.selectedColor = colors.highlightedColor;
+        colors.fadeDuration = 0.05f;
+        button.colors = colors;
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(callback);
+        return button;
+    }
+
+    private void ConfigureClickableName(TMP_Text label, bool isHeroLabel)
+    {
+        if (label == null)
+        {
+            return;
+        }
+
+        var button = label.GetComponent<Button>();
+        if (button == null)
+        {
+            button = label.gameObject.AddComponent<Button>();
+        }
+
+        button.targetGraphic = label;
+        button.transition = Selectable.Transition.ColorTint;
+        var colors = button.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1f, 0.95f, 0.75f, 1f);
+        colors.pressedColor = new Color(0.9f, 0.85f, 0.65f, 1f);
+        colors.selectedColor = colors.highlightedColor;
+        colors.fadeDuration = 0.05f;
+        button.colors = colors;
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(() => OnNameClicked(isHeroLabel));
+    }
+
+    private void OnNameClicked(bool isHeroLabel)
+    {
+        if (reviveSequencePlaying)
+        {
+            return;
+        }
+
+        if ((isHeroLabel && !heroReviveAvailable) || (!isHeroLabel && !monsterReviveAvailable))
+        {
+            return;
+        }
+
+        StartCoroutine(RestartEncounterFromReviveRoutine(isHeroLabel));
+    }
+
+    private void OnContinueArrowPressed()
+    {
+        if (pendingVictoryRewards == null || reviveSequencePlaying)
+        {
+            return;
+        }
+
+        StartCoroutine(ContinueArrowRoutine());
+    }
+
+    private void OnBackArrowPressed()
+    {
+        RunSession.ReturnToMapAfterDefeat(encounterIndex);
+        ReturnToOverview();
+    }
+
+    private void RestartEncounterFromRevive()
+    {
+        if (hero == null || encounterSnapshot == null)
+        {
+            return;
+        }
+
+        hero.CurrentHp = encounterSnapshot.HeroCurrentHp;
+        pendingVictoryRewards = null;
+        heroReviveAvailable = false;
+        monsterReviveAvailable = false;
+        returnReady = false;
+        ClearMonsterDrops();
+        SetContinueArrowVisible(false);
+        SetBackArrowVisible(false);
+        SetEndPanelVisible(false);
+        SetDefeatPanelVisible(false);
+        StartEncounter(encounterIndex, preserveEncounterFlags: true);
+    }
+
+    private System.Collections.IEnumerator ContinueArrowRoutine()
+    {
+        reviveSequencePlaying = true;
+        SetContinueArrowVisible(false);
+        SetButtonsInteractable(false);
+
+        if (heroCharacterPresenter != null)
+        {
+            var travelDuration = heroCharacterPresenter.PlayMoveToOffset(
+                new Vector3(260f, 0f, 0f),
+                moveState: BattleAnimationState.Move,
+                endState: BattleAnimationState.Idle);
+            yield return new WaitForSecondsRealtime(travelDuration);
+        }
+
+        CommitVictoryRewardsAndReturn();
+        reviveSequencePlaying = false;
+        ReturnToOverview();
+    }
+
+    private System.Collections.IEnumerator RestartEncounterFromReviveRoutine(bool isHeroRevive)
+    {
+        if (hero == null || encounterSnapshot == null || reviveSequencePlaying)
+        {
+            yield break;
+        }
+
+        reviveSequencePlaying = true;
+        SetContinueArrowVisible(false);
+        SetBackArrowVisible(false);
+        SetButtonsInteractable(false);
+
+        if (isHeroRevive)
+        {
+            yield return PlayHeroReviveAnimation();
+        }
+        else
+        {
+            yield return PlayMonsterReviveAnimation();
+        }
+
+        RestartEncounterFromRevive();
+        reviveSequencePlaying = false;
+    }
+
+    private System.Collections.IEnumerator PlayMonsterReviveAnimation()
+    {
+        if (heroCharacterPresenter == null || monsterCharacterPresenter == null)
+        {
+            yield break;
+        }
+
+        yield return FadeOutMonsterDrops(0.22f);
+
+        var timing = heroCharacterPresenter.PlayMoveLunge(
+            monsterCharacterPresenter,
+            moveState: BattleAnimationState.Move,
+            returnState: BattleAnimationState.Idle);
+
+        yield return new WaitForSecondsRealtime(timing.ImpactDelay);
+
+        monsterCharacterPresenter.PlayReverseState(BattleAnimationState.Death, BattleAnimationState.Idle);
+        yield return new WaitForSecondsRealtime(monsterCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
+
+        var remainingReturn = Mathf.Max(0f, timing.TotalDuration - timing.ImpactDelay);
+        if (remainingReturn > 0f)
+        {
+            yield return new WaitForSecondsRealtime(remainingReturn);
+        }
+    }
+
+    private System.Collections.IEnumerator PlayHeroReviveAnimation()
+    {
+        if (heroCharacterPresenter == null)
+        {
+            yield break;
+        }
+
+        heroCharacterPresenter.PlayReverseState(BattleAnimationState.Death, BattleAnimationState.Idle);
+        yield return new WaitForSecondsRealtime(heroCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
+    }
+
+    private void CommitVictoryRewardsAndReturn()
+    {
+        if (pendingVictoryRewards == null || hero == null)
+        {
+            return;
+        }
+
+        hero.Xp += pendingVictoryRewards.XpAmount;
+
+        if (!string.IsNullOrWhiteSpace(pendingVictoryRewards.LearnedMoveId))
+        {
+            hero.KnownMoves.Add(pendingVictoryRewards.LearnedMoveId);
+            RunSession.SetPendingLearnedMove(pendingVictoryRewards.LearnedMoveId);
+        }
+
+        RunSession.MarkEncounterComplete(encounterIndex, pendingVictoryRewards.Summary);
+        RunSaveService.SaveCurrentRun();
+        pendingVictoryRewards = null;
+        heroReviveAvailable = false;
+        monsterReviveAvailable = false;
+        ClearMonsterDrops();
+        SetContinueArrowVisible(false);
+        SetBackArrowVisible(false);
+    }
+
+    private void CaptureEncounterSnapshot()
+    {
+        if (hero == null)
+        {
+            encounterSnapshot = null;
+            return;
+        }
+
+        encounterSnapshot = new EncounterSnapshot
+        {
+            HeroCurrentHp = hero.CurrentHp
+        };
+    }
+
+    private void SetContinueArrowVisible(bool isVisible)
+    {
+        if (continueArrowButton != null)
+        {
+            continueArrowButton.gameObject.SetActive(isVisible);
+        }
+    }
+
+    private void SetBackArrowVisible(bool isVisible)
+    {
+        if (backArrowButton != null)
+        {
+            backArrowButton.gameObject.SetActive(isVisible);
+        }
+    }
+
+    private void ClearMonsterDrops()
+    {
+        for (var index = 0; index < runtimeDropObjects.Count; index++)
+        {
+            if (runtimeDropObjects[index] != null)
+            {
+                Destroy(runtimeDropObjects[index]);
+            }
+        }
+
+        runtimeDropObjects.Clear();
+
+        if (monsterDropsRoot == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < monsterDropsRoot.childCount; index++)
+        {
+            monsterDropsRoot.GetChild(index).gameObject.SetActive(false);
+        }
+    }
+
+    private void SpawnMonsterDrops(VictoryRewards rewards)
+    {
+        ClearMonsterDrops();
+        if (monsterDropsRoot == null || monsterDropTemplate == null || rewards == null)
+        {
+            return;
+        }
+
+        var anchorPosition = ResolveDropAnchorPosition();
+        if (anchorPosition.HasValue)
+        {
+            monsterDropsRoot.anchoredPosition = anchorPosition.Value;
+        }
+
+        var drops = new List<(Sprite sprite, string label)>
+        {
+            (ResolveDropSprite(coinDropSprite, reward1Icon), rewards.CoinsText),
+            (ResolveDropSprite(xpDropSprite, reward3Icon), rewards.XpText)
+        };
+
+        if (rewards.KeyAmount > 0)
+        {
+            drops.Add((ResolveDropSprite(keyDropSprite, null), rewards.KeyText));
+        }
+
+        if (rewards.HasLearnedMove)
+        {
+            drops.Add((ResolveReward2Icon(rewards.LearnedMoveId), rewards.LearnedMoveText));
+        }
+
+        var offsets = BuildDropOffsets(drops.Count, 64f, 118f, 26f);
+        for (var index = 0; index < drops.Count; index++)
+        {
+            var dropObject = Instantiate(monsterDropTemplate.gameObject, monsterDropsRoot);
+            dropObject.name = $"Object ({index})";
+            dropObject.SetActive(true);
+            runtimeDropObjects.Add(dropObject);
+
+            var dropRect = dropObject.GetComponent<RectTransform>();
+            if (dropRect != null)
+            {
+                dropRect.anchoredPosition = offsets[index];
+                dropRect.localScale = Vector3.one;
+            }
+
+            ConfigureDropVisual(dropObject, drops[index].sprite, drops[index].label);
+        }
+    }
+
+    private void ConfigureDropVisual(GameObject dropObject, Sprite iconSprite, string label)
+    {
+        if (dropObject == null)
+        {
+            return;
+        }
+
+        var images = dropObject.GetComponentsInChildren<Image>(true);
+        Image iconImage = null;
+        for (var index = 0; index < images.Length; index++)
+        {
+            var imageName = images[index].gameObject.name;
+            if (imageName.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                iconImage = images[index];
+                break;
+            }
+        }
+
+        if (iconImage == null && images.Length > 0)
+        {
+            iconImage = images[images.Length - 1];
+        }
+
+        if (iconImage != null)
+        {
+            iconImage.sprite = iconSprite;
+            iconImage.preserveAspect = true;
+            iconImage.color = Color.white;
+        }
+
+        var labelText = dropObject.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault();
+        if (labelText != null)
+        {
+            labelText.text = label;
+        }
+    }
+
+    private Sprite ResolveDropSprite(Sprite preferredSprite, Image fallbackImage)
+    {
+        if (preferredSprite != null)
+        {
+            return preferredSprite;
+        }
+
+        return fallbackImage != null ? fallbackImage.sprite : null;
+    }
+
+    private System.Collections.IEnumerator FadeOutMonsterDrops(float duration)
+    {
+        if (runtimeDropObjects.Count == 0)
+        {
+            yield break;
+        }
+
+        var images = new List<Image>();
+        var texts = new List<TMP_Text>();
+        var imageColors = new List<Color>();
+        var textColors = new List<Color>();
+
+        for (var index = 0; index < runtimeDropObjects.Count; index++)
+        {
+            var dropObject = runtimeDropObjects[index];
+            if (dropObject == null)
+            {
+                continue;
+            }
+
+            var childImages = dropObject.GetComponentsInChildren<Image>(true);
+            for (var imageIndex = 0; imageIndex < childImages.Length; imageIndex++)
+            {
+                images.Add(childImages[imageIndex]);
+                imageColors.Add(childImages[imageIndex].color);
+            }
+
+            var childTexts = dropObject.GetComponentsInChildren<TMP_Text>(true);
+            for (var textIndex = 0; textIndex < childTexts.Length; textIndex++)
+            {
+                texts.Add(childTexts[textIndex]);
+                textColors.Add(childTexts[textIndex].color);
+            }
+        }
+
+        if (duration <= 0f)
+        {
+            ClearMonsterDrops();
+            yield break;
+        }
+
+        var elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            var t = Mathf.Clamp01(elapsed / duration);
+            var eased = 1f - Mathf.Pow(1f - t, 3f);
+
+            for (var index = 0; index < images.Count; index++)
+            {
+                if (images[index] == null)
+                {
+                    continue;
+                }
+
+                var color = imageColors[index];
+                color.a = Mathf.Lerp(imageColors[index].a, 0f, eased);
+                images[index].color = color;
+            }
+
+            for (var index = 0; index < texts.Count; index++)
+            {
+                if (texts[index] == null)
+                {
+                    continue;
+                }
+
+                var color = textColors[index];
+                color.a = Mathf.Lerp(textColors[index].a, 0f, eased);
+                texts[index].color = color;
+            }
+
+            yield return null;
+        }
+
+        ClearMonsterDrops();
+    }
+
+    private Vector2? ResolveDropAnchorPosition()
+    {
+        var parentRect = monsterDropsRoot != null ? monsterDropsRoot.parent as RectTransform : null;
+        var anchorRect = monsterRootRect != null ? monsterRootRect : monsterCharacterRect;
+        if (parentRect == null || anchorRect == null)
+        {
+            return null;
+        }
+
+        var worldCenter = anchorRect.TransformPoint(anchorRect.rect.center);
+        var screenPoint = RectTransformUtility.WorldToScreenPoint(null, worldCenter);
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPoint, null, out var localPoint))
+        {
+            return localPoint + new Vector2(0f, -26f);
+        }
+
+        return null;
+    }
+
+    private static List<Vector2> BuildDropOffsets(int count, float minRadius, float maxRadius, float jitter)
+    {
+        var offsets = new List<Vector2>(count);
+        if (count <= 0)
+        {
+            return offsets;
+        }
+
+        var baseAngle = Random.Range(0f, Mathf.PI * 2f);
+        for (var index = 0; index < count; index++)
+        {
+            var t = (index + 0.5f) / count;
+            var angle = baseAngle + (Mathf.PI * 2f * index / count) + Random.Range(-0.18f, 0.18f);
+            var radius = Mathf.Lerp(minRadius, maxRadius, t) + Random.Range(-jitter, jitter);
+            offsets.Add(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius);
+        }
+
+        return offsets;
+    }
+
     private void AutoBindScene()
     {
+        canvasRect = FindComponent<RectTransform>("Canvas");
+        heroRootRect = FindComponent<RectTransform>("Canvas/Hero") ?? FindComponent<RectTransform>("Hero");
+        monsterRootRect = FindComponent<RectTransform>("Canvas/Monster") ?? FindComponent<RectTransform>("Monster");
         heroNameText = FindComponent<TMP_Text>("Canvas/Hero/Hero Name") ??
                        FindComponent<TMP_Text>("Hero/Hero Name");
         monsterNameText = FindComponent<TMP_Text>("Canvas/Monster/Monster Name") ??
@@ -2249,8 +2807,12 @@ public class TowerBattleController : MonoBehaviour
                                     FindComponent<BattleCharacterPresenter>("Monster Character");
         heroUiAnimator = heroCharacterPresenter != null ? heroCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
         monsterUiAnimator = monsterCharacterPresenter != null ? monsterCharacterPresenter.GetComponent<UiSpriteSheetAnimator>() : null;
+        heroCharacterRect = heroCharacterPresenter != null ? heroCharacterPresenter.GetComponent<RectTransform>() : null;
+        monsterCharacterRect = monsterCharacterPresenter != null ? monsterCharacterPresenter.GetComponent<RectTransform>() : null;
         endPanelRoot = FindGameObject("Canvas/End Panel");
         defeatPanelRoot = FindGameObject("Canvas/Defeat Panel");
+        monsterDropsRoot = FindComponent<RectTransform>("Canvas/Monster Drops");
+        monsterDropTemplate = FindComponent<RectTransform>("Canvas/Monster Drops/Object");
         battleLogPanelRoot = FindGameObject("Canvas/Battle Log Panel");
         pauseMenuPanelRoot = FindGameObject("Canvas/Pause Menu Panel");
         battleLogTemplateText = FindComponent<TMP_Text>("Canvas/Battle Log Panel/Battle Log Text");
@@ -2351,6 +2913,10 @@ public class TowerBattleController : MonoBehaviour
         continueButton = FindComponent<Button>("Canvas/End Panel/Continue Button");
         defeatReviveButton = FindComponent<Button>("Canvas/Defeat Panel/Revive Button");
         defeatMapButton = FindComponent<Button>("Canvas/Defeat Panel/Map Button");
+        continueArrowButton = ConfigureImageButton("Canvas/Continue Arrow Button", OnContinueArrowPressed);
+        backArrowButton = ConfigureImageButton("Canvas/Back Arrow Button", OnBackArrowPressed);
+        ConfigureClickableName(heroNameText, isHeroLabel: true);
+        ConfigureClickableName(monsterNameText, isHeroLabel: false);
 
         if (reviveButton != null)
         {
@@ -2377,6 +2943,9 @@ public class TowerBattleController : MonoBehaviour
 
         SetEndPanelVisible(false);
         SetDefeatPanelVisible(false);
+        SetContinueArrowVisible(false);
+        SetBackArrowVisible(false);
+        ClearMonsterDrops();
         SetBattleLogVisible(false);
         SetPauseMenuVisible(false);
 
