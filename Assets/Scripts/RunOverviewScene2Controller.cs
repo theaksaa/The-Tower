@@ -599,8 +599,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         if (xpValueText != null)
         {
             xpValueText.text = nextThreshold >= 0
-                ? $"LV {hero.Level}   {hero.Xp}/{nextThreshold}"
-                : $"LV {hero.Level}   MAX";
+                ? $"LV {hero.Level}   {hero.Xp}/{nextThreshold}   {hero.Coins} coins"
+                : $"LV {hero.Level}   MAX   {hero.Coins} coins";
         }
 
         if (xpFillImage != null)

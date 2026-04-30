@@ -221,6 +221,7 @@ public class TowerBattleController : MonoBehaviour
         public int KeyAmount;
         public int XpAmount;
         public bool HasLearnedMove;
+        public bool IsCommitted;
     }
 
     private sealed class EncounterSnapshot
@@ -957,6 +958,7 @@ public class TowerBattleController : MonoBehaviour
         var wasFinalEncounter = IsPendingEncounterFinal();
         var rewards = AwardVictoryRewards();
         monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
+        CommitVictoryRewards(rewards);
         pendingVictoryRewards = rewards;
         RefreshAllUi();
 
@@ -991,7 +993,11 @@ public class TowerBattleController : MonoBehaviour
         SetButtonsInteractable(false);
         heroCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
-        SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.");
+        var defeatStatus = $"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.";
+        SetStatus(defeatStatus);
+        RunSession.RegisterDefeat(encounterIndex);
+        RunSession.SetStatus(defeatStatus);
+        RunSaveService.SaveCurrentRun();
 
         if (usingBattleSceneUi && defeatPanelRoot != null)
         {
@@ -1005,8 +1011,8 @@ public class TowerBattleController : MonoBehaviour
 
     private VictoryRewards AwardVictoryRewards()
     {
-        var xpAmount = Mathf.Max(0, currentMonster?.xpReward ?? 0);
-        var coinAmount = Mathf.Max(1, Mathf.CeilToInt(xpAmount * 0.35f));
+        var xpAmount = RunSession.CalculateXpReward(currentMonster);
+        var coinAmount = RunSession.CalculateCoinReward(currentMonster);
         var keyAmount = encounterKeyDropConsumed || RunSession.IsEncounterCompleted(encounterIndex) ? 0 : 1;
         var learnedMoveId = PickLearnableMovePreview(currentMonster);
         var learnedMove = GetMove(learnedMoveId);
@@ -2438,6 +2444,8 @@ public class TowerBattleController : MonoBehaviour
         SetBackArrowVisible(false);
         SetEndPanelVisible(false);
         SetDefeatPanelVisible(false);
+        RunSession.ClearDefeatState($"Battle resumed on encounter {encounterIndex + 1}.");
+        RunSaveService.SaveCurrentRun();
         StartEncounter(encounterIndex, preserveEncounterFlags: true);
     }
 
@@ -2523,23 +2531,36 @@ public class TowerBattleController : MonoBehaviour
         yield return new WaitForSecondsRealtime(heroCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
     }
 
-    private void CommitVictoryRewardsAndReturn()
+    private void CommitVictoryRewards(VictoryRewards rewards)
     {
-        if (pendingVictoryRewards == null || hero == null)
+        if (rewards == null || hero == null || rewards.IsCommitted)
         {
             return;
         }
 
-        hero.Xp += pendingVictoryRewards.XpAmount;
+        RunSession.AddCoins(rewards.CoinsAmount);
+        hero.Xp += rewards.XpAmount;
 
-        if (!string.IsNullOrWhiteSpace(pendingVictoryRewards.LearnedMoveId))
+        if (!string.IsNullOrWhiteSpace(rewards.LearnedMoveId))
         {
-            hero.KnownMoves.Add(pendingVictoryRewards.LearnedMoveId);
-            RunSession.SetPendingLearnedMove(pendingVictoryRewards.LearnedMoveId);
+            hero.KnownMoves.Add(rewards.LearnedMoveId);
+            RunSession.SetPendingLearnedMove(rewards.LearnedMoveId);
         }
 
-        RunSession.MarkEncounterComplete(encounterIndex, pendingVictoryRewards.Summary);
+        RunSession.RegisterMonsterKill(currentMonster?.id);
+        RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
         RunSaveService.SaveCurrentRun();
+        rewards.IsCommitted = true;
+    }
+
+    private void CommitVictoryRewardsAndReturn()
+    {
+        if (pendingVictoryRewards == null)
+        {
+            return;
+        }
+
+        CommitVictoryRewards(pendingVictoryRewards);
         pendingVictoryRewards = null;
         heroReviveAvailable = false;
         monsterReviveAvailable = false;

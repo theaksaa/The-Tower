@@ -172,7 +172,7 @@ public class MapRunOverviewController : MonoBehaviour, IMoveLoadoutController
         var hero = RunSession.Hero;
         var heroStats = RunSession.GetHeroBaseStats();
         heroStatsText.text =
-            $"{RunSession.GetHeroDisplayName()} Lv.{hero.Level}   XP {hero.Xp}\n" +
+            $"{RunSession.GetHeroDisplayName()} Lv.{hero.Level}   XP {hero.Xp}   Coins {hero.Coins}\n" +
             $"HP {hero.CurrentHp}/{heroStats.health}   ATK {heroStats.attack}   DEF {heroStats.defense}   MAG {heroStats.magic}";
 
         statusText.text = RunSession.IsRunComplete()
@@ -235,11 +235,12 @@ public class MapRunOverviewController : MonoBehaviour, IMoveLoadoutController
                 : canEnter
                     ? "Click to enter battle"
                     : "Unavailable";
+            var coinReward = RunSession.CalculateCoinReward(encounter);
 
             encounterButtonLabels[index].text =
                 $"{index + 1}. {encounter.name}\n" +
                 $"{encounter.description}\n" +
-                $"Reward: {encounter.xpReward} XP   Status: {stateLabel}";
+                $"Reward: {coinReward} Coins   {encounter.xpReward} XP   Status: {stateLabel}";
 
             encounterButtons[index].interactable = canEnter;
             encounterButtons[index].onClick.RemoveAllListeners();

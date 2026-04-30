@@ -53,6 +53,7 @@ public static class RunDataService
       ""moves"": [""rusty_blade"", ""dirty_kick""],
       ""learnableMoves"": [""rusty_blade"", ""dirty_kick""],
       ""xpReward"": 60,
+      ""coinReward"": 24,
       ""spriteKey"": ""training_dummy""
     },
     {
@@ -63,6 +64,7 @@ public static class RunDataService
       ""moves"": [""flame_breath"", ""claw_swipe"", ""dragon_scales""],
       ""learnableMoves"": [""flame_breath"", ""dragon_scales""],
       ""xpReward"": 140,
+      ""coinReward"": 56,
       ""spriteKey"": ""emberscale""
     }
   ],
@@ -87,6 +89,14 @@ public static class RunDataService
     }
   ],
   ""xpTable"": [0, 100, 250, 450, 700],
+  ""coinRewardScaling"": {
+    ""multiplierPerKill"": 0.9,
+    ""minimumReward"": 5
+  },
+  ""xpRewardScaling"": {
+    ""multiplierPerKill"": 0.95,
+    ""minimumReward"": 25
+  },
   ""moveRegistry"": {
     ""slash"": { ""id"": ""slash"", ""name"": ""Slash"", ""description"": ""Moderate physical damage."", ""spriteKey"": ""slash"", ""type"": ""physical"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 15, ""statMultiplier"": 1.0, ""statModifier"": null, ""hpCost"": null },
     ""shield_up"": { ""id"": ""shield_up"", ""name"": ""Shield Up"", ""description"": ""Raises the user's Defense for two turns."", ""spriteKey"": ""shield_up"", ""type"": ""status"", ""effect"": ""stat_modifier"", ""target"": ""self"", ""basePower"": 0, ""statMultiplier"": 0, ""statModifier"": { ""stat"": ""defense"", ""value"": 6, ""durationTurns"": 2 }, ""hpCost"": null },

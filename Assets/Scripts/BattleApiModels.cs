@@ -57,7 +57,22 @@ namespace TheTower
         public List<string> moves;
         public List<string> learnableMoves;
         public int xpReward;
+        public int coinReward;
         public string spriteKey;
+    }
+
+    [Serializable]
+    public class CoinRewardScaling
+    {
+        public float multiplierPerKill;
+        public int minimumReward;
+    }
+
+    [Serializable]
+    public class XpRewardScaling
+    {
+        public float multiplierPerKill;
+        public int minimumReward;
     }
 
     [Serializable]
@@ -93,6 +108,8 @@ namespace TheTower
         public List<HeroDefinition> heroes;
         public HeroDefaults heroDefaults;
         public List<int> xpTable;
+        public CoinRewardScaling coinRewardScaling;
+        public XpRewardScaling xpRewardScaling;
         public Dictionary<string, Move> moveRegistry;
     }
 

@@ -13,12 +13,14 @@ public sealed class HeroRuntimeState
     public string HeroName;
     public int Level;
     public int Xp;
+    public int Coins;
     public int CurrentHp;
     public int BonusAttack;
     public int BonusDefense;
     public int BonusMagic;
     public List<string> EquippedMoves = new();
     public HashSet<string> KnownMoves = new();
+    public Dictionary<string, int> MonsterKillCounts = new();
 }
 
 public static class RunSession
@@ -88,9 +90,11 @@ public static class RunSession
             HeroName = defaults.name,
             Level = 1,
             Xp = 0,
+            Coins = 0,
             CurrentHp = defaults.baseStats.health,
             EquippedMoves = defaults.moves.Take(4).ToList(),
-            KnownMoves = new HashSet<string>(defaults.moves)
+            KnownMoves = new HashSet<string>(defaults.moves),
+            MonsterKillCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         };
 
         CompletedEncounters = Enumerable.Repeat(false, runConfig.encounters.Count).ToList();
@@ -124,6 +128,7 @@ public static class RunSession
                 : runData.Hero.HeroName,
             Level = Mathf.Max(1, runData.Hero.Level),
             Xp = Mathf.Max(0, runData.Hero.Xp),
+            Coins = Mathf.Max(0, runData.Hero.Coins),
             CurrentHp = Mathf.Max(0, runData.Hero.CurrentHp),
             BonusAttack = runData.Hero.BonusAttack,
             BonusDefense = runData.Hero.BonusDefense,
@@ -131,7 +136,10 @@ public static class RunSession
             EquippedMoves = runData.Hero.EquippedMoves?.ToList() ?? new List<string>(),
             KnownMoves = runData.Hero.KnownMoves != null
                 ? new HashSet<string>(runData.Hero.KnownMoves)
-                : new HashSet<string>()
+                : new HashSet<string>(),
+            MonsterKillCounts = runData.Hero.MonsterKillCounts != null
+                ? new Dictionary<string, int>(runData.Hero.MonsterKillCounts, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         };
 
         if (Hero.KnownMoves.Count == 0 && SelectedHeroDefinition?.moves != null)
@@ -289,6 +297,15 @@ public static class RunSession
         StatusMessage = $"The hero fell on encounter {encounterIndex + 1}. Start a new run to try again.";
     }
 
+    public static void ClearDefeatState(string statusMessage = null)
+    {
+        IsDefeated = false;
+        if (!string.IsNullOrWhiteSpace(statusMessage))
+        {
+            StatusMessage = statusMessage;
+        }
+    }
+
     public static void ReturnToMapAfterDefeat(int encounterIndex)
     {
         if (!HasActiveRun || Hero == null)
@@ -296,7 +313,7 @@ public static class RunSession
             return;
         }
 
-        IsDefeated = false;
+        ClearDefeatState();
         Hero.CurrentHp = GetHeroBaseStats().health;
 
         var nextEncounterIndex = encounterIndex >= 0 && encounterIndex < CurrentRunConfig.encounters.Count
@@ -325,6 +342,94 @@ public static class RunSession
     public static void SetStatus(string message)
     {
         StatusMessage = message;
+    }
+
+    public static void AddCoins(int amount)
+    {
+        if (Hero == null || amount <= 0)
+        {
+            return;
+        }
+
+        Hero.Coins += amount;
+    }
+
+    public static int GetMonsterKillCount(string monsterId)
+    {
+        if (Hero?.MonsterKillCounts == null || string.IsNullOrWhiteSpace(monsterId))
+        {
+            return 0;
+        }
+
+        return Hero.MonsterKillCounts.TryGetValue(monsterId, out var count)
+            ? Mathf.Max(0, count)
+            : 0;
+    }
+
+    public static void RegisterMonsterKill(string monsterId)
+    {
+        if (Hero == null || string.IsNullOrWhiteSpace(monsterId))
+        {
+            return;
+        }
+
+        Hero.MonsterKillCounts ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        Hero.MonsterKillCounts.TryGetValue(monsterId, out var existingCount);
+        Hero.MonsterKillCounts[monsterId] = Mathf.Max(0, existingCount) + 1;
+    }
+
+    public static int CalculateCoinReward(Monster monster)
+    {
+        var baseReward = Mathf.Max(0, monster?.coinReward ?? 0);
+        if (baseReward <= 0)
+        {
+            return 0;
+        }
+
+        var repeatKillCount = GetMonsterKillCount(monster.id);
+        if (repeatKillCount <= 0)
+        {
+            return baseReward;
+        }
+
+        var rewardScaling = CurrentRunConfig?.coinRewardScaling;
+        if (rewardScaling == null)
+        {
+            return baseReward;
+        }
+
+        var multiplierPerKill = rewardScaling.multiplierPerKill > 0f
+            ? rewardScaling.multiplierPerKill
+            : 1f;
+        var scaledReward = Mathf.FloorToInt(baseReward * Mathf.Pow(multiplierPerKill, repeatKillCount));
+        return Mathf.Max(Mathf.Max(0, rewardScaling.minimumReward), scaledReward);
+    }
+
+    public static int CalculateXpReward(Monster monster)
+    {
+        var baseReward = Mathf.Max(0, monster?.xpReward ?? 0);
+        if (baseReward <= 0)
+        {
+            return 0;
+        }
+
+        var repeatKillCount = GetMonsterKillCount(monster.id);
+        if (repeatKillCount <= 0)
+        {
+            return baseReward;
+        }
+
+        var rewardScaling = CurrentRunConfig?.xpRewardScaling;
+        if (rewardScaling == null)
+        {
+            return baseReward;
+        }
+
+        var multiplierPerKill = rewardScaling.multiplierPerKill > 0f
+            ? rewardScaling.multiplierPerKill
+            : 1f;
+        var scaledReward = Mathf.FloorToInt(baseReward * Mathf.Pow(multiplierPerKill, repeatKillCount));
+        return Mathf.Max(Mathf.Max(0, rewardScaling.minimumReward), scaledReward);
     }
 
     public static bool IsRunComplete()
@@ -644,6 +749,7 @@ public static class RunSaveService
                 HeroName = RunSession.Hero.HeroName,
                 Level = RunSession.Hero.Level,
                 Xp = RunSession.Hero.Xp,
+                Coins = RunSession.Hero.Coins,
                 CurrentHp = RunSession.Hero.CurrentHp,
                 BonusAttack = RunSession.Hero.BonusAttack,
                 BonusDefense = RunSession.Hero.BonusDefense,
@@ -651,7 +757,10 @@ public static class RunSaveService
                 EquippedMoves = RunSession.Hero.EquippedMoves?.ToList() ?? new List<string>(),
                 KnownMoves = RunSession.Hero.KnownMoves != null
                     ? new HashSet<string>(RunSession.Hero.KnownMoves)
-                    : new HashSet<string>()
+                    : new HashSet<string>(),
+                MonsterKillCounts = RunSession.Hero.MonsterKillCounts != null
+                    ? new Dictionary<string, int>(RunSession.Hero.MonsterKillCounts, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
             };
     }
 
@@ -665,6 +774,7 @@ public static class RunSaveService
                 HeroName = hero.HeroName,
                 Level = hero.Level,
                 Xp = hero.Xp,
+                Coins = hero.Coins,
                 CurrentHp = hero.CurrentHp,
                 BonusAttack = hero.BonusAttack,
                 BonusDefense = hero.BonusDefense,
@@ -672,7 +782,10 @@ public static class RunSaveService
                 EquippedMoves = hero.EquippedMoves?.ToList() ?? new List<string>(),
                 KnownMoves = hero.KnownMoves != null
                     ? new HashSet<string>(hero.KnownMoves)
-                    : new HashSet<string>()
+                    : new HashSet<string>(),
+                MonsterKillCounts = hero.MonsterKillCounts != null
+                    ? new Dictionary<string, int>(hero.MonsterKillCounts, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
             };
     }
 
