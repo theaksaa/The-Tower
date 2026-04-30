@@ -880,10 +880,21 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
     private void SetMapPanelVisible(bool isVisible)
     {
+        if (!isVisible)
+        {
+            ResetMapPanelState();
+        }
+
         if (mapPanelRoot != null)
         {
             mapPanelRoot.SetActive(isVisible);
         }
+    }
+
+    private void ResetMapPanelState()
+    {
+        selectedEncounterIndex = -1;
+        hoveredEncounterIndex = -1;
     }
 
     private void ToggleMovesPanel()
