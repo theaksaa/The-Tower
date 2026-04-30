@@ -1414,12 +1414,23 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         for (var index = 0; index < shopItems.Count; index++)
         {
             var item = shopItems[index];
-            if (item?.Button == null)
+            if (item == null)
             {
                 continue;
             }
 
             var config = item.Config;
+            var shouldHide = ShouldHideShopItem(config);
+            if (item.Root != null)
+            {
+                item.Root.gameObject.SetActive(!shouldHide);
+            }
+
+            if (shouldHide || item.Button == null)
+            {
+                continue;
+            }
+
             var canAfford = RunSession.HasActiveRun &&
                 RunSession.Hero != null &&
                 config != null &&
@@ -1433,6 +1444,16 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
                 item.DisabledBackground.SetActive(!(canAfford && canPurchase));
             }
         }
+    }
+
+    private static bool ShouldHideShopItem(ShopItemConfig config)
+    {
+        if (config == null || config.repeatable)
+        {
+            return false;
+        }
+
+        return !CanPurchaseShopItem(config);
     }
 
     private static bool CanPurchaseShopItem(ShopItemConfig config)
