@@ -222,6 +222,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         private Image backgroundImage;
         private RectTransform labelRect;
         private TMP_Text labelText;
+        private readonly List<Graphic> childGraphics = new();
+        private readonly List<Color> childGraphicColors = new();
         private Sprite normalSprite;
         private Sprite pressedSprite;
         private Color normalColor;
@@ -268,6 +270,24 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             if (labelText != null)
             {
                 labelNormalColor = labelText.color;
+            }
+
+            childGraphics.Clear();
+            childGraphicColors.Clear();
+            if (button != null)
+            {
+                var graphics = button.GetComponentsInChildren<Graphic>(true);
+                for (var index = 0; index < graphics.Length; index++)
+                {
+                    var graphic = graphics[index];
+                    if (graphic == null || graphic == backgroundImage || graphic == labelText)
+                    {
+                        continue;
+                    }
+
+                    childGraphics.Add(graphic);
+                    childGraphicColors.Add(graphic.color);
+                }
             }
 
             wasInteractable = button == null || button.IsInteractable();
@@ -356,6 +376,14 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             if (labelText != null)
             {
                 labelText.color = isInteractable ? labelNormalColor : disabledColor;
+            }
+
+            for (var index = 0; index < childGraphics.Count; index++)
+            {
+                if (childGraphics[index] != null)
+                {
+                    childGraphics[index].color = isInteractable ? childGraphicColors[index] : disabledColor;
+                }
             }
         }
     }
@@ -724,15 +752,18 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
         var hero = RunSession.Hero;
         var nextThreshold = RunSession.GetNextLevelXpThreshold();
+        var availableLevelUps = RunSession.GetAvailableLevelUpCount();
         var previousThreshold = hero.Level <= 1 || RunSession.CurrentRunConfig?.xpTable == null
             ? 0
             : RunSession.CurrentRunConfig.xpTable[Mathf.Clamp(hero.Level - 1, 0, RunSession.CurrentRunConfig.xpTable.Count - 1)];
 
         if (xpValueText != null)
         {
-            xpValueText.text = nextThreshold >= 0
-                ? $"LV {hero.Level}   {hero.Xp}/{nextThreshold}   {hero.Coins} coins"
-                : $"LV {hero.Level}   MAX   {hero.Coins} coins";
+            xpValueText.text = availableLevelUps > 0
+                ? "Level up available"
+                : nextThreshold >= 0
+                    ? $"{hero.Xp}/{nextThreshold}"
+                    : "MAX";
         }
 
         if (xpFillImage != null)

@@ -62,6 +62,7 @@ public class TowerBattleController : MonoBehaviour
     private readonly List<Button> moveButtons = new();
     private readonly List<Text> moveButtonLabels = new();
     private readonly List<Image> moveButtonIcons = new();
+    private readonly List<bool> moveButtonHasMoveStates = new();
     private readonly List<GameObject> moveHoverSelectorRoots = new();
     private readonly List<ActiveModifier> heroModifiers = new();
     private readonly List<ActiveModifier> monsterModifiers = new();
@@ -187,6 +188,7 @@ public class TowerBattleController : MonoBehaviour
     private readonly Color debuffEffectColor = new(1f, 0.45f, 0.45f, 1f);
     private readonly Color activeMoveIconColor = Color.white;
     private readonly Color inactiveMoveIconColor = new(0.35f, 0.35f, 0.35f, 1f);
+    private readonly Color disabledMoveIconColor = new(0.78431374f, 0.78431374f, 0.78431374f, 0.5019608f);
     private VictoryRewards pendingVictoryRewards;
     private EncounterSnapshot encounterSnapshot;
     private readonly List<GameObject> runtimeDropObjects = new();
@@ -1346,7 +1348,17 @@ public class TowerBattleController : MonoBehaviour
         for (var index = 0; index < moveButtons.Count; index++)
         {
             var hasMove = hero != null && index < hero.EquippedMoves.Count;
-            moveButtons[index].interactable = !isBusy && !returnReady && hasMove;
+            var button = moveButtons[index];
+            if (button != null)
+            {
+                button.interactable = !isBusy && !returnReady && hasMove;
+            }
+
+            if (index < moveButtonHasMoveStates.Count)
+            {
+                moveButtonHasMoveStates[index] = hasMove;
+            }
+
             if (moveButtonLabels[index] != null)
             {
                 moveButtonLabels[index].text = hasMove ? GetMove(hero.EquippedMoves[index])?.name ?? hero.EquippedMoves[index] : "-";
@@ -1356,8 +1368,9 @@ public class TowerBattleController : MonoBehaviour
             {
                 var move = hasMove ? GetMove(hero.EquippedMoves[index]) : null;
                 moveButtonIcons[index].sprite = ResolveMoveIconSprite(move);
-                moveButtonIcons[index].color = hasMove ? activeMoveIconColor : inactiveMoveIconColor;
             }
+
+            RefreshMoveButtonIconState(index);
         }
 
         UpdateMoveHoverSelectors();
@@ -1424,15 +1437,40 @@ public class TowerBattleController : MonoBehaviour
     private void ApplyMoveButtonsInteractableState()
     {
         var canInteract = requestedMoveButtonsInteractable && !pauseMenuOpen;
-        foreach (var button in moveButtons)
+        for (var index = 0; index < moveButtons.Count; index++)
         {
+            var button = moveButtons[index];
             if (button != null)
             {
                 button.interactable = canInteract;
             }
+
+            RefreshMoveButtonIconState(index);
         }
 
         UpdateMoveHoverSelectors();
+    }
+
+    private void RefreshMoveButtonIconState(int index)
+    {
+        if (index < 0 || index >= moveButtonIcons.Count)
+        {
+            return;
+        }
+
+        var icon = moveButtonIcons[index];
+        if (icon == null)
+        {
+            return;
+        }
+
+        var hasMove = index < moveButtonHasMoveStates.Count && moveButtonHasMoveStates[index];
+        var button = index < moveButtons.Count ? moveButtons[index] : null;
+        icon.color = !hasMove
+            ? inactiveMoveIconColor
+            : button != null && button.IsInteractable()
+                ? activeMoveIconColor
+                : disabledMoveIconColor;
     }
 
     private void ConfigurePauseMenuButtons()
@@ -2886,6 +2924,7 @@ public class TowerBattleController : MonoBehaviour
         moveButtons.Clear();
         moveButtonLabels.Clear();
         moveButtonIcons.Clear();
+        moveButtonHasMoveStates.Clear();
         moveHoverSelectorRoots.Clear();
         hoveredMoveIndex = -1;
 
@@ -2914,6 +2953,7 @@ public class TowerBattleController : MonoBehaviour
                 moveButtons.Add(button);
                 moveButtonLabels.Add(label);
                 moveButtonIcons.Add(null);
+                moveButtonHasMoveStates.Add(false);
                 moveHoverSelectorRoots.Add(null);
             }
         }
@@ -3035,6 +3075,7 @@ public class TowerBattleController : MonoBehaviour
             moveButtons.Add(button);
             moveButtonLabels.Add(null);
             moveButtonIcons.Add(iconImage);
+            moveButtonHasMoveStates.Add(false);
             moveHoverSelectorRoots.Add(CreateMoveHoverSelector(moveRoot.transform));
             ConfigureMoveHoverListener(moveRoot, capturedIndex);
         }
