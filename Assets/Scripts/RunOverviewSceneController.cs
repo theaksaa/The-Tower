@@ -715,7 +715,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         movesBarOpenPanelIndicatorRoot = FindChild("Moves Bar/Open Moves Panel") as RectTransform;
         bottomMovesRoot = FindChild("Moves Bar/Moves") as RectTransform;
         panelMovesRoot = FindChild("Moves Panel/Moves") as RectTransform;
-        movesInventoryRoot = FindChild("Moves Panel/Moves Inventory") as RectTransform;
+        movesInventoryRoot = ResolveMovesInventoryRoot();
         movesPanelRoot = FindChild("Moves Panel")?.gameObject;
         movesPanelCloseButton = FindComponent<Button>("Moves Panel/Close Button");
         moveStatsIcon = FindComponent<Image>("Moves Panel/Current Move Stats/Move/Move Icon");
@@ -2293,6 +2293,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private void CacheMoveSlots(RectTransform root, ICollection<MoveSlotView> slots)
     {
         slots.Clear();
+        root = ResolveMoveSlotContainer(root);
         if (root == null)
         {
             return;
@@ -2312,6 +2313,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
 
     private void EnsureSlotCount(RectTransform root, List<MoveSlotView> slots, int requiredCount)
     {
+        root = ResolveMoveSlotContainer(root);
         if (root == null || slots == null || slots.Count == 0)
         {
             return;
@@ -2356,6 +2358,34 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         slot.DefaultIconSprite = slot.Icon != null ? slot.Icon.sprite : null;
         slot.DefaultBackgroundSprite = slot.Background != null ? slot.Background.sprite : null;
         return slot;
+    }
+
+    private RectTransform ResolveMovesInventoryRoot()
+    {
+        return FindChild("Moves Panel/Moves Inventory/Viewport/Content/moves") as RectTransform
+            ?? FindChild("Moves Panel/Moves Inventory/Viewport/Content/Moves") as RectTransform
+            ?? FindChild("Moves Panel/Moves Inventory/Viewport/Content") as RectTransform
+            ?? FindChild("Moves Panel/Moves Inventory/Content/moves") as RectTransform
+            ?? FindChild("Moves Panel/Moves Inventory/Content/Moves") as RectTransform
+            ?? FindChild("Moves Panel/Moves Inventory/Content") as RectTransform
+            ?? FindChild("Moves Panel/Moves Inventory") as RectTransform;
+    }
+
+    private static RectTransform ResolveMoveSlotContainer(RectTransform root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        var contentChild = root.Find("Viewport/Content/moves") as RectTransform
+            ?? root.Find("Viewport/Content/Moves") as RectTransform
+            ?? root.Find("Viewport/Content") as RectTransform
+            ?? root.Find("Content/moves") as RectTransform
+            ?? root.Find("Content/Moves") as RectTransform
+            ?? root.Find("Content") as RectTransform;
+
+        return contentChild ?? root;
     }
 
     private void RefreshMoveSelectors()
