@@ -5021,12 +5021,12 @@ GameObject:
   - component: {fileID: 707960957}
   - component: {fileID: 707960956}
   m_Layer: 5
-  m_Name: Open Moves Panel
+  m_Name: Open Moves Panel Icon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &707960955
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7721,6 +7721,8 @@ MonoBehaviour:
   buttonHoverTint: {r: 0.9, g: 0.9, b: 0.9, a: 1}
   buttonPressedTint: {r: 0.82, g: 0.82, b: 0.82, a: 1}
   pressedButtonTextOffset: {x: 0, y: -6}
+  movesBarHoverLift: 10
+  movesBarHoverAnimationSpeed: 14
 --- !u!1 &1139882520
 GameObject:
   m_ObjectHideFlags: 0

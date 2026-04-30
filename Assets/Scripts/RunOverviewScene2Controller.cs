@@ -44,6 +44,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     [SerializeField] private Color buttonHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
     [SerializeField] private Color buttonPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
     [SerializeField] private Vector2 pressedButtonTextOffset = new(0f, -6f);
+    [SerializeField] private float movesBarHoverLift = 10f;
+    [SerializeField] private float movesBarHoverAnimationSpeed = 14f;
 
     private Image heroImage;
     private UiSpriteSheetAnimator heroAnimator;
@@ -69,6 +71,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private RectTransform movesInventoryRoot;
     private GameObject movesPanelRoot;
     private Button movesBarButton;
+    private RectTransform movesBarBackgroundRoot;
+    private RectTransform movesBarOpenPanelIndicatorRoot;
     private Button movesPanelCloseButton;
     private RectTransform dragLayer;
     private Image moveStatsIcon;
@@ -88,6 +92,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private GameObject mapPanelRoot;
     private TMP_Text mapPanelText;
     private Button mapButton;
+    private RectTransform mapButtonBackgroundRoot;
+    private RectTransform mapButtonTextRoot;
     private Button mapPanelCloseButton;
     private Button mapStartButton;
     private TMP_Text mapStartButtonText;
@@ -354,6 +360,102 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         }
     }
 
+    private sealed class HoverLiftFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private RectTransform backgroundTarget;
+        private RectTransform indicatorTarget;
+        private Vector2 backgroundBaseAnchoredPosition;
+        private Vector2 indicatorBaseAnchoredPosition;
+        private float hoverLift;
+        private float animationSpeed;
+        private bool isHovered;
+        private System.Func<bool> shouldLiftPredicate;
+
+        public void Initialize(
+            RectTransform backgroundRectTransform,
+            RectTransform indicatorRectTransform,
+            float lift,
+            float speed,
+            System.Func<bool> shouldLift)
+        {
+            backgroundTarget = backgroundRectTransform;
+            indicatorTarget = indicatorRectTransform;
+            hoverLift = lift;
+            animationSpeed = Mathf.Max(0.01f, speed);
+            shouldLiftPredicate = shouldLift;
+
+            if (backgroundTarget != null)
+            {
+                backgroundBaseAnchoredPosition = backgroundTarget.anchoredPosition;
+                backgroundTarget.anchoredPosition = backgroundBaseAnchoredPosition;
+            }
+
+            if (indicatorTarget != null)
+            {
+                indicatorBaseAnchoredPosition = indicatorTarget.anchoredPosition;
+                indicatorTarget.anchoredPosition = indicatorBaseAnchoredPosition;
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            SnapToBasePosition();
+        }
+
+        private void LateUpdate()
+        {
+            if (backgroundTarget == null && indicatorTarget == null)
+            {
+                return;
+            }
+
+            var shouldLift = isHovered && (shouldLiftPredicate?.Invoke() ?? true);
+            var t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
+            UpdateTargetPosition(backgroundTarget, backgroundBaseAnchoredPosition, shouldLift, t);
+            UpdateTargetPosition(indicatorTarget, indicatorBaseAnchoredPosition, shouldLift, t);
+        }
+
+        public void SnapToBasePosition()
+        {
+            if (backgroundTarget != null)
+            {
+                backgroundTarget.anchoredPosition = backgroundBaseAnchoredPosition;
+            }
+
+            if (indicatorTarget != null)
+            {
+                indicatorTarget.anchoredPosition = indicatorBaseAnchoredPosition;
+            }
+        }
+
+        private void UpdateTargetPosition(RectTransform target, Vector2 basePosition, bool shouldLift, float interpolation)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var targetPosition = basePosition + (shouldLift ? Vector2.up * hoverLift : Vector2.zero);
+            target.anchoredPosition = Vector2.Lerp(target.anchoredPosition, targetPosition, interpolation);
+
+            if ((target.anchoredPosition - targetPosition).sqrMagnitude <= 0.01f)
+            {
+                target.anchoredPosition = targetPosition;
+            }
+        }
+    }
+
     private void Awake()
     {
         AutoBindScene();
@@ -417,6 +519,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         magicButton = FindComponent<Button>("Level Panel/Boost Buttons/Magic Button");
         closeButton = FindComponent<Button>("Level Panel/Close Button");
         movesBarRoot = FindChild("Moves Bar") as RectTransform;
+        movesBarBackgroundRoot = FindChild("Moves Bar/Moves Background") as RectTransform;
+        movesBarOpenPanelIndicatorRoot = FindChild("Moves Bar/Open Moves Panel") as RectTransform;
         bottomMovesRoot = FindChild("Moves Bar/Moves") as RectTransform;
         panelMovesRoot = FindChild("Moves Panel/Moves") as RectTransform;
         movesInventoryRoot = FindChild("Moves Panel/Moves Inventory") as RectTransform;
@@ -437,6 +541,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         monsterMagicEffectText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Monster Effects Stat/Magic/Magic Text");
         moveStatsEffectsAmountText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Effects Amount");
         mapButton = EnsureButton(FindChild("Map Button"));
+        mapButtonBackgroundRoot = FindChild("Map Button/Background") as RectTransform;
+        mapButtonTextRoot = FindChild("Map Button/Text") as RectTransform;
         mapPanelRoot = FindChild("Map Panel")?.gameObject;
         mapPanelText = FindComponent<TMP_Text>("Map Panel/Text");
         mapPanelCloseButton = FindComponent<Button>("Map Panel/Close Button");
@@ -474,6 +580,19 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         {
             mapButton.onClick.RemoveAllListeners();
             mapButton.onClick.AddListener(OpenMapPanel);
+
+            var hoverFeedback = mapButton.GetComponent<HoverLiftFeedback>();
+            if (hoverFeedback == null)
+            {
+                hoverFeedback = mapButton.gameObject.AddComponent<HoverLiftFeedback>();
+            }
+
+            hoverFeedback.Initialize(
+                mapButtonBackgroundRoot,
+                mapButtonTextRoot,
+                movesBarHoverLift,
+                movesBarHoverAnimationSpeed,
+                () => mapButton.IsInteractable());
         }
 
         if (mapPanelCloseButton != null)
@@ -520,6 +639,19 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
             movesBarButton.onClick.RemoveAllListeners();
             movesBarButton.onClick.AddListener(ToggleMovesPanel);
+
+            var hoverFeedback = movesBarRoot.GetComponent<HoverLiftFeedback>();
+            if (hoverFeedback == null)
+            {
+                hoverFeedback = movesBarRoot.gameObject.AddComponent<HoverLiftFeedback>();
+            }
+
+            hoverFeedback.Initialize(
+                movesBarBackgroundRoot,
+                movesBarOpenPanelIndicatorRoot,
+                movesBarHoverLift,
+                movesBarHoverAnimationSpeed,
+                ShouldLiftMovesBarOnHover);
         }
 
         if (movesPanelCloseButton != null)
@@ -765,6 +897,26 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         {
             movesPanelRoot.SetActive(isVisible);
         }
+
+        if (!isVisible)
+        {
+            hoveredMoveId = null;
+        }
+
+        if (movesBarOpenPanelIndicatorRoot != null)
+        {
+            movesBarOpenPanelIndicatorRoot.gameObject.SetActive(!isVisible);
+        }
+
+        RefreshMoveSelectors();
+        RefreshMoveStats(hoveredMoveId);
+    }
+
+    private bool ShouldLiftMovesBarOnHover()
+    {
+        return movesBarButton != null &&
+               movesBarButton.IsInteractable() &&
+               (movesPanelRoot == null || !movesPanelRoot.activeSelf);
     }
 
     private void ConfigurePauseMenuButtons()
@@ -890,8 +1042,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             hoveredMoveId = null;
         }
 
-        ConfigureEquippedSlots(bottomEquippedSlots, hero.EquippedMoves, canDrag: false);
-        ConfigureEquippedSlots(panelEquippedSlots, hero.EquippedMoves, canDrag: true);
+        ConfigureEquippedSlots(bottomEquippedSlots, hero.EquippedMoves, canDrag: false, canHoverPreview: false);
+        ConfigureEquippedSlots(panelEquippedSlots, hero.EquippedMoves, canDrag: true, canHoverPreview: true);
         ConfigureInventorySlots(orderedKnownMoves);
         RefreshMoveSelectors();
         RefreshMoveStats(hoveredMoveId);
@@ -1078,7 +1230,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         SceneManager.LoadScene(battleSceneName);
     }
 
-    private void ConfigureEquippedSlots(IReadOnlyList<MoveSlotView> slots, IReadOnlyList<string> equippedMoves, bool canDrag)
+    private void ConfigureEquippedSlots(IReadOnlyList<MoveSlotView> slots, IReadOnlyList<string> equippedMoves, bool canDrag, bool canHoverPreview)
     {
         for (var index = 0; index < slots.Count; index++)
         {
@@ -1090,6 +1242,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
                 sourceEquippedIndex: index,
                 canDrop: canDrag,
                 canDrag: canDrag,
+                canHoverPreview: canHoverPreview,
                 emptyBackgroundSprite: emptyMovesInventorySprite);
         }
     }
@@ -1114,6 +1267,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
                     sourceEquippedIndex: -1,
                     canDrop: false,
                     canDrag: false,
+                    canHoverPreview: false,
                     emptyBackgroundSprite: emptyMovesInventorySprite);
             }
         }
@@ -1126,6 +1280,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         int sourceEquippedIndex,
         bool canDrop,
         bool canDrag,
+        bool canHoverPreview = true,
         Sprite emptyIconSprite = null,
         bool showEmptyIcon = false,
         Sprite emptyBackgroundSprite = null)
@@ -1186,7 +1341,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         }
 
         var hoverItem = slot.Root.GetComponent<MoveHoverPreviewItem>();
-        if (moveId == null)
+        if (moveId == null || !canHoverPreview)
         {
             if (hoverItem != null)
             {
@@ -1281,6 +1436,14 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
     public void HandleMoveHoverChanged(string moveId, bool isHovered)
     {
+        if (movesPanelRoot == null || !movesPanelRoot.activeSelf)
+        {
+            hoveredMoveId = null;
+            RefreshMoveSelectors();
+            RefreshMoveStats(null);
+            return;
+        }
+
         hoveredMoveId = isHovered ? moveId : null;
         RefreshMoveSelectors();
         RefreshMoveStats(hoveredMoveId);
