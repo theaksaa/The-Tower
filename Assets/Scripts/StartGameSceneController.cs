@@ -11,7 +11,7 @@ public class StartGameSceneController : MonoBehaviour
 {
     [Header("Navigation")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
-    [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
+    [SerializeField] private string storySceneName = "StoryScene";
     [SerializeField] private string runOverviewSceneName = "RunOverviewScene";
 
     [Header("Mode Preview")]
@@ -331,14 +331,14 @@ public class StartGameSceneController : MonoBehaviour
     {
         RunSession.ClearActiveRun();
         RunSession.SetPendingMode("Story");
-        SceneManager.LoadScene(heroSelectSceneName);
+        SceneManager.LoadScene(storySceneName);
     }
 
     private void SelectEndlessMode()
     {
         RunSession.ClearActiveRun();
         RunSession.SetPendingMode("Endless");
-        SceneManager.LoadScene(heroSelectSceneName);
+        SceneManager.LoadScene(storySceneName);
     }
 
     private void ShowPanel(VisiblePanel panel)
