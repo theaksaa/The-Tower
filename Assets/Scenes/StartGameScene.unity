@@ -3684,7 +3684,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StartGameSceneController
   mainMenuSceneName: MainMenu
   heroSelectSceneName: HeroSelectScene
-  runOverviewSceneName: RunOverviewScene2
+  runOverviewSceneName: RunOverviewScene
   storyModeTitle: Story mode
   storyModeDescription: Take on a curated tower run, grow your hero, and push through
     each encounter one by one.

@@ -1351,7 +1351,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f5b038fdde3dad45939a74551f06aa8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuController
-  battleSceneName: RunOverviewScene2
+  battleSceneName: RunOverviewScene
   statusMessage: Settings are not implemented yet.
   buttonHeight: 88
 --- !u!114 &1828979758

@@ -12,7 +12,7 @@ public class StartGameSceneController : MonoBehaviour
     [Header("Navigation")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
     [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
-    [SerializeField] private string runOverviewSceneName = "RunOverviewScene2";
+    [SerializeField] private string runOverviewSceneName = "RunOverviewScene";
 
     [Header("Mode Preview")]
     [SerializeField] private string storyModeTitle = "Story mode";

@@ -13,7 +13,7 @@ using UnityEngine.UI;
 using UnityEditor;
 #endif
 
-public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
+public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
 {
     private static readonly Color EmptyMoveSlotTint = new(1f, 1f, 1f, 0.28f);
     private static readonly Color LockedMonsterTint = Color.black;
@@ -152,10 +152,10 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
     private sealed class MoveHoverPreviewItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        private RunOverviewScene2Controller owner;
+        private RunOverviewSceneController owner;
         private string moveId;
 
-        public void Initialize(RunOverviewScene2Controller controller, string currentMoveId)
+        public void Initialize(RunOverviewSceneController controller, string currentMoveId)
         {
             owner = controller;
             moveId = currentMoveId;
@@ -178,10 +178,10 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
     private sealed class MonsterHoverPreviewItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        private RunOverviewScene2Controller owner;
+        private RunOverviewSceneController owner;
         private int encounterIndex;
 
-        public void Initialize(RunOverviewScene2Controller controller, int currentEncounterIndex)
+        public void Initialize(RunOverviewSceneController controller, int currentEncounterIndex)
         {
             owner = controller;
             encounterIndex = currentEncounterIndex;
@@ -204,10 +204,10 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
     private sealed class PauseMenuHoverTextTarget : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        private RunOverviewScene2Controller owner;
+        private RunOverviewSceneController owner;
         private string hoverMessage;
 
-        public void Initialize(RunOverviewScene2Controller controller, string message)
+        public void Initialize(RunOverviewSceneController controller, string message)
         {
             owner = controller;
             hoverMessage = message;

@@ -26,7 +26,7 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]
-    [SerializeField] private string overviewSceneName = "RunOverviewScene2";
+    [SerializeField] private string overviewSceneName = "RunOverviewScene";
     [SerializeField] private string mainMenuSceneName = "MainMenu";
 
     [Header("Turn Timing")]

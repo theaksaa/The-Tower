@@ -24101,7 +24101,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TowerBattleController
   baseUrl: http://localhost:3000
   useLocalFallbackIfApiFails: 1
-  overviewSceneName: RunOverviewScene2
+  overviewSceneName: RunOverviewScene
   mainMenuSceneName: MainMenu
   heroAttackDelay: 1
   monsterAttackDelay: 1

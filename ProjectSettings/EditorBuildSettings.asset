@@ -18,7 +18,7 @@ EditorBuildSettings:
     path: Assets/Scenes/HeroSelectScene.unity
     guid: 7dd9a91820e6795468590fb74d45b6b0
   - enabled: 1
-    path: Assets/Scenes/RunOverviewScene2.unity
+    path: Assets/Scenes/RunOverviewScene.unity
     guid: aec898a05bab54f4985f67baa7707b54
   - enabled: 1
     path: Assets/Scenes/BattleScene.unity
