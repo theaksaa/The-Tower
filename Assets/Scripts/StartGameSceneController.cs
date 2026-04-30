@@ -330,11 +330,15 @@ public class StartGameSceneController : MonoBehaviour
     private void SelectStoryMode()
     {
         RunSession.ClearActiveRun();
+        RunSession.SetPendingMode("Story");
         SceneManager.LoadScene(heroSelectSceneName);
     }
 
     private void SelectEndlessMode()
     {
+        RunSession.ClearActiveRun();
+        RunSession.SetPendingMode("Endless");
+        SceneManager.LoadScene(heroSelectSceneName);
     }
 
     private void ShowPanel(VisiblePanel panel)

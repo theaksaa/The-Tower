@@ -22,6 +22,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private static readonly Color HoverSelectorTint = new(0.72f, 0.72f, 0.72f, 1f);
     private const string MapContinueLabel = "Continue";
     private const string MapReviveLabel = "Revive monster";
+    private const string NextEncounterLabel = "Next Encounter";
     private const string PauseExitGameHoverText = "Exit the game application.";
     private const string PauseExitMainMenuHoverText = "Return to the main menu.";
 
@@ -98,6 +99,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private GameObject mapPanelRoot;
     private TMP_Text mapPanelText;
     private Button mapButton;
+    private Button nextEncounterButton;
     private RectTransform mapButtonBackgroundRoot;
     private RectTransform mapButtonTextRoot;
     private Button mapPanelCloseButton;
@@ -731,6 +733,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         monsterMagicEffectText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Monster Effects Stat/Magic/Magic Text");
         moveStatsEffectsAmountText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Effects Amount");
         mapButton = EnsureButton(FindChild("Map Button"));
+        nextEncounterButton = EnsureButton(FindChild("Next Encounter Button"));
         mapButtonBackgroundRoot = FindChild("Map Button/Background") as RectTransform;
         mapButtonTextRoot = FindChild("Map Button/Text") as RectTransform;
         mapPanelRoot = FindChild("Map Panel")?.gameObject;
@@ -774,7 +777,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         if (mapButton != null)
         {
             mapButton.onClick.RemoveAllListeners();
-            mapButton.onClick.AddListener(OpenMapPanel);
+            mapButton.onClick.AddListener(OnMapButtonPressed);
 
             var hoverFeedback = mapButton.GetComponent<HoverLiftFeedback>();
             if (hoverFeedback == null)
@@ -788,6 +791,12 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
                 movesBarHoverLift,
                 movesBarHoverAnimationSpeed,
                 () => mapButton.IsInteractable());
+        }
+
+        if (nextEncounterButton != null)
+        {
+            nextEncounterButton.onClick.RemoveAllListeners();
+            nextEncounterButton.onClick.AddListener(EnterNextEndlessEncounter);
         }
 
         if (mapPanelCloseButton != null)
@@ -904,6 +913,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         RefreshMovesUi();
         RefreshMapPanel();
         RefreshShopUi();
+        RefreshMapButton();
     }
 
     private void RefreshHeroAnimation()
@@ -1133,8 +1143,25 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
 
     private void OpenMapPanel()
     {
+        if (RunSession.IsEndlessMode)
+        {
+            EnterNextEndlessEncounter();
+            return;
+        }
+
         RefreshMapPanel();
         SetMapPanelVisible(true);
+    }
+
+    private void OnMapButtonPressed()
+    {
+        if (RunSession.IsEndlessMode)
+        {
+            EnterNextEndlessEncounter();
+            return;
+        }
+
+        OpenMapPanel();
     }
 
     private void SetMapPanelVisible(bool isVisible)
@@ -1776,6 +1803,27 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
             return;
         }
 
+        if (RunSession.IsEndlessMode)
+        {
+            if (mapStartButton != null)
+            {
+                mapStartButton.interactable = RunSession.CanEnterEncounterFromMap(RunSession.GetFirstAvailableEncounterIndex());
+            }
+
+            if (mapStartButtonText != null)
+            {
+                mapStartButtonText.text = NextEncounterLabel;
+            }
+
+            if (mapPanelText != null)
+            {
+                var nextEncounterNumber = RunSession.GetClearedEncounterCount() + 1;
+                mapPanelText.text = $"Prepare for encounter {nextEncounterNumber}.";
+            }
+
+            return;
+        }
+
         if (!RunSession.CanEnterEncounterFromMap(selectedEncounterIndex))
         {
             selectedEncounterIndex = -1;
@@ -1860,6 +1908,12 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
 
     private void EnterSelectedEncounter()
     {
+        if (RunSession.IsEndlessMode)
+        {
+            EnterNextEndlessEncounter();
+            return;
+        }
+
         if (!RunSession.CanEnterEncounterFromMap(selectedEncounterIndex))
         {
             return;
@@ -1867,6 +1921,61 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
 
         RunSession.SelectEncounter(selectedEncounterIndex);
         SceneManager.LoadScene(battleSceneName);
+    }
+
+    private void EnterNextEndlessEncounter()
+    {
+        var nextEncounterIndex = RunSession.GetFirstAvailableEncounterIndex();
+        if (!RunSession.CanEnterEncounterFromMap(nextEncounterIndex))
+        {
+            return;
+        }
+
+        RunSession.SelectEncounter(nextEncounterIndex);
+        SceneManager.LoadScene(battleSceneName);
+    }
+
+    private void RefreshMapButton()
+    {
+        if (mapButton == null)
+        {
+            if (nextEncounterButton != null)
+            {
+                nextEncounterButton.gameObject.SetActive(RunSession.IsEndlessMode);
+            }
+
+            return;
+        }
+
+        var isEndlessMode = RunSession.IsEndlessMode;
+        mapButton.gameObject.SetActive(!isEndlessMode);
+        SetButtonLabel(mapButton, "Map");
+
+        if (nextEncounterButton != null)
+        {
+            nextEncounterButton.gameObject.SetActive(isEndlessMode);
+        }
+    }
+
+    private static void SetButtonLabel(Button button, string label)
+    {
+        if (button == null || string.IsNullOrWhiteSpace(label))
+        {
+            return;
+        }
+
+        var tmpText = button.GetComponentInChildren<TMP_Text>(true);
+        if (tmpText != null)
+        {
+            tmpText.text = label;
+            return;
+        }
+
+        var uiText = button.GetComponentInChildren<Text>(true);
+        if (uiText != null)
+        {
+            uiText.text = label;
+        }
     }
 
     private void ConfigureEquippedSlots(IReadOnlyList<MoveSlotView> slots, IReadOnlyList<string> equippedMoves, bool canDrag, bool canHoverPreview)

@@ -37,11 +37,13 @@ public static class RunSession
     public static string PendingLearnedMoveId { get; private set; }
     public static string CurrentSaveId { get; private set; }
     public static string CurrentMode { get; private set; } = "Story";
+    public static string PendingMode { get; private set; } = "Story";
     public static long CreatedAtUtcTicks { get; private set; }
     public static long LastUpdatedAtUtcTicks { get; private set; }
 
     public static bool HasActiveRun => CurrentRunConfig != null && Hero != null && CompletedEncounters != null;
     public static bool HasPendingLearnedMove => !string.IsNullOrEmpty(PendingLearnedMoveId);
+    public static bool IsEndlessMode => IsEndlessModeConfigured(CurrentRunConfig, CurrentMode);
 
     public static void InitializeNewRun(RunConfig runConfig, bool usingFallbackData)
     {
@@ -60,6 +62,7 @@ public static class RunSession
         IsDefeated = false;
         PendingLearnedMoveId = null;
         CurrentMode = string.IsNullOrWhiteSpace(mode) ? "Story" : mode;
+        PendingMode = CurrentMode;
         CurrentSaveId = Guid.NewGuid().ToString("N");
         CreatedAtUtcTicks = DateTime.UtcNow.Ticks;
         LastUpdatedAtUtcTicks = CreatedAtUtcTicks;
@@ -99,7 +102,9 @@ public static class RunSession
             MonsterKillCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         };
 
-        CompletedEncounters = Enumerable.Repeat(false, runConfig.encounters.Count).ToList();
+        CompletedEncounters = IsEndlessMode
+            ? new List<bool> { false }
+            : Enumerable.Repeat(false, runConfig.encounters.Count).ToList();
         SelectedEncounterIndex = GetFirstAvailableEncounterIndex();
         RunSaveService.SaveCurrentRun();
     }
@@ -118,6 +123,7 @@ public static class RunSession
         PendingLearnedMoveId = runData.PendingLearnedMoveId;
         CurrentSaveId = runData.SaveId;
         CurrentMode = string.IsNullOrWhiteSpace(runData.Mode) ? "Story" : runData.Mode;
+        PendingMode = CurrentMode;
         CreatedAtUtcTicks = runData.CreatedAtUtcTicks > 0 ? runData.CreatedAtUtcTicks : DateTime.UtcNow.Ticks;
         LastUpdatedAtUtcTicks = runData.UpdatedAtUtcTicks > 0 ? runData.UpdatedAtUtcTicks : CreatedAtUtcTicks;
 
@@ -184,6 +190,11 @@ public static class RunSession
         ClearSaveMetadata();
     }
 
+    public static void SetPendingMode(string mode)
+    {
+        PendingMode = string.IsNullOrWhiteSpace(mode) ? "Story" : mode.Trim();
+    }
+
     public static IReadOnlyList<HeroDefinition> GetAvailableHeroes(RunConfig runConfig)
     {
         if (runConfig?.heroes != null && runConfig.heroes.Count > 0)
@@ -225,7 +236,16 @@ public static class RunSession
 
     public static void SelectEncounter(int encounterIndex)
     {
-        SelectedEncounterIndex = Mathf.Clamp(encounterIndex, 0, CurrentRunConfig.encounters.Count - 1);
+        if (CurrentRunConfig == null)
+        {
+            SelectedEncounterIndex = -1;
+            return;
+        }
+
+        var maxIndex = IsEndlessMode
+            ? Mathf.Max(0, (CompletedEncounters?.Count ?? 1) - 1)
+            : CurrentRunConfig.encounters.Count - 1;
+        SelectedEncounterIndex = Mathf.Clamp(encounterIndex, 0, maxIndex);
     }
 
     public static int GetFirstAvailableEncounterIndex()
@@ -256,6 +276,15 @@ public static class RunSession
 
     public static bool CanEnterEncounter(int encounterIndex)
     {
+        if (IsEndlessMode)
+        {
+            return HasActiveRun &&
+                   !IsDefeated &&
+                   encounterIndex >= 0 &&
+                   encounterIndex < CompletedEncounters.Count &&
+                   encounterIndex == GetFirstAvailableEncounterIndex();
+        }
+
         var nextEncounterIndex = GetFirstAvailableEncounterIndex();
         return HasActiveRun &&
                !IsDefeated &&
@@ -270,6 +299,13 @@ public static class RunSession
         if (!HasActiveRun || IsDefeated || CurrentRunConfig == null || CompletedEncounters == null)
         {
             return false;
+        }
+
+        if (IsEndlessMode)
+        {
+            return encounterIndex >= 0 &&
+                   encounterIndex < CompletedEncounters.Count &&
+                   encounterIndex == GetFirstAvailableEncounterIndex();
         }
 
         if (encounterIndex < 0 || encounterIndex >= CurrentRunConfig.encounters.Count)
@@ -287,9 +323,24 @@ public static class RunSession
 
     public static void MarkEncounterComplete(int encounterIndex, string rewardSummary)
     {
+        if (CompletedEncounters == null || encounterIndex < 0)
+        {
+            return;
+        }
+
+        while (encounterIndex >= CompletedEncounters.Count)
+        {
+            CompletedEncounters.Add(false);
+        }
+
         if (!IsEncounterCompleted(encounterIndex))
         {
             CompletedEncounters[encounterIndex] = true;
+        }
+
+        if (IsEndlessMode && CompletedEncounters.All(completed => completed))
+        {
+            CompletedEncounters.Add(false);
         }
 
         SelectedEncounterIndex = GetFirstAvailableEncounterIndex();
@@ -321,7 +372,9 @@ public static class RunSession
         ClearDefeatState();
         RestoreHeroToFullHealth();
 
-        var nextEncounterIndex = encounterIndex >= 0 && encounterIndex < CurrentRunConfig.encounters.Count
+        var nextEncounterIndex = IsEndlessMode
+            ? GetFirstAvailableEncounterIndex()
+            : encounterIndex >= 0 && encounterIndex < CurrentRunConfig.encounters.Count
             ? encounterIndex
             : GetFirstAvailableEncounterIndex();
 
@@ -330,7 +383,9 @@ public static class RunSession
             SelectedEncounterIndex = nextEncounterIndex;
         }
 
-        StatusMessage = $"The hero retreated from encounter {encounterIndex + 1}. Choose your next fight from the map.";
+        StatusMessage = IsEndlessMode
+            ? $"The hero recovered after encounter {encounterIndex + 1}. Continue to the next encounter."
+            : $"The hero retreated from encounter {encounterIndex + 1}. Choose your next fight from the map.";
         RunSaveService.SaveCurrentRun();
     }
 
@@ -499,7 +554,17 @@ public static class RunSession
 
     public static bool IsRunComplete()
     {
+        if (IsEndlessMode)
+        {
+            return false;
+        }
+
         return CompletedEncounters != null && CompletedEncounters.All(completed => completed);
+    }
+
+    public static int GetClearedEncounterCount()
+    {
+        return CompletedEncounters?.Count(completed => completed) ?? 0;
     }
 
     public static Move GetMove(string moveId)
@@ -709,6 +774,22 @@ public static class RunSession
 
     private static void NormalizeCompletedEncounters()
     {
+        if (IsEndlessMode)
+        {
+            if (CompletedEncounters == null || CompletedEncounters.Count == 0)
+            {
+                CompletedEncounters = new List<bool> { false };
+                return;
+            }
+
+            if (CompletedEncounters.All(completed => completed))
+            {
+                CompletedEncounters.Add(false);
+            }
+
+            return;
+        }
+
         var encounterCount = CurrentRunConfig?.encounters?.Count ?? 0;
         if (CompletedEncounters == null)
         {
@@ -730,8 +811,15 @@ public static class RunSession
     {
         CurrentSaveId = null;
         CurrentMode = "Story";
+        PendingMode = "Story";
         CreatedAtUtcTicks = 0L;
         LastUpdatedAtUtcTicks = 0L;
+    }
+
+    private static bool IsEndlessModeConfigured(RunConfig runConfig, string mode)
+    {
+        return string.Equals(mode, "Endless", StringComparison.OrdinalIgnoreCase) &&
+               runConfig?.endlessMode?.enabled == true;
     }
 }
 

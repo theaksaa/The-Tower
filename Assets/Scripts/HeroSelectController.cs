@@ -321,7 +321,7 @@ public class HeroSelectController : MonoBehaviour
             return;
         }
 
-        RunSession.InitializeNewRun(loadedRunConfig, usingFallbackData, availableHeroes[selectedHeroIndex], "Story");
+        RunSession.InitializeNewRun(loadedRunConfig, usingFallbackData, availableHeroes[selectedHeroIndex], RunSession.PendingMode);
         SceneManager.LoadScene(overviewSceneName);
     }
 

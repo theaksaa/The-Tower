@@ -497,14 +497,42 @@ public class TowerBattleController : MonoBehaviour
         }
 
         RunSession.SelectEncounter(encounterIndex);
-        StartEncounter(encounterIndex);
+        yield return LoadAndStartEncounter(encounterIndex);
         isBusy = false;
     }
 
-    private void StartEncounter(int index, bool preserveEncounterFlags = false)
+    private IEnumerator LoadAndStartEncounter(int index, bool preserveEncounterFlags = false, bool reloadEndlessMonster = true)
+    {
+        Monster encounterMonster = currentMonster;
+
+        if (RunSession.IsEndlessMode && reloadEndlessMonster)
+        {
+            encounterMonster = null;
+            SetStatus("Loading next endless encounter...");
+            yield return RunDataService.LoadNextEndlessEncounter(
+                baseUrl,
+                RunSession.GetClearedEncounterCount(),
+                loadedMonster => encounterMonster = loadedMonster);
+
+            if (encounterMonster == null)
+            {
+                SetStatus("Unable to load the next endless encounter.");
+                PrepareReturn("Back to overview");
+                yield break;
+            }
+        }
+        else if (encounterMonster == null)
+        {
+            encounterMonster = runConfig.encounters[index];
+        }
+
+        StartEncounter(index, encounterMonster, preserveEncounterFlags);
+    }
+
+    private void StartEncounter(int index, Monster encounterMonster, bool preserveEncounterFlags = false)
     {
         encounterIndex = index;
-        currentMonster = runConfig.encounters[index];
+        currentMonster = encounterMonster;
         currentMonsterHp = currentMonster.stats.health;
         monsterModifiers.Clear();
         heroModifiers.Clear();
@@ -528,7 +556,7 @@ public class TowerBattleController : MonoBehaviour
         var intro = RunSession.UsingFallbackData
             ? "Offline fallback data loaded."
             : $"Run {GetRunLabel()} active.";
-        SetStatus($"{intro}\nEncounter {encounterIndex + 1}/{runConfig.encounters.Count}: {currentMonster.name}\n{currentMonster.description}");
+        SetStatus($"{intro}\n{GetEncounterLabel()}: {currentMonster.name}\n{currentMonster.description}");
         ClearBattleLog();
         PreloadBattleAssets();
         ConfigureBattlePresenters();
@@ -956,7 +984,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void HandleVictory(string heroTurnSummary)
     {
-        var wasFinalEncounter = IsPendingEncounterFinal();
+        var wasFinalEncounter = !RunSession.IsEndlessMode && IsPendingEncounterFinal();
         var rewards = AwardVictoryRewards();
         monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
         CommitVictoryRewards(rewards);
@@ -986,7 +1014,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        PrepareReturn("Continue on map");
+        PrepareReturn(RunSession.IsEndlessMode ? "Next encounter" : "Continue on map");
     }
 
     private IEnumerator HandleDefeatSequence(string heroTurnSummary, string monsterTurnSummary)
@@ -994,7 +1022,7 @@ public class TowerBattleController : MonoBehaviour
         SetButtonsInteractable(false);
         heroCharacterPresenter?.PlayState(BattleAnimationState.Death);
         RefreshAllUi();
-        var defeatStatus = $"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on encounter {encounterIndex + 1}. Try again.";
+        var defeatStatus = $"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on {GetEncounterLabel().ToLowerInvariant()}. Try again.";
         SetStatus(defeatStatus);
         RunSession.RegisterDefeat(encounterIndex);
         RunSession.SetStatus(defeatStatus);
@@ -1014,7 +1042,7 @@ public class TowerBattleController : MonoBehaviour
     {
         var xpAmount = RunSession.CalculateXpReward(currentMonster);
         var coinAmount = RunSession.CalculateCoinReward(currentMonster);
-        var keyAmount = encounterKeyDropConsumed || RunSession.IsEncounterCompleted(encounterIndex) ? 0 : 1;
+        var keyAmount = RunSession.IsEndlessMode || encounterKeyDropConsumed || RunSession.IsEncounterCompleted(encounterIndex) ? 0 : 1;
         var learnedMoveId = PickLearnableMovePreview(currentMonster);
         var learnedMove = GetMove(learnedMoveId);
         var learnedMoveText = learnedMove != null ? learnedMove.name : null;
@@ -1158,7 +1186,7 @@ public class TowerBattleController : MonoBehaviour
         }
         returnReady = true;
         isBusy = false;
-        monsterReviveAvailable = true;
+        monsterReviveAvailable = !RunSession.IsEndlessMode;
         heroReviveAvailable = false;
         SetButtonsInteractable(false);
         SetEndPanelVisible(false);
@@ -1178,9 +1206,10 @@ public class TowerBattleController : MonoBehaviour
         monsterReviveAvailable = false;
         ClearMonsterDrops();
         SetEndPanelVisible(false);
-        SetDefeatPanelVisible(false);
+        SetDefeatPanelVisible(RunSession.IsEndlessMode);
         SetContinueArrowVisible(false);
-        SetBackArrowVisible(true);
+        SetBackArrowVisible(!RunSession.IsEndlessMode);
+        SetDefeatMapButtonLabel(RunSession.IsEndlessMode ? "Exit" : "Map");
         RefreshLabels();
     }
 
@@ -1222,6 +1251,23 @@ public class TowerBattleController : MonoBehaviour
 
     private void OnDefeatMapButtonPressed()
     {
+        if (RunSession.IsEndlessMode)
+        {
+            var saveId = RunSession.CurrentSaveId;
+            if (!string.IsNullOrWhiteSpace(saveId))
+            {
+                RunSaveService.DeleteRun(saveId);
+            }
+            else
+            {
+                RunSession.ClearActiveRun();
+            }
+
+            ReleasePauseState();
+            SceneManager.LoadScene(mainMenuSceneName);
+            return;
+        }
+
         RunSession.ReturnToMapAfterDefeat(encounterIndex);
         ReturnToOverview();
     }
@@ -1239,7 +1285,7 @@ public class TowerBattleController : MonoBehaviour
         }
 
         endPanelRoot.SetActive(isVisible);
-        if (!isVisible && !monsterReviveAvailable)
+        if (!isVisible && !monsterReviveAvailable && !RunSession.IsEndlessMode)
         {
             pendingVictoryRewards = null;
         }
@@ -1288,7 +1334,7 @@ public class TowerBattleController : MonoBehaviour
         if (levelText != null)
         {
             var encounterText = runConfig != null && encounterIndex >= 0
-                ? $"Encounter {encounterIndex + 1}/{runConfig.encounters.Count}"
+                ? GetEncounterLabel()
                 : "Battle";
             levelText.text = hero != null
                 ? $"Hero Lv.{hero.Level}  •  {encounterText}"
@@ -1385,8 +1431,11 @@ public class TowerBattleController : MonoBehaviour
         var nextThreshold = RunSession.GetNextLevelXpThreshold();
         var heroStats = GetEffectiveHeroStats();
         var thresholdText = nextThreshold >= 0 ? $"{hero.Xp}/{nextThreshold}" : $"{hero.Xp}/MAX";
+        var runText = RunSession.IsEndlessMode
+            ? $"Run: Encounter {Mathf.Max(1, encounterIndex + 1)}"
+            : $"Run: {encounterIndex + 1}/{runConfig.encounters.Count}";
         progressText.text =
-            $"Run: {encounterIndex + 1}/{runConfig.encounters.Count}\n" +
+            $"{runText}\n" +
             $"XP: {thresholdText}\n" +
             $"ATK {heroStats.attack} DEF {heroStats.defense} MAG {heroStats.magic}";
     }
@@ -2374,6 +2423,41 @@ public class TowerBattleController : MonoBehaviour
         return runConfig.runId.Substring(0, Mathf.Min(8, runConfig.runId.Length));
     }
 
+    private string GetEncounterLabel()
+    {
+        if (RunSession.IsEndlessMode)
+        {
+            return encounterIndex >= 0
+                ? $"Encounter {encounterIndex + 1}"
+                : $"Encounter {RunSession.GetClearedEncounterCount() + 1}";
+        }
+
+        return runConfig != null && encounterIndex >= 0
+            ? $"Encounter {encounterIndex + 1}/{runConfig.encounters.Count}"
+            : "Battle";
+    }
+
+    private void SetDefeatMapButtonLabel(string label)
+    {
+        if (defeatMapButton == null || string.IsNullOrWhiteSpace(label))
+        {
+            return;
+        }
+
+        var tmpText = defeatMapButton.GetComponentInChildren<TMP_Text>(true);
+        if (tmpText != null)
+        {
+            tmpText.text = label;
+            return;
+        }
+
+        var uiText = defeatMapButton.GetComponentInChildren<Text>(true);
+        if (uiText != null)
+        {
+            uiText.text = label;
+        }
+    }
+
     private Button ConfigureImageButton(string path, UnityEngine.Events.UnityAction callback)
     {
         var buttonRoot = FindGameObject(path);
@@ -2481,9 +2565,9 @@ public class TowerBattleController : MonoBehaviour
         SetBackArrowVisible(false);
         SetEndPanelVisible(false);
         SetDefeatPanelVisible(false);
-        RunSession.ClearDefeatState($"Battle resumed on encounter {encounterIndex + 1}.");
+        RunSession.ClearDefeatState($"Battle resumed on {GetEncounterLabel().ToLowerInvariant()}.");
         RunSaveService.SaveCurrentRun();
-        StartEncounter(encounterIndex, preserveEncounterFlags: true);
+        StartCoroutine(LoadAndStartEncounter(encounterIndex, preserveEncounterFlags: true, reloadEndlessMonster: false));
     }
 
     private System.Collections.IEnumerator ContinueArrowRoutine()
@@ -3005,7 +3089,9 @@ public class TowerBattleController : MonoBehaviour
         reviveButton = FindComponent<Button>("Canvas/End Panel/Revive Button");
         continueButton = FindComponent<Button>("Canvas/End Panel/Continue Button");
         defeatReviveButton = FindComponent<Button>("Canvas/Defeat Panel/Revive Button");
-        defeatMapButton = FindComponent<Button>("Canvas/Defeat Panel/Map Button");
+        defeatMapButton = FindComponent<Button>("Canvas/Defeat Panel/Exit Button") ??
+                          FindComponent<Button>("Canvas/Defeat Panel/Map Button");
+
         continueArrowButton = ConfigureImageButton("Canvas/Continue Arrow Button", OnContinueArrowPressed);
         backArrowButton = ConfigureImageButton("Canvas/Back Arrow Button", OnBackArrowPressed);
         ConfigureClickableName(heroNameText, isHeroLabel: true);
@@ -3030,6 +3116,8 @@ public class TowerBattleController : MonoBehaviour
         {
             ConfigureEndPanelButton(defeatMapButton, OnDefeatMapButtonPressed);
         }
+
+        SetDefeatMapButtonLabel(RunSession.IsEndlessMode ? "Exit" : "Map");
 
         ConfigurePauseMenuButtons();
         ConfigureBattleLogButtons();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TheTower;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -114,5 +115,59 @@ public static class RunDataService
 }";
 
         return JsonConvert.DeserializeObject<RunConfig>(fallbackJson);
+    }
+
+    public static IEnumerator LoadNextEndlessEncounter(string baseUrl, int encountersCleared, Action<Monster> onLoaded)
+    {
+        Monster monster = null;
+        var requestBody = new NextEncounterRequest
+        {
+            encountersCleared = Mathf.Max(0, encountersCleared)
+        };
+
+        using (var request = new UnityWebRequest($"{baseUrl}/run/next-encounter", UnityWebRequest.kHttpVerbPOST))
+        {
+            var json = JsonConvert.SerializeObject(requestBody);
+            request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.timeout = 5;
+            request.SetRequestHeader("Content-Type", "application/json");
+
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                try
+                {
+                    monster = DeserializeEndlessMonster(request.downloadHandler.text);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning($"Failed to deserialize endless encounter: {exception}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Failed to load endless encounter: {request.error}");
+            }
+        }
+
+        onLoaded?.Invoke(monster);
+    }
+
+    private static Monster DeserializeEndlessMonster(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        var token = JToken.Parse(json);
+        if (token.Type == JTokenType.Object && token["monster"] != null)
+        {
+            return token["monster"].ToObject<Monster>();
+        }
+
+        return token.ToObject<Monster>();
     }
 }

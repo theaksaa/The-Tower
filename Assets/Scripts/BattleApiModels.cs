@@ -120,6 +120,25 @@ namespace TheTower
         public XpRewardScaling xpRewardScaling;
         public Dictionary<string, Move> moveRegistry;
         public List<ShopItemConfig> shopItems;
+        public EndlessModeConfig endlessMode;
+    }
+
+    [Serializable]
+    public class EndlessModeConfig
+    {
+        public bool enabled;
+    }
+
+    [Serializable]
+    public class NextEncounterRequest
+    {
+        public int encountersCleared;
+    }
+
+    [Serializable]
+    public class NextEncounterResponse
+    {
+        public Monster monster;
     }
 
     [Serializable]
