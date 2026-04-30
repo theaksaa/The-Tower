@@ -268,13 +268,35 @@ public class StartGameSceneController : MonoBehaviour
         currentModeRoot = FindObject("New Game Panel/Current Mode");
         currentModeTitleText = FindComponent<TMP_Text>("New Game Panel/Current Mode/Title");
         currentModeDescriptionText = FindComponent<TMP_Text>("New Game Panel/Current Mode/Description");
-        continueGamesRoot = FindObject("Continue Panel/Games")?.GetComponent<RectTransform>();
+        continueGamesRoot = ResolveContinueGamesRoot();
 
         backButton = FindComponent<Button>("Back Button");
         newGameButton = FindComponent<Button>("Game Panel/Buttons/New Game Button");
         continueButton = FindComponent<Button>("Game Panel/Buttons/Continue Button");
         storyModeButton = FindComponent<Button>("New Game Panel/Buttons/Story Mode Button");
         endlessModeButton = FindComponent<Button>("New Game Panel/Buttons/Endless Mode Button");
+    }
+
+    private RectTransform ResolveContinueGamesRoot()
+    {
+        var candidatePaths = new[]
+        {
+            "Continue Panel/Scroll View/Viewport/Content/games",
+            "Continue Panel/Scroll View/Viewport/Content/Games",
+            "Continue Panel/Scroll View/Viewport/Content",
+            "Continue Panel/Games"
+        };
+
+        foreach (var path in candidatePaths)
+        {
+            var rectTransform = FindObject(path)?.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                return rectTransform;
+            }
+        }
+
+        return null;
     }
 
     private void HandleBackButtonPressed()
