@@ -40,6 +40,7 @@ public static class RunSession
     public static string PendingMode { get; private set; } = "Story";
     public static long CreatedAtUtcTicks { get; private set; }
     public static long LastUpdatedAtUtcTicks { get; private set; }
+    public static bool EndSceneShown { get; private set; }
 
     public static bool HasActiveRun => CurrentRunConfig != null && Hero != null && CompletedEncounters != null;
     public static bool HasPendingLearnedMove => !string.IsNullOrEmpty(PendingLearnedMoveId);
@@ -66,6 +67,7 @@ public static class RunSession
         CurrentSaveId = Guid.NewGuid().ToString("N");
         CreatedAtUtcTicks = DateTime.UtcNow.Ticks;
         LastUpdatedAtUtcTicks = CreatedAtUtcTicks;
+        EndSceneShown = false;
         SelectedHeroDefinition = selectedHero ?? GetAvailableHeroes(runConfig).FirstOrDefault();
         var runLabel = string.IsNullOrEmpty(runConfig.runId)
             ? "run"
@@ -126,6 +128,7 @@ public static class RunSession
         PendingMode = CurrentMode;
         CreatedAtUtcTicks = runData.CreatedAtUtcTicks > 0 ? runData.CreatedAtUtcTicks : DateTime.UtcNow.Ticks;
         LastUpdatedAtUtcTicks = runData.UpdatedAtUtcTicks > 0 ? runData.UpdatedAtUtcTicks : CreatedAtUtcTicks;
+        EndSceneShown = runData.EndSceneShown;
 
         SelectedHeroDefinition = ResolveSavedHeroDefinition(runData);
         Hero = new HeroRuntimeState
@@ -187,7 +190,18 @@ public static class RunSession
         IsDefeated = false;
         StatusMessage = null;
         PendingLearnedMoveId = null;
+        EndSceneShown = false;
         ClearSaveMetadata();
+    }
+
+    public static bool ShouldShowEndScene()
+    {
+        return !IsEndlessMode && !EndSceneShown;
+    }
+
+    public static void MarkEndSceneShown()
+    {
+        EndSceneShown = true;
     }
 
     public static void SetPendingMode(string mode)
@@ -814,6 +828,7 @@ public static class RunSession
         PendingMode = "Story";
         CreatedAtUtcTicks = 0L;
         LastUpdatedAtUtcTicks = 0L;
+        EndSceneShown = false;
     }
 
     private static bool IsEndlessModeConfigured(RunConfig runConfig, string mode)
@@ -834,6 +849,7 @@ public static class RunSaveService
         public string Mode;
         public long CreatedAtUtcTicks;
         public long UpdatedAtUtcTicks;
+        public bool EndSceneShown;
         public RunConfig RunConfig;
         public HeroRuntimeState Hero;
         public HeroDefinition SelectedHeroDefinition;
@@ -896,6 +912,7 @@ public static class RunSaveService
             Mode = RunSession.CurrentMode,
             CreatedAtUtcTicks = RunSession.CreatedAtUtcTicks,
             UpdatedAtUtcTicks = updatedAtUtcTicks,
+            EndSceneShown = RunSession.EndSceneShown,
             RunConfig = RunSession.CurrentRunConfig,
             Hero = CloneHero(RuntimeHeroOrNull()),
             SelectedHeroDefinition = CloneHeroDefinition(RunSession.SelectedHeroDefinition),

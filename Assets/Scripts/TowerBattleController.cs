@@ -27,6 +27,7 @@ public class TowerBattleController : MonoBehaviour
 
     [Header("Navigation")]
     [SerializeField] private string overviewSceneName = "RunOverviewScene";
+    [SerializeField] private string endSceneName = "EndScene";
     [SerializeField] private string mainMenuSceneName = "MainMenu";
 
     [Header("Turn Timing")]
@@ -1237,7 +1238,16 @@ public class TowerBattleController : MonoBehaviour
 
     private void OnContinueButtonPressed()
     {
+        var shouldShowEndScene = ShouldShowEndSceneAfterVictory();
         CommitVictoryRewardsAndReturn();
+
+        if (shouldShowEndScene)
+        {
+            ReleasePauseState();
+            SceneManager.LoadScene(endSceneName);
+            return;
+        }
+
         ReturnToOverview();
     }
 
@@ -2413,6 +2423,11 @@ public class TowerBattleController : MonoBehaviour
         SceneManager.LoadScene(overviewSceneName);
     }
 
+    private bool ShouldShowEndSceneAfterVictory()
+    {
+        return RunSession.IsRunComplete() && RunSession.ShouldShowEndScene();
+    }
+
     private string GetRunLabel()
     {
         if (string.IsNullOrEmpty(runConfig?.runId))
@@ -2572,6 +2587,7 @@ public class TowerBattleController : MonoBehaviour
 
     private System.Collections.IEnumerator ContinueArrowRoutine()
     {
+        var shouldShowEndScene = ShouldShowEndSceneAfterVictory();
         reviveSequencePlaying = true;
         SetContinueArrowVisible(false);
         SetButtonsInteractable(false);
@@ -2587,6 +2603,14 @@ public class TowerBattleController : MonoBehaviour
 
         CommitVictoryRewardsAndReturn();
         reviveSequencePlaying = false;
+
+        if (shouldShowEndScene)
+        {
+            ReleasePauseState();
+            SceneManager.LoadScene(endSceneName);
+            yield break;
+        }
+
         ReturnToOverview();
     }
 
@@ -2683,6 +2707,12 @@ public class TowerBattleController : MonoBehaviour
         }
 
         CommitVictoryRewards(pendingVictoryRewards);
+        if (RunSession.IsRunComplete() && RunSession.ShouldShowEndScene())
+        {
+            RunSession.MarkEndSceneShown();
+            RunSaveService.SaveCurrentRun();
+        }
+
         pendingVictoryRewards = null;
         heroReviveAvailable = false;
         monsterReviveAvailable = false;
