@@ -228,7 +228,6 @@ public class TowerBattleController : MonoBehaviour
 
     private sealed class EncounterSnapshot
     {
-        public int HeroCurrentHp;
     }
 
     private sealed class MoveHoverListener : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -651,7 +650,7 @@ public class TowerBattleController : MonoBehaviour
             monsterId = currentMonster.id,
             monsterCurrentHp = currentMonsterHp,
             heroCurrentHp = hero.CurrentHp,
-            heroMaxHp = GetHeroBaseStats().health,
+            heroMaxHp = RunSession.GetHeroMaxHealth(),
             heroStats = GetEffectiveHeroStats(),
             turnNumber = turnNumber,
             heroLastMoveId = heroLastMoveId,
@@ -871,7 +870,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (targetIsHero)
         {
-            hero.CurrentHp = Mathf.Min(GetHeroBaseStats().health, hero.CurrentHp + amount);
+            hero.CurrentHp = Mathf.Min(RunSession.GetHeroMaxHealth(), hero.CurrentHp + amount);
             return;
         }
 
@@ -1277,7 +1276,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (heroHpWorldText != null && hero != null)
         {
-            heroHpWorldText.text = $"HP: {hero.CurrentHp}/{GetHeroBaseStats().health}";
+            heroHpWorldText.text = $"HP: {hero.CurrentHp}/{RunSession.GetHeroMaxHealth()}";
         }
 
         if (monsterHpWorldText != null)
@@ -1298,7 +1297,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (heroHealthBarImage != null && hero != null)
         {
-            var heroMaxHp = Mathf.Max(1, GetHeroBaseStats().health);
+            var heroMaxHp = RunSession.GetHeroMaxHealth();
             SetHeroHealthBarTarget(Mathf.Clamp01(hero.CurrentHp / (float)heroMaxHp), pendingInstantHealthBarSync);
         }
 
@@ -2472,7 +2471,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        hero.CurrentHp = encounterSnapshot.HeroCurrentHp;
+        RunSession.RestoreHeroToFullHealth();
         pendingVictoryRewards = null;
         heroReviveAvailable = false;
         monsterReviveAvailable = false;
@@ -2585,6 +2584,7 @@ public class TowerBattleController : MonoBehaviour
             RunSession.SetPendingLearnedMove(rewards.LearnedMoveId);
         }
 
+        RunSession.RestoreHeroToFullHealth();
         RunSession.RegisterMonsterKill(currentMonster?.id);
         RunSession.MarkEncounterComplete(encounterIndex, rewards.Summary);
         RunSaveService.SaveCurrentRun();
@@ -2615,10 +2615,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        encounterSnapshot = new EncounterSnapshot
-        {
-            HeroCurrentHp = hero.CurrentHp
-        };
+        encounterSnapshot = new EncounterSnapshot();
     }
 
     private void SetContinueArrowVisible(bool isVisible)

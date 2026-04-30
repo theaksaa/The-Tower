@@ -150,6 +150,8 @@ public static class RunSession
             Hero.KnownMoves = new HashSet<string>(SelectedHeroDefinition.moves);
         }
 
+        RestoreHeroToFullHealth();
+
         CompletedEncounters = runData.CompletedEncounters?.ToList() ?? new List<bool>();
         NormalizeCompletedEncounters();
 
@@ -317,7 +319,7 @@ public static class RunSession
         }
 
         ClearDefeatState();
-        Hero.CurrentHp = GetHeroBaseStats().health;
+        RestoreHeroToFullHealth();
 
         var nextEncounterIndex = encounterIndex >= 0 && encounterIndex < CurrentRunConfig.encounters.Count
             ? encounterIndex
@@ -373,8 +375,7 @@ public static class RunSession
         {
             case "health":
                 Hero.BonusHealth += amount;
-                Hero.CurrentHp += amount;
-                Hero.CurrentHp = Mathf.Min(Hero.CurrentHp, GetHeroBaseStats().health);
+                RestoreHeroToFullHealth();
                 break;
             case "attack":
                 Hero.BonusAttack += amount;
@@ -580,10 +581,35 @@ public static class RunSession
 
         Hero.Level++;
         Hero.CurrentHp += healthGain;
-        Hero.CurrentHp = Mathf.Min(Hero.CurrentHp, GetHeroBaseStats().health);
+        ClampHeroCurrentHp();
         StatusMessage = $"{GetHeroDisplayName()} leveled up {stat.Trim().ToUpperInvariant()}.";
         RunSaveService.SaveCurrentRun();
         return true;
+    }
+
+    public static int GetHeroMaxHealth()
+    {
+        return Mathf.Max(1, GetHeroBaseStats().health);
+    }
+
+    public static void ClampHeroCurrentHp()
+    {
+        if (Hero == null)
+        {
+            return;
+        }
+
+        Hero.CurrentHp = Mathf.Clamp(Hero.CurrentHp, 0, GetHeroMaxHealth());
+    }
+
+    public static void RestoreHeroToFullHealth()
+    {
+        if (Hero == null)
+        {
+            return;
+        }
+
+        Hero.CurrentHp = GetHeroMaxHealth();
     }
 
     public static Stats GetHeroBaseStats()
