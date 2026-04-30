@@ -111,6 +111,22 @@ namespace TheTower
         public CoinRewardScaling coinRewardScaling;
         public XpRewardScaling xpRewardScaling;
         public Dictionary<string, Move> moveRegistry;
+        public List<ShopItemConfig> shopItems;
+    }
+
+    [Serializable]
+    public class ShopItemConfig
+    {
+        public string id;
+        public string name;
+        public string description;
+        public string spriteKey;
+        public int cost;
+        public bool repeatable;
+        public string type;
+        public string stat;
+        public int value;
+        public string moveId;
     }
 
     [Serializable]

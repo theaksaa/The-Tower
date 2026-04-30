@@ -24,12 +24,14 @@ public static class SpriteKeyLookup
 {
     private const string CharacterResourceRoot = "Sprites/Characters";
     private const string MoveResourceRoot = "Sprites/Moves";
+    private const string IconResourceRoot = "Sprites/Icons";
     private const string DefaultSpriteKey = "default";
     private const string DefaultHeroResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/hero";
     private const string DefaultMonsterResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/monster";
 
     private static readonly Dictionary<string, Sprite[]> CharacterAnimationCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Sprite> MoveSpriteCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, Sprite> IconSpriteCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static Sprite[] LoadCharacterAnimation(string spriteKey, BattleAnimationState state)
     {
@@ -65,6 +67,23 @@ public static class SpriteKeyLookup
             ?? LoadSingleSprite(BuildCharacterResourcePath(spriteKey, "Idle"));
 
         MoveSpriteCache[spriteKey] = sprite;
+        return sprite;
+    }
+
+    public static Sprite LoadIconSprite(string spriteKey)
+    {
+        if (string.IsNullOrWhiteSpace(spriteKey))
+        {
+            return null;
+        }
+
+        if (IconSpriteCache.TryGetValue(spriteKey, out var cachedSprite))
+        {
+            return cachedSprite;
+        }
+
+        var sprite = LoadSingleSprite($"{IconResourceRoot}/{spriteKey}");
+        IconSpriteCache[spriteKey] = sprite;
         return sprite;
     }
 

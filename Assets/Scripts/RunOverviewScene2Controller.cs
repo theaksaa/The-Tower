@@ -46,6 +46,10 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     [SerializeField] private Vector2 pressedButtonTextOffset = new(0f, -6f);
     [SerializeField] private float movesBarHoverLift = 10f;
     [SerializeField] private float movesBarHoverAnimationSpeed = 14f;
+    [SerializeField] private float shopItemHoverScale = 1.05f;
+    [SerializeField] private float shopItemHoverAnimationSpeed = 14f;
+    [SerializeField] private float shopButtonRevealAnimationSpeed = 18f;
+    [SerializeField] private float shopSelectorCornerSize = 32f;
 
     private Image heroImage;
     private UiSpriteSheetAnimator heroAnimator;
@@ -53,6 +57,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private Image xpFillImage;
     private TMP_Text xpValueText;
     private TMP_Text coinsText;
+    private TMP_Text shopCoinsText;
     private GameObject levelPanelRoot;
     private TMP_Text levelTitleText;
     private TMP_Text levelDescText;
@@ -98,6 +103,9 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private Button mapPanelCloseButton;
     private Button mapStartButton;
     private TMP_Text mapStartButtonText;
+    private Button shopButton;
+    private GameObject shopPanelRoot;
+    private Button shopPanelCloseButton;
     private GameObject pauseMenuPanelRoot;
     private TMP_Text pauseMenuHoverText;
     private Button pauseMenuResumeButton;
@@ -115,6 +123,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private readonly List<MoveSlotView> panelEquippedSlots = new();
     private readonly List<MoveSlotView> inventorySlots = new();
     private readonly List<MapMonsterSlotView> monsterSlots = new();
+    private readonly List<ShopItemView> shopItems = new();
 
     private sealed class MoveSlotView
     {
@@ -125,6 +134,20 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         public Sprite DefaultIconSprite;
         public Sprite DefaultBackgroundSprite;
         public string MoveId;
+    }
+
+    private sealed class ShopItemView
+    {
+        public RectTransform Root;
+        public RectTransform HoverScaleTarget;
+        public Button Button;
+        public TMP_Text NameText;
+        public TMP_Text DescriptionText;
+        public TMP_Text CoinsText;
+        public Image Icon;
+        public GameObject DisabledBackground;
+        public Sprite DefaultIconSprite;
+        public ShopItemConfig Config;
     }
 
     private sealed class MoveHoverPreviewItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -237,6 +260,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         private bool isHovered;
         private bool isPressed;
         private bool wasInteractable;
+        private bool applyDisabledTint = true;
+        private bool swapPressedSprite = true;
 
         public void Initialize(
             Button targetButton,
@@ -245,7 +270,9 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             Sprite targetPressedSprite,
             Color targetHoverColor,
             Color targetPressedColor,
-            Vector2 targetPressedLabelOffset)
+            Vector2 targetPressedLabelOffset,
+            bool shouldApplyDisabledTint = true,
+            bool shouldSwapPressedSprite = true)
         {
             button = targetButton;
             backgroundImage = targetImage;
@@ -255,6 +282,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             hoverColor = targetHoverColor;
             pressedColor = targetPressedColor;
             pressedLabelOffset = targetPressedLabelOffset;
+            applyDisabledTint = shouldApplyDisabledTint;
+            swapPressedSprite = shouldSwapPressedSprite;
             disabledColor = targetButton != null ? targetButton.colors.disabledColor : new Color(0.78431374f, 0.78431374f, 0.78431374f, 0.5019608f);
 
             if (backgroundImage != null)
@@ -361,8 +390,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
             if (backgroundImage != null)
             {
-                backgroundImage.sprite = isInteractable && isPressed && pressedSprite != null ? pressedSprite : normalSprite;
-                backgroundImage.color = !isInteractable
+                backgroundImage.sprite = isInteractable && isPressed && swapPressedSprite && pressedSprite != null ? pressedSprite : normalSprite;
+                backgroundImage.color = !isInteractable && applyDisabledTint
                     ? disabledColor
                     : isPressed
                     ? pressedColor
@@ -376,14 +405,14 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
 
             if (labelText != null)
             {
-                labelText.color = isInteractable ? labelNormalColor : disabledColor;
+                labelText.color = !isInteractable && applyDisabledTint ? disabledColor : labelNormalColor;
             }
 
             for (var index = 0; index < childGraphics.Count; index++)
             {
                 if (childGraphics[index] != null)
                 {
-                    childGraphics[index].color = isInteractable ? childGraphicColors[index] : disabledColor;
+                    childGraphics[index].color = !isInteractable && applyDisabledTint ? disabledColor : childGraphicColors[index];
                 }
             }
         }
@@ -485,6 +514,133 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         }
     }
 
+    private sealed class HoverScaleFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private RectTransform target;
+        private Vector3 baseScale;
+        private float hoverScaleMultiplier;
+        private float animationSpeed;
+        private bool isHovered;
+        private System.Func<bool> shouldScalePredicate;
+
+        public void Initialize(RectTransform targetRectTransform, float scaleMultiplier, float speed, System.Func<bool> shouldScale)
+        {
+            target = targetRectTransform;
+            hoverScaleMultiplier = Mathf.Max(1f, scaleMultiplier);
+            animationSpeed = Mathf.Max(0.01f, speed);
+            shouldScalePredicate = shouldScale;
+
+            if (target != null)
+            {
+                baseScale = target.localScale;
+                target.localScale = baseScale;
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            if (target != null)
+            {
+                target.localScale = baseScale;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var shouldScale = isHovered && (shouldScalePredicate?.Invoke() ?? true);
+            var scale = shouldScale ? baseScale * hoverScaleMultiplier : baseScale;
+            var t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
+            target.localScale = Vector3.Lerp(target.localScale, scale, t);
+
+            if ((target.localScale - scale).sqrMagnitude <= 0.0001f)
+            {
+                target.localScale = scale;
+            }
+        }
+    }
+
+    private sealed class HoverRevealSelectorButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private Image targetImage;
+        private CanvasGroup selectorCanvasGroup;
+        private float animationSpeed;
+        private bool isHovered;
+
+        public void Initialize(Image image, CanvasGroup selectorGroup, float speed)
+        {
+            targetImage = image;
+            selectorCanvasGroup = selectorGroup;
+            animationSpeed = Mathf.Max(0.01f, speed);
+
+            if (targetImage != null)
+            {
+                targetImage.sprite = null;
+                targetImage.color = Color.clear;
+                targetImage.enabled = true;
+                targetImage.raycastTarget = true;
+            }
+
+            if (selectorCanvasGroup != null)
+            {
+                selectorCanvasGroup.alpha = 0f;
+                selectorCanvasGroup.blocksRaycasts = false;
+                selectorCanvasGroup.interactable = false;
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            if (selectorCanvasGroup != null)
+            {
+                selectorCanvasGroup.alpha = 0f;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (selectorCanvasGroup == null)
+            {
+                return;
+            }
+
+            var targetAlpha = isHovered ? 1f : 0f;
+            var t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
+            selectorCanvasGroup.alpha = Mathf.Lerp(selectorCanvasGroup.alpha, targetAlpha, t);
+
+            if (Mathf.Abs(selectorCanvasGroup.alpha - targetAlpha) <= 0.01f)
+            {
+                selectorCanvasGroup.alpha = targetAlpha;
+            }
+        }
+    }
+
     private void Awake()
     {
         AutoBindScene();
@@ -540,6 +696,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             ?? FindComponent<TMP_Text>("Coins/Value")
             ?? FindComponent<TMP_Text>("Stats/Coins Text")
             ?? FindComponent<TMP_Text>("Level Panel/Stats/Coins Text");
+        shopCoinsText = FindComponent<TMP_Text>("Shop Panel/Coins/Value");
         levelPanelRoot = FindChild("Level Panel")?.gameObject;
         levelTitleText = FindComponent<TMP_Text>("Level Panel/Title");
         levelDescText = FindComponent<TMP_Text>("Level Panel/Desc");
@@ -581,6 +738,9 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         mapPanelCloseButton = FindComponent<Button>("Map Panel/Close Button");
         mapStartButton = FindComponent<Button>("Map Panel/Start Button");
         mapStartButtonText = FindComponent<TMP_Text>("Map Panel/Start Button/Text");
+        shopButton = EnsureButton(FindChild("Shop Button"));
+        shopPanelRoot = FindChild("Shop Panel")?.gameObject;
+        shopPanelCloseButton = FindComponent<Button>("Shop Panel/Close Button") ?? EnsureButton(FindChild("Shop Panel/Close Button"));
         pauseMenuPanelRoot = FindChild("Pause Menu Panel")?.gameObject;
         pauseMenuHoverText = FindComponent<TMP_Text>("Pause Menu Panel/Buttons Hover Text");
         pauseMenuResumeButton = FindComponent<Button>("Pause Menu Panel/Buttons/Resume Button");
@@ -649,6 +809,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             closeButton.onClick.RemoveAllListeners();
             closeButton.onClick.AddListener(() => SetLevelPanelVisible(false));
         }
+
+        ConfigureShopUi();
 
         if (xpFillImage != null)
         {
@@ -741,6 +903,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         RefreshLevelPanel();
         RefreshMovesUi();
         RefreshMapPanel();
+        RefreshShopUi();
     }
 
     private void RefreshHeroAnimation()
@@ -799,10 +962,19 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         if (!RunSession.HasActiveRun || RunSession.Hero == null)
         {
             coinsText.text = "0";
+            if (shopCoinsText != null)
+            {
+                shopCoinsText.text = "0";
+            }
             return;
         }
 
-        coinsText.text = RunSession.Hero.Coins.ToString();
+        var coinValue = RunSession.Hero.Coins.ToString();
+        coinsText.text = coinValue;
+        if (shopCoinsText != null)
+        {
+            shopCoinsText.text = coinValue;
+        }
     }
 
     private void EnsureCoinsText()
@@ -913,7 +1085,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         button.onClick.AddListener(() => TryApplyLevelUp(stat));
     }
 
-    private void ConfigurePressedButtonFeedback(Button button)
+    private void ConfigurePressedButtonFeedback(Button button, bool applyDisabledTint = true, bool swapPressedSprite = true)
     {
         if (button == null)
         {
@@ -942,7 +1114,9 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
             pressedButtonSprite,
             buttonHoverTint,
             buttonPressedTint,
-            pressedButtonTextOffset);
+            pressedButtonTextOffset,
+            applyDisabledTint,
+            swapPressedSprite);
     }
 
     private void OpenLevelPanel()
@@ -976,6 +1150,354 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         {
             mapPanelRoot.SetActive(isVisible);
         }
+    }
+
+    private void ConfigureShopUi()
+    {
+        if (shopButton != null)
+        {
+            shopButton.transition = Selectable.Transition.None;
+            shopButton.onClick.RemoveAllListeners();
+            shopButton.onClick.AddListener(OpenShopPanel);
+
+            var shopButtonImage = shopButton.targetGraphic as Image ?? shopButton.GetComponent<Image>();
+            var selectorRoot = EnsureSelectorRoot(shopButton.transform as RectTransform, shopButton.transform.Find("Selector")?.gameObject);
+            if (selectorRoot != null)
+            {
+                selectorRoot.SetActive(true);
+                var selectorRect = selectorRoot.GetComponent<RectTransform>();
+                selectorRect.offsetMin = Vector2.zero;
+                selectorRect.offsetMax = Vector2.zero;
+                ResizeSelectorCorners(selectorRoot.transform, shopSelectorCornerSize);
+            }
+
+            var selectorCanvasGroup = selectorRoot != null
+                ? selectorRoot.GetComponent<CanvasGroup>() ?? selectorRoot.AddComponent<CanvasGroup>()
+                : null;
+
+            var revealFeedback = shopButton.GetComponent<HoverRevealSelectorButtonFeedback>();
+            if (revealFeedback == null)
+            {
+                revealFeedback = shopButton.gameObject.AddComponent<HoverRevealSelectorButtonFeedback>();
+            }
+
+            revealFeedback.Initialize(shopButtonImage, selectorCanvasGroup, shopButtonRevealAnimationSpeed);
+        }
+
+        if (shopPanelCloseButton != null)
+        {
+            shopPanelCloseButton.onClick.RemoveAllListeners();
+            shopPanelCloseButton.onClick.AddListener(() => SetShopPanelVisible(false));
+            ConfigurePressedButtonFeedback(shopPanelCloseButton, swapPressedSprite: false);
+        }
+
+        CacheShopItems();
+        for (var index = 0; index < shopItems.Count; index++)
+        {
+            var item = shopItems[index];
+            if (item?.Button == null)
+            {
+                continue;
+            }
+
+            item.Button.transition = Selectable.Transition.None;
+            item.Button.onClick.RemoveAllListeners();
+            var capturedItem = item;
+            item.Button.onClick.AddListener(() => TryPurchaseShopItem(capturedItem));
+            var pressedFeedback = item.Button.GetComponent<PressedButtonFeedback>();
+            if (pressedFeedback != null)
+            {
+                Destroy(pressedFeedback);
+            }
+
+            var hoverScale = item.Root.GetComponent<HoverScaleFeedback>();
+            if (hoverScale == null)
+            {
+                hoverScale = item.Root.gameObject.AddComponent<HoverScaleFeedback>();
+            }
+
+            hoverScale.Initialize(
+                item.HoverScaleTarget != null ? item.HoverScaleTarget : item.Root,
+                shopItemHoverScale,
+                shopItemHoverAnimationSpeed,
+                () => capturedItem.Button != null && capturedItem.Button.IsInteractable());
+        }
+
+        SetShopPanelVisible(false);
+    }
+
+    private void CacheShopItems()
+    {
+        shopItems.Clear();
+
+        var itemsRoot = FindChild("Shop Panel/Scroll View/Viewport/Content") as RectTransform
+            ?? FindChild("Shop Panel/Items") as RectTransform;
+        if (itemsRoot == null)
+        {
+            return;
+        }
+
+        var configuredItems = RunSession.CurrentRunConfig?.shopItems ?? new List<ShopItemConfig>();
+        EnsureShopItemSlotCount(itemsRoot, configuredItems.Count);
+
+        for (var index = 0; index < itemsRoot.childCount; index++)
+        {
+            if (itemsRoot.GetChild(index) is not RectTransform child)
+            {
+                continue;
+            }
+
+            var hasConfig = index < configuredItems.Count;
+            child.gameObject.SetActive(hasConfig);
+            if (!hasConfig)
+            {
+                continue;
+            }
+
+            var item = BuildShopItemView(child, configuredItems[index]);
+            if (item != null)
+            {
+                shopItems.Add(item);
+            }
+        }
+    }
+
+    private static void EnsureShopItemSlotCount(RectTransform itemsRoot, int desiredCount)
+    {
+        if (itemsRoot == null || desiredCount <= itemsRoot.childCount || itemsRoot.childCount == 0)
+        {
+            return;
+        }
+
+        var template = itemsRoot.GetChild(0);
+        for (var index = itemsRoot.childCount; index < desiredCount; index++)
+        {
+            var clone = Object.Instantiate(template.gameObject, itemsRoot);
+            clone.name = $"{template.name} ({index + 1})";
+            clone.SetActive(true);
+        }
+    }
+
+    private ShopItemView BuildShopItemView(RectTransform root, ShopItemConfig config)
+    {
+        if (root == null || config == null)
+        {
+            return null;
+        }
+
+        var button = EnsureButton(root);
+        var nameText = root.Find("Item/Name")?.GetComponent<TMP_Text>() ?? root.Find("Name")?.GetComponent<TMP_Text>();
+        var descriptionText = root.Find("Item/Description")?.GetComponent<TMP_Text>();
+        var coinsValueText = root.Find("Coins/Coins Value")?.GetComponent<TMP_Text>();
+        var icon = FindShopItemIcon(root);
+        var disabledBackground = root.Find("Background Disabled")?.gameObject;
+
+        if (nameText != null)
+        {
+            nameText.text = ResolveShopItemName(config);
+        }
+
+        if (descriptionText != null)
+        {
+            descriptionText.text = ResolveShopItemDescription(config);
+        }
+
+        if (coinsValueText != null)
+        {
+            coinsValueText.text = Mathf.Max(0, config.cost).ToString();
+        }
+
+        if (icon != null)
+        {
+            var resolvedSprite = ResolveShopItemIconSprite(config, icon.sprite);
+            if (resolvedSprite != null)
+            {
+                icon.sprite = resolvedSprite;
+            }
+
+            icon.preserveAspect = true;
+        }
+
+        return new ShopItemView
+        {
+            Root = root,
+            HoverScaleTarget = root.Find("Item") as RectTransform ?? root,
+            Button = button,
+            NameText = nameText,
+            DescriptionText = descriptionText,
+            CoinsText = coinsValueText,
+            Icon = icon,
+            DisabledBackground = disabledBackground,
+            DefaultIconSprite = icon != null ? icon.sprite : null,
+            Config = config
+        };
+    }
+
+    private static Sprite ResolveShopItemIconSprite(ShopItemConfig config, Sprite fallbackSprite)
+    {
+        if (config == null)
+        {
+            return fallbackSprite;
+        }
+
+        var itemType = (config.type ?? string.Empty).Trim().ToLowerInvariant();
+        var keyedSprite = itemType == "move"
+            ? SpriteKeyLookup.LoadMoveSprite(config.spriteKey)
+            : SpriteKeyLookup.LoadIconSprite(config.spriteKey);
+
+        return keyedSprite != null ? keyedSprite : fallbackSprite;
+    }
+
+    private static Image FindShopItemIcon(RectTransform root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        return root.Find("Item/Item Icon")?.GetComponent<Image>()
+            ?? root.Find("Item/Icon")?.GetComponent<Image>()
+            ?? root.Find("Item Icon")?.GetComponent<Image>()
+            ?? root.Find("Icon")?.GetComponent<Image>();
+    }
+
+    private static string ResolveShopItemName(ShopItemConfig config)
+    {
+        if (config == null)
+        {
+            return string.Empty;
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.name))
+        {
+            return config.name;
+        }
+
+        if (IsMoveShopItem(config))
+        {
+            var move = RunSession.GetMove(config.moveId);
+            if (!string.IsNullOrWhiteSpace(move?.name))
+            {
+                return move.name;
+            }
+        }
+
+        return config.id ?? string.Empty;
+    }
+
+    private static string ResolveShopItemDescription(ShopItemConfig config)
+    {
+        if (config == null)
+        {
+            return string.Empty;
+        }
+
+        if (IsMoveShopItem(config))
+        {
+            var move = RunSession.GetMove(config.moveId);
+            if (!string.IsNullOrWhiteSpace(move?.description))
+            {
+                return move.description;
+            }
+        }
+
+        return config.description ?? string.Empty;
+    }
+
+    private static bool IsMoveShopItem(ShopItemConfig config)
+    {
+        return string.Equals((config?.type ?? string.Empty).Trim(), "move", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void RefreshShopUi()
+    {
+        for (var index = 0; index < shopItems.Count; index++)
+        {
+            var item = shopItems[index];
+            if (item?.Button == null)
+            {
+                continue;
+            }
+
+            var config = item.Config;
+            var canAfford = RunSession.HasActiveRun &&
+                RunSession.Hero != null &&
+                config != null &&
+                RunSession.Hero.Coins >= Mathf.Max(0, config.cost);
+            var canPurchase = CanPurchaseShopItem(config);
+
+            item.Button.interactable = canAfford && canPurchase;
+
+            if (item.DisabledBackground != null)
+            {
+                item.DisabledBackground.SetActive(!(canAfford && canPurchase));
+            }
+        }
+    }
+
+    private static bool CanPurchaseShopItem(ShopItemConfig config)
+    {
+        if (!RunSession.HasActiveRun || RunSession.Hero == null || config == null)
+        {
+            return false;
+        }
+
+        if (config.repeatable)
+        {
+            return true;
+        }
+
+        return (config.type ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "move" => !string.IsNullOrWhiteSpace(config.moveId) && !RunSession.Hero.KnownMoves.Contains(config.moveId.Trim()),
+            "stat" => true,
+            _ => false
+        };
+    }
+
+    private void OpenShopPanel()
+    {
+        RefreshShopUi();
+        SetShopPanelVisible(true);
+    }
+
+    private void SetShopPanelVisible(bool isVisible)
+    {
+        if (shopPanelRoot == null)
+        {
+            return;
+        }
+
+        if (isVisible)
+        {
+            shopPanelRoot.transform.SetAsLastSibling();
+        }
+
+        shopPanelRoot.SetActive(isVisible);
+    }
+
+    private void TryPurchaseShopItem(ShopItemView item)
+    {
+        if (item?.Config == null)
+        {
+            RefreshShopUi();
+            return;
+        }
+
+        var purchaseSucceeded = (item.Config.type ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "stat" => RunSession.TryPurchaseStatBoost(item.Config.stat, item.Config.value, item.Config.cost),
+            "move" => RunSession.TryPurchaseMoveUnlock(item.Config.moveId, item.Config.cost),
+            _ => false
+        };
+
+        if (!purchaseSucceeded)
+        {
+            RefreshShopUi();
+            return;
+        }
+
+        RefreshUi();
     }
 
     private void ResetMapPanelState()
@@ -1881,6 +2403,24 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         button.targetGraphic = image;
 
         return button;
+    }
+
+    private static void ResizeSelectorCorners(Transform selectorRoot, float size)
+    {
+        if (selectorRoot == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < selectorRoot.childCount; index++)
+        {
+            if (selectorRoot.GetChild(index) is not RectTransform child)
+            {
+                continue;
+            }
+
+            child.sizeDelta = new Vector2(size, size);
+        }
     }
 
     private GameObject EnsureSelectorRoot(RectTransform root, GameObject existingSelectorRoot)

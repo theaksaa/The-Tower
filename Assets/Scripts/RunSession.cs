@@ -15,6 +15,7 @@ public sealed class HeroRuntimeState
     public int Xp;
     public int Coins;
     public int CurrentHp;
+    public int BonusHealth;
     public int BonusAttack;
     public int BonusDefense;
     public int BonusMagic;
@@ -92,6 +93,7 @@ public static class RunSession
             Xp = 0,
             Coins = 0,
             CurrentHp = defaults.baseStats.health,
+            BonusHealth = 0,
             EquippedMoves = defaults.moves.Take(4).ToList(),
             KnownMoves = new HashSet<string>(defaults.moves),
             MonsterKillCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
@@ -130,6 +132,7 @@ public static class RunSession
             Xp = Mathf.Max(0, runData.Hero.Xp),
             Coins = Mathf.Max(0, runData.Hero.Coins),
             CurrentHp = Mathf.Max(0, runData.Hero.CurrentHp),
+            BonusHealth = runData.Hero.BonusHealth,
             BonusAttack = runData.Hero.BonusAttack,
             BonusDefense = runData.Hero.BonusDefense,
             BonusMagic = runData.Hero.BonusMagic,
@@ -354,6 +357,67 @@ public static class RunSession
         Hero.Coins += amount;
     }
 
+    public static bool TryPurchaseStatBoost(string stat, int amount, int coinCost)
+    {
+        if (Hero == null || string.IsNullOrWhiteSpace(stat) || amount <= 0 || coinCost < 0)
+        {
+            return false;
+        }
+
+        if (Hero.Coins < coinCost)
+        {
+            return false;
+        }
+
+        switch (stat.Trim().ToLowerInvariant())
+        {
+            case "health":
+                Hero.BonusHealth += amount;
+                Hero.CurrentHp += amount;
+                Hero.CurrentHp = Mathf.Min(Hero.CurrentHp, GetHeroBaseStats().health);
+                break;
+            case "attack":
+                Hero.BonusAttack += amount;
+                break;
+            case "defense":
+                Hero.BonusDefense += amount;
+                break;
+            case "magic":
+                Hero.BonusMagic += amount;
+                break;
+            default:
+                return false;
+        }
+
+        Hero.Coins -= coinCost;
+        StatusMessage = $"{GetHeroDisplayName()} bought {stat.Trim().ToUpperInvariant()} +{amount}.";
+        RunSaveService.SaveCurrentRun();
+        return true;
+    }
+
+    public static bool TryPurchaseMoveUnlock(string moveId, int coinCost)
+    {
+        if (Hero == null || string.IsNullOrWhiteSpace(moveId) || coinCost < 0)
+        {
+            return false;
+        }
+
+        moveId = moveId.Trim();
+        if (Hero.Coins < coinCost || Hero.KnownMoves.Contains(moveId) || GetMove(moveId) == null)
+        {
+            return false;
+        }
+
+        Hero.KnownMoves.Add(moveId);
+        Hero.Coins -= coinCost;
+        PendingLearnedMoveId = moveId;
+
+        var moveName = GetMove(moveId)?.name ?? moveId;
+        StatusMessage = $"{GetHeroDisplayName()} learned {moveName}.";
+        RunSaveService.SaveCurrentRun();
+        return true;
+    }
+
     public static int GetMonsterKillCount(string monsterId)
     {
         if (Hero?.MonsterKillCounts == null || string.IsNullOrWhiteSpace(monsterId))
@@ -533,7 +597,7 @@ public static class RunSession
         var baseStats = selectedHero.baseStats.Clone();
         var levelBonus = Mathf.Max(0, Hero.Level - 1);
 
-        baseStats.health += selectedHero.statsPerLevel.health * levelBonus;
+        baseStats.health += selectedHero.statsPerLevel.health * levelBonus + Hero.BonusHealth;
         baseStats.attack += Hero.BonusAttack;
         baseStats.defense += Hero.BonusDefense;
         baseStats.magic += Hero.BonusMagic;
@@ -751,6 +815,7 @@ public static class RunSaveService
                 Xp = RunSession.Hero.Xp,
                 Coins = RunSession.Hero.Coins,
                 CurrentHp = RunSession.Hero.CurrentHp,
+                BonusHealth = RunSession.Hero.BonusHealth,
                 BonusAttack = RunSession.Hero.BonusAttack,
                 BonusDefense = RunSession.Hero.BonusDefense,
                 BonusMagic = RunSession.Hero.BonusMagic,
@@ -776,6 +841,7 @@ public static class RunSaveService
                 Xp = hero.Xp,
                 Coins = hero.Coins,
                 CurrentHp = hero.CurrentHp,
+                BonusHealth = hero.BonusHealth,
                 BonusAttack = hero.BonusAttack,
                 BonusDefense = hero.BonusDefense,
                 BonusMagic = hero.BonusMagic,
