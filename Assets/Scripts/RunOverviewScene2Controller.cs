@@ -52,6 +52,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     private Button xpBarButton;
     private Image xpFillImage;
     private TMP_Text xpValueText;
+    private TMP_Text coinsText;
     private GameObject levelPanelRoot;
     private TMP_Text levelTitleText;
     private TMP_Text levelDescText;
@@ -535,6 +536,10 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         heroImage = FindComponent<Image>("Hero");
         xpFillImage = FindComponent<Image>("XP Bar/XP Bar");
         xpValueText = FindComponent<TMP_Text>("XP Bar/Value");
+        coinsText = FindComponent<TMP_Text>("Coins")
+            ?? FindComponent<TMP_Text>("Coins/Value")
+            ?? FindComponent<TMP_Text>("Stats/Coins Text")
+            ?? FindComponent<TMP_Text>("Level Panel/Stats/Coins Text");
         levelPanelRoot = FindChild("Level Panel")?.gameObject;
         levelTitleText = FindComponent<TMP_Text>("Level Panel/Title");
         levelDescText = FindComponent<TMP_Text>("Level Panel/Desc");
@@ -587,6 +592,8 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
         {
             xpBarButton = EnsureButton(FindChild("XP Bar/Backround"));
         }
+
+        EnsureCoinsText();
     }
 
     private void ConfigureStaticUi()
@@ -730,6 +737,7 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
     {
         RefreshHeroAnimation();
         RefreshXpBar();
+        RefreshCoinsText();
         RefreshLevelPanel();
         RefreshMovesUi();
         RefreshMapPanel();
@@ -778,6 +786,54 @@ public class RunOverviewScene2Controller : MonoBehaviour, IMoveLoadoutController
                 var progress = hero.Xp - previousThreshold;
                 xpFillImage.fillAmount = Mathf.Clamp01(progress / (float)span);
             }
+        }
+    }
+
+    private void RefreshCoinsText()
+    {
+        if (coinsText == null)
+        {
+            return;
+        }
+
+        if (!RunSession.HasActiveRun || RunSession.Hero == null)
+        {
+            coinsText.text = "0";
+            return;
+        }
+
+        coinsText.text = RunSession.Hero.Coins.ToString();
+    }
+
+    private void EnsureCoinsText()
+    {
+        if (coinsText != null || canvasRoot == null)
+        {
+            return;
+        }
+
+        var coinsObject = new GameObject("Coins", typeof(RectTransform));
+        coinsObject.transform.SetParent(canvasRoot, false);
+
+        var rectTransform = coinsObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = new Vector2(0f, 360f);
+        rectTransform.sizeDelta = new Vector2(320f, 44f);
+
+        coinsText = coinsObject.AddComponent<TextMeshProUGUI>();
+        coinsText.alignment = TextAlignmentOptions.Center;
+        coinsText.fontSize = 32f;
+        coinsText.color = Color.white;
+        coinsText.raycastTarget = false;
+
+        if (xpValueText != null)
+        {
+            coinsText.font = xpValueText.font;
+            coinsText.fontSharedMaterial = xpValueText.fontSharedMaterial;
+            coinsText.fontSize = xpValueText.fontSize;
+            coinsText.color = xpValueText.color;
         }
     }
 
