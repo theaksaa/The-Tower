@@ -88,7 +88,10 @@ public static class RunDataService
       ""moves"": [""slash"", ""flame_breath"", ""battle_cry"", ""second_wind""]
     }
   ],
-  ""xpTable"": [0, 100, 250, 450, 700],
+  ""levelProgression"": {
+    ""baseXpForNextLevel"": 100,
+    ""additionalXpPerLevel"": 50
+  },
   ""coinRewardScaling"": {
     ""multiplierPerKill"": 0.9,
     ""minimumReward"": 5

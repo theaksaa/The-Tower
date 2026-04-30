@@ -924,9 +924,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         var hero = RunSession.Hero;
         var nextThreshold = RunSession.GetNextLevelXpThreshold();
         var availableLevelUps = RunSession.GetAvailableLevelUpCount();
-        var previousThreshold = hero.Level <= 1 || RunSession.CurrentRunConfig?.xpTable == null
-            ? 0
-            : RunSession.CurrentRunConfig.xpTable[Mathf.Clamp(hero.Level - 1, 0, RunSession.CurrentRunConfig.xpTable.Count - 1)];
+        var previousThreshold = RunSession.GetXpThresholdForLevel(hero.Level);
 
         if (xpValueText != null)
         {
@@ -934,7 +932,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
                 ? "Level up available"
                 : nextThreshold >= 0
                     ? $"{hero.Xp}/{nextThreshold}"
-                    : "MAX";
+                    : $"{hero.Xp}/MAX";
         }
 
         if (xpFillImage != null)

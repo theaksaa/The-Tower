@@ -76,6 +76,13 @@ namespace TheTower
     }
 
     [Serializable]
+    public class LevelProgression
+    {
+        public int baseXpForNextLevel;
+        public int additionalXpPerLevel;
+    }
+
+    [Serializable]
     public class HeroDefaults
     {
         public string id;
@@ -107,6 +114,7 @@ namespace TheTower
         public List<Monster> encounters;
         public List<HeroDefinition> heroes;
         public HeroDefaults heroDefaults;
+        public LevelProgression levelProgression;
         public List<int> xpTable;
         public CoinRewardScaling coinRewardScaling;
         public XpRewardScaling xpRewardScaling;

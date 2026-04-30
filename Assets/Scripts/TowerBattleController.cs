@@ -1382,7 +1382,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        var nextThreshold = hero.Level < runConfig.xpTable.Count ? runConfig.xpTable[hero.Level] : -1;
+        var nextThreshold = RunSession.GetNextLevelXpThreshold();
         var heroStats = GetEffectiveHeroStats();
         var thresholdText = nextThreshold >= 0 ? $"{hero.Xp}/{nextThreshold}" : $"{hero.Xp}/MAX";
         progressText.text =

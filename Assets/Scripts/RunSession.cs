@@ -515,14 +515,12 @@ public static class RunSession
 
     public static int GetNextLevelXpThreshold()
     {
-        if (!HasActiveRun || CurrentRunConfig?.xpTable == null || Hero == null)
+        if (!HasActiveRun || Hero == null)
         {
             return -1;
         }
 
-        return Hero.Level < CurrentRunConfig.xpTable.Count
-            ? CurrentRunConfig.xpTable[Hero.Level]
-            : -1;
+        return GetXpThresholdForLevel(Hero.Level + 1);
     }
 
     public static bool CanLevelUp()
@@ -533,16 +531,21 @@ public static class RunSession
 
     public static int GetAvailableLevelUpCount()
     {
-        if (!HasActiveRun || CurrentRunConfig?.xpTable == null || Hero == null)
+        if (!HasActiveRun || Hero == null)
         {
             return 0;
         }
 
         var count = 0;
         var simulatedLevel = Hero.Level;
-        while (simulatedLevel < CurrentRunConfig.xpTable.Count &&
-               Hero.Xp >= CurrentRunConfig.xpTable[simulatedLevel])
+        while (true)
         {
+            var nextThreshold = GetXpThresholdForLevel(simulatedLevel + 1);
+            if (nextThreshold < 0 || Hero.Xp < nextThreshold)
+            {
+                break;
+            }
+
             count++;
             simulatedLevel++;
         }
@@ -610,6 +613,40 @@ public static class RunSession
         }
 
         Hero.CurrentHp = GetHeroMaxHealth();
+    }
+
+    public static int GetXpThresholdForLevel(int level)
+    {
+        if (level <= 1)
+        {
+            return 0;
+        }
+
+        if (CurrentRunConfig == null)
+        {
+            return -1;
+        }
+
+        if (CurrentRunConfig.xpTable != null && CurrentRunConfig.xpTable.Count > 0)
+        {
+            var xpTableIndex = level - 1;
+            return xpTableIndex >= 0 && xpTableIndex < CurrentRunConfig.xpTable.Count
+                ? CurrentRunConfig.xpTable[xpTableIndex]
+                : -1;
+        }
+
+        var progression = CurrentRunConfig.levelProgression;
+        if (progression == null)
+        {
+            return -1;
+        }
+
+        var baseXp = Mathf.Max(0, progression.baseXpForNextLevel);
+        var additionalXp = Mathf.Max(0, progression.additionalXpPerLevel);
+        var increments = level - 1L;
+        var additionalSteps = level - 2L;
+        var totalXp = increments * baseXp + (additionalSteps * increments * additionalXp) / 2L;
+        return totalXp > int.MaxValue ? int.MaxValue : (int)totalXp;
     }
 
     public static Stats GetHeroBaseStats()
