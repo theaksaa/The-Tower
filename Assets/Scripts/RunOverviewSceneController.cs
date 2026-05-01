@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,6 +62,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private TMP_Text coinsText;
     private TMP_Text shopCoinsText;
     private GameObject levelPanelRoot;
+    private RectTransform levelPanelContentRoot;
     private TMP_Text levelTitleText;
     private TMP_Text levelDescText;
     private TMP_Text levelHelpText;
@@ -78,6 +80,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private RectTransform panelMovesRoot;
     private RectTransform movesInventoryRoot;
     private GameObject movesPanelRoot;
+    private RectTransform movesPanelContentRoot;
     private Button movesBarButton;
     private RectTransform movesBarBackgroundRoot;
     private RectTransform movesBarOpenPanelIndicatorRoot;
@@ -90,6 +93,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private RectTransform itemsInventoryRoot;
     private ScrollRect itemsInventoryScrollRect;
     private GameObject itemsPanelRoot;
+    private RectTransform itemsPanelContentRoot;
     private Button itemsPanelCloseButton;
     private RectTransform dragLayer;
     private Image moveStatsIcon;
@@ -112,6 +116,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private GameObject currentItemStatsRoot;
     private GameObject mapPanelRoot;
     private TMP_Text mapPanelText;
+    private RectTransform mapPanelContentRoot;
     private Button mapButton;
     private Button nextEncounterButton;
     private RectTransform mapButtonBackgroundRoot;
@@ -121,8 +126,10 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private TMP_Text mapStartButtonText;
     private Button shopButton;
     private GameObject shopPanelRoot;
+    private RectTransform shopPanelContentRoot;
     private Button shopPanelCloseButton;
     private GameObject pauseMenuPanelRoot;
+    private RectTransform pauseMenuPanelContentRoot;
     private TMP_Text pauseMenuHoverText;
     private Button pauseMenuResumeButton;
     private Button pauseMenuExitGameButton;
@@ -288,6 +295,34 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         private void OnDisable()
         {
             owner?.SetPauseMenuHoverMessage(null);
+        }
+    }
+
+    private sealed class PanelBackdropCloseTarget : MonoBehaviour, IPointerClickHandler
+    {
+        private RectTransform contentRoot;
+        private Action closeHandler;
+
+        public void Initialize(RectTransform currentContentRoot, Action onClose)
+        {
+            contentRoot = currentContentRoot;
+            closeHandler = onClose;
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Left || closeHandler == null)
+            {
+                return;
+            }
+
+            if (contentRoot != null &&
+                RectTransformUtility.RectangleContainsScreenPoint(contentRoot, eventData.position, eventData.pressEventCamera))
+            {
+                return;
+            }
+
+            closeHandler.Invoke();
         }
     }
 
@@ -753,13 +788,13 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
     private void Update()
     {
-        if (pauseMenuPanelRoot == null)
+        var keyboard = Keyboard.current;
+        if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
         {
             return;
         }
 
-        var keyboard = Keyboard.current;
-        if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
+        if (TryCloseOpenPanelOnEscape())
         {
             return;
         }
@@ -770,7 +805,47 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             return;
         }
 
+        if (pauseMenuPanelRoot == null)
+        {
+            return;
+        }
+
         OpenPauseMenu();
+    }
+
+    private bool TryCloseOpenPanelOnEscape()
+    {
+        if (shopPanelRoot != null && shopPanelRoot.activeSelf)
+        {
+            SetShopPanelVisible(false);
+            return true;
+        }
+
+        if (mapPanelRoot != null && mapPanelRoot.activeSelf)
+        {
+            SetMapPanelVisible(false);
+            return true;
+        }
+
+        if (levelPanelRoot != null && levelPanelRoot.activeSelf)
+        {
+            SetLevelPanelVisible(false);
+            return true;
+        }
+
+        if (movesPanelRoot != null && movesPanelRoot.activeSelf)
+        {
+            SetMovesPanelVisible(false);
+            return true;
+        }
+
+        if (itemsPanelRoot != null && itemsPanelRoot.activeSelf)
+        {
+            SetItemsPanelVisible(false);
+            return true;
+        }
+
+        return false;
     }
 
     private void AutoBindScene()
@@ -786,6 +861,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             ?? FindComponent<TMP_Text>("Level Panel/Stats/Coins Text");
         shopCoinsText = FindComponent<TMP_Text>("Shop Panel/Coins/Value");
         levelPanelRoot = FindChild("Level Panel")?.gameObject;
+        levelPanelContentRoot = ResolvePanelContentRoot(levelPanelRoot, "Level Panel/Background");
         levelTitleText = FindComponent<TMP_Text>("Level Panel/Title");
         levelDescText = FindComponent<TMP_Text>("Level Panel/Desc");
         levelHelpText = FindComponent<TMP_Text>("Level Panel/Help");
@@ -806,8 +882,10 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         panelMovesRoot = FindChild("Moves Panel/Moves") as RectTransform;
         movesInventoryRoot = ResolveMovesInventoryRoot();
         movesPanelRoot = FindChild("Moves Panel")?.gameObject;
+        movesPanelContentRoot = ResolvePanelContentRoot(movesPanelRoot, "Moves Panel/Background");
         movesPanelCloseButton = FindComponent<Button>("Moves Panel/Close Button");
         itemsPanelRoot = FindChild("Items Panel")?.gameObject;
+        itemsPanelContentRoot = ResolvePanelContentRoot(itemsPanelRoot, "Items Panel/Background");
         panelItemsRoot = FindChild("Items Panel/Items Bar/Items") as RectTransform
             ?? FindChild("Items Panel/Items Bar") as RectTransform;
         itemsInventoryRoot = ResolveItemsInventoryRoot();
@@ -838,14 +916,17 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         mapButtonBackgroundRoot = FindChild("Map Button/Background") as RectTransform;
         mapButtonTextRoot = FindChild("Map Button/Text") as RectTransform;
         mapPanelRoot = FindChild("Map Panel")?.gameObject;
+        mapPanelContentRoot = ResolvePanelContentRoot(mapPanelRoot, "Map Panel/Background");
         mapPanelText = FindComponent<TMP_Text>("Map Panel/Text");
         mapPanelCloseButton = FindComponent<Button>("Map Panel/Close Button");
         mapStartButton = FindComponent<Button>("Map Panel/Start Button");
         mapStartButtonText = FindComponent<TMP_Text>("Map Panel/Start Button/Text");
         shopButton = EnsureButton(FindChild("Shop Button"));
         shopPanelRoot = FindChild("Shop Panel")?.gameObject;
+        shopPanelContentRoot = ResolvePanelContentRoot(shopPanelRoot, "Shop Panel/Background");
         shopPanelCloseButton = FindComponent<Button>("Shop Panel/Close Button") ?? EnsureButton(FindChild("Shop Panel/Close Button"));
         pauseMenuPanelRoot = FindChild("Pause Menu Panel")?.gameObject;
+        pauseMenuPanelContentRoot = ResolvePanelContentRoot(pauseMenuPanelRoot, "Pause Menu Panel/Background");
         pauseMenuHoverText = FindComponent<TMP_Text>("Pause Menu Panel/Buttons Hover Text");
         pauseMenuResumeButton = FindComponent<Button>("Pause Menu Panel/Buttons/Resume Button");
         pauseMenuExitGameButton = FindComponent<Button>("Pause Menu Panel/Buttons/Exit Game Button");
@@ -1021,6 +1102,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         initialEquippedItemSlotCount = equippedItemSlots.Count;
         initialInventoryItemSlotCount = inventoryItemSlots.Count;
         ConfigurePauseMenuButtons();
+        ConfigureBackdropCloseTargets();
     }
 
     private void ConfigureHeroAnimation()
@@ -1443,7 +1525,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         var template = itemsRoot.GetChild(0);
         for (var index = itemsRoot.childCount; index < desiredCount; index++)
         {
-            var clone = Object.Instantiate(template.gameObject, itemsRoot);
+            var clone = UnityEngine.Object.Instantiate(template.gameObject, itemsRoot);
             clone.name = $"{template.name} ({index + 1})";
             clone.SetActive(true);
         }
@@ -1814,6 +1896,32 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             pauseMenuExitToMainMenuButton.onClick.AddListener(ExitToMainMenuFromPauseMenu);
             ConfigurePauseMenuHoverTextTarget(pauseMenuExitToMainMenuButton, PauseExitMainMenuHoverText);
         }
+    }
+
+    private void ConfigureBackdropCloseTargets()
+    {
+        ConfigureBackdropCloseTarget(levelPanelRoot, levelPanelContentRoot, () => SetLevelPanelVisible(false));
+        ConfigureBackdropCloseTarget(mapPanelRoot, mapPanelContentRoot, () => SetMapPanelVisible(false));
+        ConfigureBackdropCloseTarget(movesPanelRoot, movesPanelContentRoot, () => SetMovesPanelVisible(false));
+        ConfigureBackdropCloseTarget(itemsPanelRoot, itemsPanelContentRoot, () => SetItemsPanelVisible(false));
+        ConfigureBackdropCloseTarget(shopPanelRoot, shopPanelContentRoot, () => SetShopPanelVisible(false));
+        ConfigureBackdropCloseTarget(pauseMenuPanelRoot, pauseMenuPanelContentRoot, ResumeFromPauseMenu);
+    }
+
+    private void ConfigureBackdropCloseTarget(GameObject panelRoot, RectTransform contentRoot, Action closeHandler)
+    {
+        if (panelRoot == null || contentRoot == null || closeHandler == null)
+        {
+            return;
+        }
+
+        var closeTarget = panelRoot.GetComponent<PanelBackdropCloseTarget>();
+        if (closeTarget == null)
+        {
+            closeTarget = panelRoot.AddComponent<PanelBackdropCloseTarget>();
+        }
+
+        closeTarget.Initialize(contentRoot, closeHandler);
     }
 
     private void ConfigurePauseMenuHoverTextTarget(Button button, string message)
@@ -3454,6 +3562,30 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
         var target = canvasRoot.Find(path);
         return target ?? FindDescendant(canvasRoot, path);
+    }
+
+    private RectTransform ResolvePanelContentRoot(GameObject panelRoot, string preferredPath)
+    {
+        var preferredRoot = FindChild(preferredPath) as RectTransform;
+        if (preferredRoot != null)
+        {
+            return preferredRoot;
+        }
+
+        if (panelRoot == null)
+        {
+            return null;
+        }
+
+        for (var index = 0; index < panelRoot.transform.childCount; index++)
+        {
+            if (panelRoot.transform.GetChild(index) is RectTransform rectTransform)
+            {
+                return rectTransform;
+            }
+        }
+
+        return null;
     }
 
     private static Transform FindDescendant(Transform root, string path)
