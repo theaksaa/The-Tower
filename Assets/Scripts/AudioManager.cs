@@ -126,6 +126,16 @@ public sealed class AudioManager : MonoBehaviour
         PlaySfx(clip, volume, pitch);
     }
 
+    public static void AssignSfxMixerGroup(AudioSource source)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        Instance.AssignSfxMixerGroupInternal(source);
+    }
+
     private static AudioClip LoadClip(string resourcesPath)
     {
         if (string.IsNullOrWhiteSpace(resourcesPath))
@@ -442,6 +452,21 @@ public sealed class AudioManager : MonoBehaviour
         sfxSource.pitch = pitch;
         sfxSource.PlayOneShot(clip, volume);
         sfxSource.pitch = originalPitch;
+    }
+
+    private void AssignSfxMixerGroupInternal(AudioSource source)
+    {
+        EnsureSourcesExist();
+        if (sfxMixerGroup == null)
+        {
+            ResolveMixerGroups();
+        }
+
+        source.playOnAwake = false;
+        if (sfxMixerGroup != null)
+        {
+            source.outputAudioMixerGroup = sfxMixerGroup;
+        }
     }
 
     private IEnumerator CrossfadeMusic(AudioSource fromSource, AudioSource toSource, int toSourceIndex, AudioClip clip, bool loop, float targetVolume)

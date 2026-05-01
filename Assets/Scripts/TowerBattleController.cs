@@ -3232,6 +3232,7 @@ public class TowerBattleController : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(timing.ImpactDelay);
 
+        PlayCharacterReviveSfx(ResolveMonsterSpriteKey());
         monsterCharacterPresenter.PlayReverseState(BattleAnimationState.Death, BattleAnimationState.Idle);
         yield return new WaitForSecondsRealtime(monsterCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
 
@@ -3249,6 +3250,7 @@ public class TowerBattleController : MonoBehaviour
             yield break;
         }
 
+        PlayCharacterReviveSfx(ResolveHeroSpriteKey());
         heroCharacterPresenter.PlayReverseState(BattleAnimationState.Death, BattleAnimationState.Idle);
         yield return new WaitForSecondsRealtime(heroCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
     }
@@ -3969,19 +3971,43 @@ public class TowerBattleController : MonoBehaviour
 
     private void PlayMoveStartEffects(bool actorIsHero, Move move)
     {
-        if (move?.effect == "heal")
+        if (move == null)
+        {
+            return;
+        }
+
+        PlayMoveSfx(move);
+
+        if (move.effect == "heal")
         {
             PlayHealParticleEffect(actorIsHero);
             return;
         }
 
-        if ((move?.effect == "stat_modifier" || move?.effect == "damage_and_stat_modifier") &&
+        if ((move.effect == "stat_modifier" || move.effect == "damage_and_stat_modifier") &&
             move.statModifier != null &&
             move.statModifier.value != 0)
         {
             var targetIsHero = move.target == "self" ? actorIsHero : !actorIsHero;
             var particleColor = ResolveModifierParticleColor(actorIsHero, move, move.statModifier);
             PlayModifierParticleEffect(targetIsHero, move.statModifier, particleColor);
+        }
+    }
+
+    private static void PlayMoveSfx(Move move)
+    {
+        foreach (var clip in MoveSfxLookup.LoadMoveSfx(move))
+        {
+            AudioManager.PlaySfx(clip);
+        }
+    }
+
+    private static void PlayCharacterReviveSfx(string spriteKey)
+    {
+        var clip = CharacterSfxLookup.LoadCharacterSfxOrDefault(spriteKey, CharacterSfxType.Revive);
+        if (clip != null)
+        {
+            AudioManager.PlaySfx(clip);
         }
     }
 
