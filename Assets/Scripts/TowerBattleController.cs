@@ -12,6 +12,8 @@ using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using BattleEnvironment = TheTower.Environment;
+using EnvironmentSideEffects = TheTower.EnvironmentSideEffects;
 using Random = UnityEngine.Random;
 
 public class TowerBattleController : MonoBehaviour
@@ -21,6 +23,7 @@ public class TowerBattleController : MonoBehaviour
     private const string DefaultHeroSpriteKey = "";
     private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
     private const string PauseExitMainMenuHoverText = "Exit to main menu without saving the current battle.";
+    private const string BattleBackgroundPath = "Canvas/Background";
 
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
@@ -34,6 +37,7 @@ public class TowerBattleController : MonoBehaviour
     [Header("Turn Timing")]
     [SerializeField] private float heroAttackDelay = 1f;
     [SerializeField] private float monsterAttackDelay = 1f;
+    [SerializeField] private float environmentEffectDelay = 0.35f;
     [SerializeField] private float nextTurnDelay = 0.75f;
 
     [Header("Battle Scene UI")]
@@ -114,6 +118,7 @@ public class TowerBattleController : MonoBehaviour
     private Vector2 currentItemStatsBasePosition;
     private Image heroHealthBarImage;
     private Image monsterHealthBarImage;
+    private Image battleBackgroundImage;
     private BattleCharacterPresenter heroCharacterPresenter;
     private BattleCharacterPresenter monsterCharacterPresenter;
     private Image heroEffectAttackIcon;
@@ -172,6 +177,7 @@ public class TowerBattleController : MonoBehaviour
 
     private RunConfig runConfig;
     private Monster currentMonster;
+    private BattleEnvironment currentEnvironment;
     private HeroRuntimeState hero;
     private int encounterIndex = -1;
     private int currentMonsterHp;
@@ -247,6 +253,13 @@ public class TowerBattleController : MonoBehaviour
 
     private sealed class EncounterSnapshot
     {
+    }
+
+    private sealed class EnvironmentTurnResolution
+    {
+        public string Summary;
+        public bool HeroDefeated;
+        public bool MonsterDefeated;
     }
 
     private sealed class MoveHoverListener : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -595,6 +608,7 @@ public class TowerBattleController : MonoBehaviour
     {
         encounterIndex = index;
         currentMonster = encounterMonster;
+        currentEnvironment = ResolveCurrentEnvironment();
         monsterModifiers.Clear();
         heroModifiers.Clear();
         var heroBaseMaxHealth = Mathf.Max(1, GetHeroBaseStats().health);
@@ -625,6 +639,7 @@ public class TowerBattleController : MonoBehaviour
         SetStatus($"{intro}\n{GetEncounterLabel()}: {currentMonster.name}\n{currentMonster.description}");
         ClearBattleLog();
         PreloadBattleAssets();
+        ApplyEnvironmentBackground();
         ConfigureBattlePresenters();
         RefreshAllUi();
         SetButtonsInteractable(true);
@@ -713,26 +728,56 @@ public class TowerBattleController : MonoBehaviour
         PlayReactionAnimation(actorIsHero: false, monsterResponse.move);
         monsterMoveHistory.Add(monsterResponse.move.id);
         turnNumber++;
+        var heroReactionDelay = GetReactionAnimationDelay(actorIsHero: false, monsterResponse.move);
+        var actionRecoveryDelay = Mathf.Max(monsterRecoveryDelay, heroReactionDelay);
+        EnvironmentTurnResolution environmentResolution = null;
+        if (HasPendingEnvironmentTurnEffects())
+        {
+            if (actionRecoveryDelay > 0f)
+            {
+                yield return new WaitForSeconds(actionRecoveryDelay);
+            }
+
+            yield return StartCoroutine(ApplyEnvironmentTurnEffectsRoutine(
+                resolution => environmentResolution = resolution));
+            environmentResolution ??= new EnvironmentTurnResolution();
+        }
+        else
+        {
+            environmentResolution = new EnvironmentTurnResolution();
+        }
+
         RefreshAllUi();
 
         if (hero.CurrentHp <= 0)
         {
-            yield return StartCoroutine(HandleDefeatSequence(heroTurnSummary, monsterTurnSummary));
+            yield return StartCoroutine(HandleDefeatSequence(
+                heroTurnSummary,
+                JoinSummaryLines(monsterTurnSummary, environmentResolution.Summary)));
             isBusy = false;
             yield break;
         }
 
-        SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}");
+        if (environmentResolution.MonsterDefeated)
+        {
+            HandleVictory(JoinSummaryLines(heroTurnSummary, monsterTurnSummary, environmentResolution.Summary));
+            isBusy = false;
+            yield break;
+        }
 
-        var heroReactionDelay = GetReactionAnimationDelay(actorIsHero: false, monsterResponse.move);
-        var postTurnDelay = Mathf.Max(nextTurnDelay, Mathf.Max(monsterRecoveryDelay, heroReactionDelay));
+        var combinedTurnSummary = JoinSummaryLines(heroTurnSummary, monsterTurnSummary, environmentResolution.Summary);
+        SetStatus(combinedTurnSummary);
+
+        var postTurnDelay = HasPendingEnvironmentTurnEffects()
+            ? nextTurnDelay
+            : Mathf.Max(nextTurnDelay, actionRecoveryDelay);
         if (postTurnDelay > 0f)
         {
             yield return new WaitForSeconds(postTurnDelay);
         }
 
         isBusy = false;
-        SetStatus($"{heroTurnSummary}\n{monsterTurnSummary}\nChoose your next move.");
+        SetStatus(JoinSummaryLines(combinedTurnSummary, "Choose your next move."));
         SetButtonsInteractable(true);
         RefreshAllUi();
     }
@@ -1562,6 +1607,136 @@ public class TowerBattleController : MonoBehaviour
         {
             statusText.text = message;
         }
+    }
+
+    private BattleEnvironment ResolveCurrentEnvironment()
+    {
+        if (currentMonster == null ||
+            runConfig?.environmentRegistry == null ||
+            string.IsNullOrWhiteSpace(currentMonster.environmentId))
+        {
+            return null;
+        }
+
+        runConfig.environmentRegistry.TryGetValue(currentMonster.environmentId, out var environment);
+        return environment;
+    }
+
+    private EnvironmentSideEffects GetEnvironmentSideEffects(bool targetIsHero)
+    {
+        return targetIsHero ? currentEnvironment?.heroEffects : currentEnvironment?.monsterEffects;
+    }
+
+    private void ApplyEnvironmentBackground()
+    {
+        if (battleBackgroundImage == null)
+        {
+            return;
+        }
+
+        var sprite = SpriteKeyLookup.LoadEnvironmentSprite(currentEnvironment?.spriteKey);
+        if (sprite == null)
+        {
+            return;
+        }
+
+        battleBackgroundImage.sprite = sprite;
+        battleBackgroundImage.color = Color.white;
+    }
+
+    private IEnumerator ApplyEnvironmentTurnEffectsRoutine(Action<EnvironmentTurnResolution> onResolved)
+    {
+        var heroEffect = GetActiveEnvironmentTurnEffect(targetIsHero: true);
+        var monsterEffect = GetActiveEnvironmentTurnEffect(targetIsHero: false);
+        var resolution = new EnvironmentTurnResolution();
+
+        if (heroEffect == null && monsterEffect == null)
+        {
+            onResolved?.Invoke(resolution);
+            yield break;
+        }
+
+        if (environmentEffectDelay > 0f)
+        {
+            yield return new WaitForSeconds(environmentEffectDelay);
+        }
+
+        var summaryLines = new List<string>();
+        PlayEnvironmentTurnEffectFeedback(targetIsHero: true, heroEffect?.type);
+        PlayEnvironmentTurnEffectFeedback(targetIsHero: false, monsterEffect?.type);
+
+        ApplyEnvironmentTurnEffect(
+            targetIsHero: true,
+            effect: heroEffect,
+            summaryLines);
+        ApplyEnvironmentTurnEffect(
+            targetIsHero: false,
+            effect: monsterEffect,
+            summaryLines);
+
+        resolution.HeroDefeated = hero.CurrentHp <= 0;
+        resolution.MonsterDefeated = currentMonsterHp <= 0;
+
+        RefreshAllUi();
+
+        var feedbackDelay = Mathf.Max(
+            GetEnvironmentTurnEffectFeedbackDelay(targetIsHero: true, heroEffect?.type),
+            GetEnvironmentTurnEffectFeedbackDelay(targetIsHero: false, monsterEffect?.type));
+        if (feedbackDelay > 0f)
+        {
+            yield return new WaitForSeconds(feedbackDelay);
+        }
+
+        resolution.Summary = string.Join("\n", summaryLines.Where(line => !string.IsNullOrWhiteSpace(line)));
+        onResolved?.Invoke(resolution);
+    }
+
+    private bool HasPendingEnvironmentTurnEffects()
+    {
+        return GetActiveEnvironmentTurnEffect(targetIsHero: true) != null ||
+               GetActiveEnvironmentTurnEffect(targetIsHero: false) != null;
+    }
+
+    private EnvironmentTurnEffect GetActiveEnvironmentTurnEffect(bool targetIsHero)
+    {
+        var effect = GetEnvironmentSideEffects(targetIsHero)?.turnEffect;
+        return effect == null || effect.value <= 0 || string.IsNullOrWhiteSpace(effect.type)
+            ? null
+            : effect;
+    }
+
+    private void ApplyEnvironmentTurnEffect(
+        bool targetIsHero,
+        EnvironmentTurnEffect effect,
+        List<string> summaryLines)
+    {
+        if (effect == null)
+        {
+            return;
+        }
+
+        var targetName = targetIsHero ? RunSession.GetHeroDisplayName() : currentMonster?.name ?? "Monster";
+        var normalizedType = effect.type.Trim().ToLowerInvariant();
+        switch (normalizedType)
+        {
+            case "damage":
+                PlayEnvironmentTurnEffectFeedback(targetIsHero, normalizedType);
+                ApplyDamage(targetIsHero, effect.value);
+                summaryLines.Add($"{targetName} takes {effect.value} environment damage.");
+                break;
+            case "heal":
+                PlayEnvironmentTurnEffectFeedback(targetIsHero, normalizedType);
+                ApplyHeal(targetIsHero, effect.value);
+                summaryLines.Add($"{targetName} recovers {effect.value} health from the environment.");
+                break;
+            default:
+                return;
+        }
+    }
+
+    private static string JoinSummaryLines(params string[] lines)
+    {
+        return string.Join("\n", lines.Where(line => !string.IsNullOrWhiteSpace(line)));
     }
 
     private void SetButtonsInteractable(bool interactable)
@@ -2469,14 +2644,18 @@ public class TowerBattleController : MonoBehaviour
     private Stats GetEffectiveHeroStats()
     {
         return ApplyModifiers(
-            ApplyItemModifiers(GetHeroBaseStats(), targetIsHero: true),
+            ApplyEnvironmentStatModifiers(
+                ApplyItemModifiers(GetHeroBaseStats(), targetIsHero: true),
+                targetIsHero: true),
             heroModifiers);
     }
 
     private Stats GetEffectiveMonsterStats()
     {
         return ApplyModifiers(
-            ApplyItemModifiers(currentMonster.stats.Clone(), targetIsHero: false),
+            ApplyEnvironmentStatModifiers(
+                ApplyItemModifiers(currentMonster.stats.Clone(), targetIsHero: false),
+                targetIsHero: false),
             monsterModifiers);
     }
 
@@ -2525,6 +2704,27 @@ public class TowerBattleController : MonoBehaviour
         foreach (var modifier in modifiers)
         {
             ApplyStatModifier(stats, modifier.Stat, modifier.Value);
+        }
+
+        return ClampStats(stats);
+    }
+
+    private Stats ApplyEnvironmentStatModifiers(Stats stats, bool targetIsHero)
+    {
+        if (stats == null)
+        {
+            return new Stats();
+        }
+
+        var sideEffects = GetEnvironmentSideEffects(targetIsHero);
+        if (sideEffects?.statModifiers == null)
+        {
+            return ClampStats(stats);
+        }
+
+        foreach (var modifier in sideEffects.statModifiers)
+        {
+            ApplyStatModifier(stats, modifier.Key, modifier.Value);
         }
 
         return ClampStats(stats);
@@ -3756,6 +3956,7 @@ public class TowerBattleController : MonoBehaviour
 
         heroHealthBarImage = FindComponent<Image>("Canvas/Hero UI/Health Bar/Health Bar");
         monsterHealthBarImage = FindComponent<Image>("Canvas/Monster UI/Health Bar/Health Bar");
+        battleBackgroundImage = FindComponent<Image>(BattleBackgroundPath);
         ConfigureHealthBarImage(heroHealthBarImage);
         ConfigureHealthBarImage(monsterHealthBarImage);
 
@@ -3994,6 +4195,47 @@ public class TowerBattleController : MonoBehaviour
         }
     }
 
+    private void PlayEnvironmentTurnEffectFeedback(bool targetIsHero, string effectType)
+    {
+        if (string.IsNullOrWhiteSpace(effectType))
+        {
+            return;
+        }
+
+        PlayMoveSfx(new Move
+        {
+            effect = effectType,
+            spriteKey = "default"
+        });
+
+        if (effectType == "heal")
+        {
+            PlayHealParticleEffect(targetIsHero);
+            return;
+        }
+
+        if (effectType != "damage")
+        {
+            return;
+        }
+
+        var targetPresenter = targetIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
+        targetPresenter?.PlayTemporaryState(BattleAnimationState.Hurt, 0.05f, BattleAnimationState.Idle);
+    }
+
+    private float GetEnvironmentTurnEffectFeedbackDelay(bool targetIsHero, string effectType)
+    {
+        if (effectType != "damage")
+        {
+            return 0f;
+        }
+
+        var targetPresenter = targetIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
+        return targetPresenter != null
+            ? targetPresenter.GetStateDuration(BattleAnimationState.Hurt, 0.05f)
+            : 0f;
+    }
+
     private static void PlayMoveSfx(Move move)
     {
         foreach (var clip in MoveSfxLookup.LoadMoveSfx(move))
@@ -4051,6 +4293,11 @@ public class TowerBattleController : MonoBehaviour
         var monsterSpriteKey = ResolveMonsterSpriteKey();
         PreloadAnimationStates(heroSpriteKey, CharacterSpriteKind.Hero);
         PreloadAnimationStates(monsterSpriteKey, CharacterSpriteKind.Monster);
+        if (!string.IsNullOrWhiteSpace(currentEnvironment?.spriteKey))
+        {
+            SpriteKeyLookup.LoadEnvironmentSprite(currentEnvironment.spriteKey);
+        }
+
         PreloadItemSprites(hero?.EquippedItems);
         PreloadItemSprites(currentMonster?.equippedItems);
 

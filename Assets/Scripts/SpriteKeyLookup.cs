@@ -26,13 +26,16 @@ public static class SpriteKeyLookup
     private const string MoveResourceRoot = "Sprites/Moves";
     private const string IconResourceRoot = "Sprites/Icons";
     private const string ItemResourceRoot = "Sprites/Items";
+    private const string EnvironmentResourceRoot = "Environments";
     private const string DefaultSpriteKey = "default";
+    private const string DefaultEnvironmentResourcePath = EnvironmentResourceRoot + "/" + DefaultSpriteKey;
     private const string DefaultHeroResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/hero";
     private const string DefaultMonsterResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/monster";
 
     private static readonly Dictionary<string, Sprite[]> CharacterAnimationCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Sprite> MoveSpriteCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Sprite> IconSpriteCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, Sprite> EnvironmentSpriteCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static Sprite[] LoadCharacterAnimation(string spriteKey, BattleAnimationState state)
     {
@@ -96,6 +99,22 @@ public static class SpriteKeyLookup
         }
 
         var sprite = LoadSingleSprite($"{ItemResourceRoot}/{spriteKey}");
+        return sprite;
+    }
+
+    public static Sprite LoadEnvironmentSprite(string spriteKey)
+    {
+        var normalizedKey = string.IsNullOrWhiteSpace(spriteKey) ? DefaultSpriteKey : spriteKey.Trim();
+        if (EnvironmentSpriteCache.TryGetValue(normalizedKey, out var cachedSprite))
+        {
+            return cachedSprite;
+        }
+
+        var sprite = LoadSingleSprite($"{EnvironmentResourceRoot}/{normalizedKey}")
+                     ?? LoadSingleSprite(normalizedKey)
+                     ?? LoadSingleSprite(DefaultEnvironmentResourcePath)
+                     ?? LoadSingleSprite(DefaultSpriteKey);
+        EnvironmentSpriteCache[normalizedKey] = sprite;
         return sprite;
     }
 

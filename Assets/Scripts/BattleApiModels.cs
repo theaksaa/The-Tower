@@ -69,6 +69,7 @@ namespace TheTower
         public string id;
         public string name;
         public string description;
+        public string environmentId;
         public Stats stats;
         public List<string> moves;
         public List<string> learnableMoves;
@@ -77,6 +78,31 @@ namespace TheTower
         public int xpReward;
         public int coinReward;
         public string spriteKey;
+    }
+
+    [Serializable]
+    public class EnvironmentTurnEffect
+    {
+        public string type;
+        public int value;
+    }
+
+    [Serializable]
+    public class EnvironmentSideEffects
+    {
+        public Dictionary<string, int> statModifiers;
+        public EnvironmentTurnEffect turnEffect;
+    }
+
+    [Serializable]
+    public class Environment
+    {
+        public string id;
+        public string name;
+        public string description;
+        public string spriteKey;
+        public EnvironmentSideEffects heroEffects;
+        public EnvironmentSideEffects monsterEffects;
     }
 
     [Serializable]
@@ -142,6 +168,7 @@ namespace TheTower
         public XpRewardScaling xpRewardScaling;
         public Dictionary<string, Move> moveRegistry;
         public Dictionary<string, ItemDefinition> itemRegistry;
+        public Dictionary<string, Environment> environmentRegistry;
         public List<ShopItemConfig> shopItems;
         public EndlessModeConfig endlessMode;
     }
