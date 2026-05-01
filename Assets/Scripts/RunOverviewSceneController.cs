@@ -645,23 +645,20 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
     private sealed class HoverRevealSelectorButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        private Image targetImage;
+        private GameObject selectorRoot;
         private CanvasGroup selectorCanvasGroup;
         private float animationSpeed;
         private bool isHovered;
 
-        public void Initialize(Image image, CanvasGroup selectorGroup, float speed)
+        public void Initialize(GameObject targetSelectorRoot, CanvasGroup selectorGroup, float speed)
         {
-            targetImage = image;
+            selectorRoot = targetSelectorRoot;
             selectorCanvasGroup = selectorGroup;
             animationSpeed = Mathf.Max(0.01f, speed);
 
-            if (targetImage != null)
+            if (selectorRoot != null)
             {
-                targetImage.sprite = null;
-                targetImage.color = Color.clear;
-                targetImage.enabled = true;
-                targetImage.raycastTarget = true;
+                selectorRoot.SetActive(false);
             }
 
             if (selectorCanvasGroup != null)
@@ -685,6 +682,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         private void OnDisable()
         {
             isHovered = false;
+            if (selectorRoot != null)
+            {
+                selectorRoot.SetActive(false);
+            }
+
             if (selectorCanvasGroup != null)
             {
                 selectorCanvasGroup.alpha = 0f;
@@ -693,18 +695,34 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
         private void LateUpdate()
         {
+            var targetAlpha = isHovered ? 1f : 0f;
+
             if (selectorCanvasGroup == null)
             {
+                if (selectorRoot != null)
+                {
+                    selectorRoot.SetActive(isHovered);
+                }
+
                 return;
             }
 
-            var targetAlpha = isHovered ? 1f : 0f;
+            if (selectorRoot != null && targetAlpha > 0f && !selectorRoot.activeSelf)
+            {
+                selectorRoot.SetActive(true);
+            }
+
             var t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
             selectorCanvasGroup.alpha = Mathf.Lerp(selectorCanvasGroup.alpha, targetAlpha, t);
 
             if (Mathf.Abs(selectorCanvasGroup.alpha - targetAlpha) <= 0.01f)
             {
                 selectorCanvasGroup.alpha = targetAlpha;
+            }
+
+            if (selectorRoot != null && targetAlpha <= 0f && selectorCanvasGroup.alpha <= 0.01f && selectorRoot.activeSelf)
+            {
+                selectorRoot.SetActive(false);
             }
         }
     }
@@ -1314,11 +1332,10 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             shopButton.onClick.RemoveAllListeners();
             shopButton.onClick.AddListener(OpenShopPanel);
 
-            var shopButtonImage = shopButton.targetGraphic as Image ?? shopButton.GetComponent<Image>();
             var selectorRoot = EnsureSelectorRoot(shopButton.transform as RectTransform, shopButton.transform.Find("Selector")?.gameObject);
             if (selectorRoot != null)
             {
-                selectorRoot.SetActive(true);
+                selectorRoot.SetActive(false);
                 var selectorRect = selectorRoot.GetComponent<RectTransform>();
                 selectorRect.offsetMin = Vector2.zero;
                 selectorRect.offsetMax = Vector2.zero;
@@ -1335,7 +1352,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
                 revealFeedback = shopButton.gameObject.AddComponent<HoverRevealSelectorButtonFeedback>();
             }
 
-            revealFeedback.Initialize(shopButtonImage, selectorCanvasGroup, shopButtonRevealAnimationSpeed);
+            revealFeedback.Initialize(selectorRoot, selectorCanvasGroup, shopButtonRevealAnimationSpeed);
         }
 
         if (shopPanelCloseButton != null)
