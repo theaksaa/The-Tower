@@ -6,6 +6,8 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-1000)]
 public sealed class EndSceneController : MonoBehaviour
 {
+    private const string EndSceneMusicPath = "Sounds/Background Music/Background/Ambient 10";
+
     [SerializeField] private string endSceneName = "EndScene";
     [SerializeField] private string runOverviewSceneName = "RunOverviewScene";
     [SerializeField] private string title = "The Curse Is Broken";
@@ -65,6 +67,7 @@ public sealed class EndSceneController : MonoBehaviour
         BindScene();
         BindButtons();
         ShowPage(0);
+        AudioManager.PlayMusic(EndSceneMusicPath, true);
     }
 
     private void BindScene()

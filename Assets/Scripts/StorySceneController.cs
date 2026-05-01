@@ -7,6 +7,8 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-1000)]
 public sealed class StorySceneController : MonoBehaviour
 {
+    private const string StorySceneMusicPath = "Sounds/Background Music/Background/Dark Ambient 3";
+
     [SerializeField] private string storySceneName = "StoryScene";
     [SerializeField] private string heroSelectSceneName = "HeroSelectScene";
     [SerializeField] private string storyModeTitle = "Story Mode";
@@ -76,6 +78,7 @@ public sealed class StorySceneController : MonoBehaviour
         BindButtons();
         LoadPagesForPendingMode();
         ShowPage(0);
+        AudioManager.PlayMusic(StorySceneMusicPath, true);
     }
 
     private void BindScene()

@@ -15,6 +15,7 @@ using UnityEditor;
 
 public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController, IItemLoadoutController
 {
+    private const string RunOverviewMusicPath = "Sounds/Background Music/Background/Light Ambience 1";
     private static readonly Color EmptyMoveSlotTint = new(1f, 1f, 1f, 0.28f);
     private static readonly Color LockedMonsterTint = Color.black;
     private static readonly Color AvailableMonsterTint = Color.white;
@@ -723,6 +724,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             return;
         }
 
+        AudioManager.PlayMusic(RunOverviewMusicPath, true);
         RefreshUi();
         SetLevelPanelVisible(false);
         SetMapPanelVisible(false);

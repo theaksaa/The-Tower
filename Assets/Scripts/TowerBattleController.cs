@@ -16,6 +16,7 @@ using Random = UnityEngine.Random;
 
 public class TowerBattleController : MonoBehaviour
 {
+    private const string BattleMusicFolderPath = "Sounds/Background Music/Battles";
     private const string DefaultMonsterSpriteKey = "";
     private const string DefaultHeroSpriteKey = "";
     private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
@@ -436,6 +437,7 @@ public class TowerBattleController : MonoBehaviour
         AutoBindScene();
         CreateRuntimeHud();
         PrepareHealParticleSystems();
+        PlayBattleMusic();
         StartCoroutine(BootstrapEncounter());
     }
 
@@ -469,6 +471,19 @@ public class TowerBattleController : MonoBehaviour
     private void OnDisable()
     {
         ReleasePauseState();
+    }
+
+    private void PlayBattleMusic()
+    {
+        var battleClips = Resources.LoadAll<AudioClip>(BattleMusicFolderPath);
+        if (battleClips == null || battleClips.Length == 0)
+        {
+            Debug.LogWarning($"TowerBattleController could not find any battle music in Resources folder '{BattleMusicFolderPath}'.");
+            return;
+        }
+
+        var selectedClip = battleClips[Random.Range(0, battleClips.Length)];
+        AudioManager.PlayMusic(selectedClip, true);
     }
 
     private void OnDestroy()

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
@@ -13,10 +14,14 @@ public sealed class AudioManager : MonoBehaviour
     [Header("Sources")]
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private float musicCrossfadeDuration = 1.25f;
 
     private static AudioManager instance;
     private AudioMixerGroup musicMixerGroup;
     private AudioMixerGroup sfxMixerGroup;
+    private AudioSource[] musicSources;
+    private int activeMusicSourceIndex;
+    private Coroutine musicTransitionCoroutine;
 
     public static AudioManager Instance
     {
@@ -97,13 +102,7 @@ public sealed class AudioManager : MonoBehaviour
 
     public static void StopMusic()
     {
-        if (Instance.musicSource == null)
-        {
-            return;
-        }
-
-        Instance.musicSource.Stop();
-        Instance.musicSource.clip = null;
+        Instance.StopMusicInternal();
     }
 
     public static void PlaySfx(AudioClip clip, float volume = 1f, float pitch = 1f)
@@ -301,15 +300,38 @@ public sealed class AudioManager : MonoBehaviour
 
     private void EnsureSourcesExist()
     {
-        if (musicSource == null)
-        {
-            musicSource = CreateSource("Music Source", true);
-        }
+        EnsureMusicSourcesExist();
 
         if (sfxSource == null)
         {
             sfxSource = CreateSource("SFX Source", false);
         }
+    }
+
+    private void EnsureMusicSourcesExist()
+    {
+        if (musicSources == null || musicSources.Length != 2)
+        {
+            musicSources = new AudioSource[2];
+        }
+
+        if (musicSource == null)
+        {
+            musicSource = CreateSource("Music Source", true);
+        }
+
+        if (musicSources[0] == null)
+        {
+            musicSources[0] = musicSource;
+        }
+
+        if (musicSources[1] == null)
+        {
+            musicSources[1] = CreateSource("Music Source B", true);
+        }
+
+        activeMusicSourceIndex = Mathf.Clamp(activeMusicSourceIndex, 0, musicSources.Length - 1);
+        musicSource = musicSources[activeMusicSourceIndex];
     }
 
     private AudioSource CreateSource(string sourceName, bool loop)
@@ -326,13 +348,20 @@ public sealed class AudioManager : MonoBehaviour
 
     private void ApplyMixerGroups()
     {
-        if (musicSource != null)
+        EnsureMusicSourcesExist();
+
+        foreach (var source in musicSources)
         {
-            musicSource.playOnAwake = false;
-            musicSource.loop = true;
+            if (source == null)
+            {
+                continue;
+            }
+
+            source.playOnAwake = false;
+            source.loop = true;
             if (musicMixerGroup != null)
             {
-                musicSource.outputAudioMixerGroup = musicMixerGroup;
+                source.outputAudioMixerGroup = musicMixerGroup;
             }
         }
 
@@ -350,23 +379,55 @@ public sealed class AudioManager : MonoBehaviour
     private void PlayMusicInternal(AudioClip clip, bool loop, float volume)
     {
         EnsureSourcesExist();
-        if (musicSource == null)
+        if (musicSources == null || musicSources.Length == 0)
         {
             return;
         }
 
-        if (musicSource.clip == clip && musicSource.isPlaying)
+        var currentSource = musicSources[activeMusicSourceIndex];
+        if (currentSource == null)
         {
-            musicSource.loop = loop;
-            musicSource.volume = volume;
             return;
         }
 
-        musicSource.Stop();
-        musicSource.clip = clip;
-        musicSource.loop = loop;
-        musicSource.volume = volume;
-        musicSource.Play();
+        if (currentSource.clip == clip && currentSource.isPlaying)
+        {
+            currentSource.loop = loop;
+            currentSource.volume = volume;
+            return;
+        }
+
+        if (musicTransitionCoroutine != null)
+        {
+            StopCoroutine(musicTransitionCoroutine);
+            musicTransitionCoroutine = null;
+        }
+
+        if (!currentSource.isPlaying || currentSource.clip == null || musicCrossfadeDuration <= 0f)
+        {
+            currentSource.Stop();
+            currentSource.clip = clip;
+            currentSource.loop = loop;
+            currentSource.volume = volume;
+            currentSource.Play();
+            musicSource = currentSource;
+            return;
+        }
+
+        var nextSourceIndex = (activeMusicSourceIndex + 1) % musicSources.Length;
+        var nextSource = musicSources[nextSourceIndex];
+        if (nextSource == null)
+        {
+            currentSource.Stop();
+            currentSource.clip = clip;
+            currentSource.loop = loop;
+            currentSource.volume = volume;
+            currentSource.Play();
+            musicSource = currentSource;
+            return;
+        }
+
+        musicTransitionCoroutine = StartCoroutine(CrossfadeMusic(currentSource, nextSource, nextSourceIndex, clip, loop, volume));
     }
 
     private void PlaySfxInternal(AudioClip clip, float volume, float pitch)
@@ -381,5 +442,70 @@ public sealed class AudioManager : MonoBehaviour
         sfxSource.pitch = pitch;
         sfxSource.PlayOneShot(clip, volume);
         sfxSource.pitch = originalPitch;
+    }
+
+    private IEnumerator CrossfadeMusic(AudioSource fromSource, AudioSource toSource, int toSourceIndex, AudioClip clip, bool loop, float targetVolume)
+    {
+        var fromVolume = fromSource != null ? fromSource.volume : 0f;
+
+        toSource.Stop();
+        toSource.clip = clip;
+        toSource.loop = loop;
+        toSource.volume = 0f;
+        toSource.Play();
+
+        var elapsed = 0f;
+        while (elapsed < musicCrossfadeDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            var t = Mathf.Clamp01(elapsed / musicCrossfadeDuration);
+
+            if (fromSource != null)
+            {
+                fromSource.volume = Mathf.Lerp(fromVolume, 0f, t);
+            }
+
+            toSource.volume = Mathf.Lerp(0f, targetVolume, t);
+            yield return null;
+        }
+
+        if (fromSource != null)
+        {
+            fromSource.Stop();
+            fromSource.clip = null;
+            fromSource.volume = fromVolume;
+        }
+
+        toSource.volume = targetVolume;
+        activeMusicSourceIndex = toSourceIndex;
+        musicSource = toSource;
+        musicTransitionCoroutine = null;
+    }
+
+    private void StopMusicInternal()
+    {
+        EnsureSourcesExist();
+
+        if (musicTransitionCoroutine != null)
+        {
+            StopCoroutine(musicTransitionCoroutine);
+            musicTransitionCoroutine = null;
+        }
+
+        if (musicSources == null)
+        {
+            return;
+        }
+
+        foreach (var source in musicSources)
+        {
+            if (source == null)
+            {
+                continue;
+            }
+
+            source.Stop();
+            source.clip = null;
+        }
     }
 }

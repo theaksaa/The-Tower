@@ -9,6 +9,8 @@ using UnityEngine.UI;
 
 public class HeroSelectController : MonoBehaviour
 {
+    private const string HeroSelectMusicPath = "Sounds/Background Music/Background/Ambient 3";
+
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
@@ -46,6 +48,7 @@ public class HeroSelectController : MonoBehaviour
     {
         AutoBindScene();
         ConfigureStaticUi();
+        AudioManager.PlayMusic(HeroSelectMusicPath, true);
     }
 
     private void Start()

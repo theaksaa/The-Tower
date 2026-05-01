@@ -13,6 +13,8 @@ using UnityEditor;
 
 public class MainMenuController : MonoBehaviour
 {
+    private const string MainMenuMusicPath = "Sounds/Background Music/Background/Ambient 8";
+
     [Header("Navigation")]
     [SerializeField] private string storySceneName = "StoryScene";
     [SerializeField] private string runOverviewSceneName = "RunOverviewScene";
@@ -256,6 +258,7 @@ public class MainMenuController : MonoBehaviour
         RefreshContinuePanel();
         ShowPanel(VisiblePanel.RootMenu);
         HideModePreview();
+        AudioManager.PlayMusic(MainMenuMusicPath, true);
     }
 
     public void OpenSettings()
