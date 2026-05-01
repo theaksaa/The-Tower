@@ -177,6 +177,7 @@ namespace TheTower
         public string stat;
         public int value;
         public string moveId;
+        public string itemId;
     }
 
     [Serializable]

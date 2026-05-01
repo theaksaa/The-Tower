@@ -1534,6 +1534,15 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             }
         }
 
+        if (IsItemShopItem(config))
+        {
+            var item = RunSession.GetItem(config.itemId);
+            if (!string.IsNullOrWhiteSpace(item?.name))
+            {
+                return item.name;
+            }
+        }
+
         return config.id ?? string.Empty;
     }
 
@@ -1553,12 +1562,26 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             }
         }
 
+        if (IsItemShopItem(config))
+        {
+            var item = RunSession.GetItem(config.itemId);
+            if (!string.IsNullOrWhiteSpace(item?.description))
+            {
+                return item.description;
+            }
+        }
+
         return config.description ?? string.Empty;
     }
 
     private static bool IsMoveShopItem(ShopItemConfig config)
     {
         return string.Equals((config?.type ?? string.Empty).Trim(), "move", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsItemShopItem(ShopItemConfig config)
+    {
+        return string.Equals((config?.type ?? string.Empty).Trim(), "item", System.StringComparison.OrdinalIgnoreCase);
     }
 
     private void RefreshShopUi()
@@ -1623,6 +1646,10 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         return (config.type ?? string.Empty).Trim().ToLowerInvariant() switch
         {
             "move" => !string.IsNullOrWhiteSpace(config.moveId) && !RunSession.Hero.KnownMoves.Contains(config.moveId.Trim()),
+            "item" => !string.IsNullOrWhiteSpace(config.itemId) &&
+                      RunSession.GetItem(config.itemId.Trim()) != null &&
+                      !(RunSession.Hero.EquippedItems?.Contains(config.itemId.Trim()) ?? false) &&
+                      !(RunSession.Hero.InventoryItems?.Contains(config.itemId.Trim()) ?? false),
             "stat" => true,
             _ => false
         };
@@ -1661,6 +1688,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         {
             "stat" => RunSession.TryPurchaseStatBoost(item.Config.stat, item.Config.value, item.Config.cost),
             "move" => RunSession.TryPurchaseMoveUnlock(item.Config.moveId, item.Config.cost),
+            "item" => RunSession.TryPurchaseItem(item.Config.itemId, item.Config.cost, item.Config.repeatable),
             _ => false
         };
 

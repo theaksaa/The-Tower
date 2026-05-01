@@ -523,6 +523,37 @@ public static class RunSession
         return true;
     }
 
+    public static bool TryPurchaseItem(string itemId, int coinCost, bool allowDuplicatePurchase = false)
+    {
+        if (Hero == null || string.IsNullOrWhiteSpace(itemId) || coinCost < 0)
+        {
+            return false;
+        }
+
+        itemId = itemId.Trim();
+        if (Hero.Coins < coinCost || GetItem(itemId) == null)
+        {
+            return false;
+        }
+
+        Hero.EquippedItems ??= new List<string>();
+        Hero.InventoryItems ??= new List<string>();
+
+        var alreadyOwned = Hero.EquippedItems.Contains(itemId) || Hero.InventoryItems.Contains(itemId);
+        if (alreadyOwned && !allowDuplicatePurchase)
+        {
+            return false;
+        }
+
+        Hero.InventoryItems.Add(itemId);
+        Hero.Coins -= coinCost;
+
+        var itemName = GetItem(itemId)?.name ?? itemId;
+        StatusMessage = $"{GetHeroDisplayName()} bought {itemName}.";
+        RunSaveService.SaveCurrentRun();
+        return true;
+    }
+
     public static int GetMonsterKillCount(string monsterId)
     {
         if (Hero?.MonsterKillCounts == null || string.IsNullOrWhiteSpace(monsterId))
