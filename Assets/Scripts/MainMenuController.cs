@@ -366,14 +366,14 @@ public class MainMenuController : MonoBehaviour
     {
         RunSession.ClearActiveRun();
         RunSession.SetPendingMode("Story");
-        SceneManager.LoadScene(storySceneName);
+        SceneLoader.LoadScene(storySceneName);
     }
 
     private void SelectEndlessMode()
     {
         RunSession.ClearActiveRun();
         RunSession.SetPendingMode("Endless");
-        SceneManager.LoadScene(storySceneName);
+        SceneLoader.LoadScene(storySceneName);
     }
 
     private void ShowPanel(VisiblePanel panel)
@@ -649,7 +649,7 @@ public class MainMenuController : MonoBehaviour
             return;
         }
 
-        SceneManager.LoadScene(runOverviewSceneName);
+        SceneLoader.LoadScene(runOverviewSceneName);
     }
 
     private void DeleteSavedRun(string saveId)

@@ -151,7 +151,7 @@ public class MapRunOverviewController : MonoBehaviour, IMoveLoadoutController
     {
         if (!RunSession.HasActiveRun || RunSession.IsRunComplete() || RunSession.IsDefeated)
         {
-            SceneManager.LoadScene(heroSelectSceneName);
+            SceneLoader.LoadScene(heroSelectSceneName);
             yield break;
         }
 
@@ -351,7 +351,7 @@ public class MapRunOverviewController : MonoBehaviour, IMoveLoadoutController
         }
 
         RunSession.SelectEncounter(encounterIndex);
-        SceneManager.LoadScene(battleSceneName);
+        SceneLoader.LoadScene(battleSceneName);
     }
 
     private void ToggleModal()
@@ -389,7 +389,7 @@ public class MapRunOverviewController : MonoBehaviour, IMoveLoadoutController
 
     private void StartNewRun()
     {
-        SceneManager.LoadScene(heroSelectSceneName);
+        SceneLoader.LoadScene(heroSelectSceneName);
     }
 
     private void SetModalVisible(bool visible, bool immediate)

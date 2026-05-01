@@ -1320,7 +1320,7 @@ public class TowerBattleController : MonoBehaviour
         if (shouldShowEndScene)
         {
             ReleasePauseState();
-            SceneManager.LoadScene(endSceneName);
+            SceneLoader.LoadScene(endSceneName);
             return;
         }
 
@@ -1350,7 +1350,7 @@ public class TowerBattleController : MonoBehaviour
             }
 
             ReleasePauseState();
-            SceneManager.LoadScene(mainMenuSceneName);
+            SceneLoader.LoadScene(mainMenuSceneName);
             return;
         }
 
@@ -1694,14 +1694,14 @@ public class TowerBattleController : MonoBehaviour
     {
         RestoreSavedRunState();
         ReleasePauseState();
-        SceneManager.LoadScene(overviewSceneName);
+        SceneLoader.LoadScene(overviewSceneName);
     }
 
     private void ExitToMainMenuWithoutSaving()
     {
         RestoreSavedRunState();
         ReleasePauseState();
-        SceneManager.LoadScene(mainMenuSceneName);
+        SceneLoader.LoadScene(mainMenuSceneName);
     }
 
     private void RestoreSavedRunState()
@@ -2997,7 +2997,7 @@ public class TowerBattleController : MonoBehaviour
     private void ReturnToOverview()
     {
         ReleasePauseState();
-        SceneManager.LoadScene(overviewSceneName);
+        SceneLoader.LoadScene(overviewSceneName);
     }
 
     private bool ShouldShowEndSceneAfterVictory()
@@ -3184,7 +3184,7 @@ public class TowerBattleController : MonoBehaviour
         if (shouldShowEndScene)
         {
             ReleasePauseState();
-            SceneManager.LoadScene(endSceneName);
+            SceneLoader.LoadScene(endSceneName);
             yield break;
         }
 

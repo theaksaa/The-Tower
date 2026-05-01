@@ -141,7 +141,7 @@ public sealed class StorySceneController : MonoBehaviour
 
     private void GoToHeroSelect()
     {
-        SceneManager.LoadScene(heroSelectSceneName);
+        SceneLoader.LoadScene(heroSelectSceneName);
     }
 
     private static void BindButton(Button button, UnityEngine.Events.UnityAction action)

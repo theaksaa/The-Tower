@@ -122,7 +122,7 @@ public sealed class EndSceneController : MonoBehaviour
 
     private void GoToRunOverview()
     {
-        SceneManager.LoadScene(runOverviewSceneName);
+        SceneLoader.LoadScene(runOverviewSceneName);
     }
 
     private static void BindButton(Button button, UnityEngine.Events.UnityAction action)

@@ -8,6 +8,9 @@ using UnityEngine.Networking;
 
 public static class RunDataService
 {
+    private static RunConfig cachedRunConfig;
+    private static bool cachedUsingFallbackData;
+
     public static IEnumerator LoadRunConfig(string baseUrl, bool useLocalFallbackIfApiFails, Action<RunConfig, bool> onLoaded)
     {
         RunConfig runConfig = null;
@@ -38,6 +41,21 @@ public static class RunDataService
         }
 
         onLoaded?.Invoke(runConfig, usingFallbackData);
+    }
+
+    public static void CacheRunConfig(RunConfig runConfig, bool usingFallbackData)
+    {
+        cachedRunConfig = runConfig;
+        cachedUsingFallbackData = usingFallbackData;
+    }
+
+    public static bool TryConsumeCachedRunConfig(out RunConfig runConfig, out bool usingFallbackData)
+    {
+        runConfig = cachedRunConfig;
+        usingFallbackData = cachedUsingFallbackData;
+        cachedRunConfig = null;
+        cachedUsingFallbackData = false;
+        return runConfig != null;
     }
 
     public static RunConfig BuildFallbackRunConfig()

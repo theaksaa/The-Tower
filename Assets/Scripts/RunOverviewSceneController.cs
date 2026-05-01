@@ -738,7 +738,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     {
         if (!RunSession.HasActiveRun || RunSession.IsDefeated)
         {
-            SceneManager.LoadScene(heroSelectSceneName);
+            SceneLoader.LoadScene(heroSelectSceneName);
             return;
         }
 
@@ -1868,7 +1868,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     {
         RunSaveService.SaveCurrentRun();
         SetPauseMenuVisible(false);
-        SceneManager.LoadScene(mainMenuSceneName);
+        SceneLoader.LoadScene(mainMenuSceneName);
     }
 
     private void SetPauseMenuVisible(bool isVisible)
@@ -2152,7 +2152,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         }
 
         RunSession.SelectEncounter(selectedEncounterIndex);
-        SceneManager.LoadScene(battleSceneName);
+        SceneLoader.LoadScene(battleSceneName);
     }
 
     private void EnterNextEndlessEncounter()
@@ -2164,7 +2164,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         }
 
         RunSession.SelectEncounter(nextEncounterIndex);
-        SceneManager.LoadScene(battleSceneName);
+        SceneLoader.LoadScene(battleSceneName);
     }
 
     private void RefreshMapButton()

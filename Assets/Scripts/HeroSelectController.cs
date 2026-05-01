@@ -95,11 +95,19 @@ public class HeroSelectController : MonoBehaviour
 
     private IEnumerator LoadHeroesRoutine()
     {
-        yield return RunDataService.LoadRunConfig(baseUrl, useLocalFallbackIfApiFails, (config, fallback) =>
+        if (RunDataService.TryConsumeCachedRunConfig(out var cachedConfig, out var cachedFallback))
         {
-            loadedRunConfig = config;
-            usingFallbackData = fallback;
-        });
+            loadedRunConfig = cachedConfig;
+            usingFallbackData = cachedFallback;
+        }
+        else
+        {
+            yield return RunDataService.LoadRunConfig(baseUrl, useLocalFallbackIfApiFails, (config, fallback) =>
+            {
+                loadedRunConfig = config;
+                usingFallbackData = fallback;
+            });
+        }
 
         availableHeroes = RunSession.GetAvailableHeroes(loadedRunConfig);
         if (loadedRunConfig == null || availableHeroes.Count == 0)
@@ -325,7 +333,7 @@ public class HeroSelectController : MonoBehaviour
         }
 
         RunSession.InitializeNewRun(loadedRunConfig, usingFallbackData, availableHeroes[selectedHeroIndex], RunSession.PendingMode);
-        SceneManager.LoadScene(overviewSceneName);
+        SceneLoader.LoadScene(overviewSceneName);
     }
 
     private void UpdateSelectButtonLabel()
