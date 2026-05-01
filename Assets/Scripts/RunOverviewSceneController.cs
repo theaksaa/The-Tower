@@ -117,6 +117,12 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private GameObject mapPanelRoot;
     private TMP_Text mapPanelText;
     private RectTransform mapPanelContentRoot;
+    private Image selectedMonsterImage;
+    private Sprite selectedMonsterDefaultSprite;
+    private TMP_Text selectedMonsterNameText;
+    private TMP_Text selectedMonsterDetailsText;
+    private TMP_Text selectedEnvironmentNameText;
+    private TMP_Text selectedEnvironmentDetailsText;
     private Button mapButton;
     private Button nextEncounterButton;
     private RectTransform mapButtonBackgroundRoot;
@@ -314,6 +320,16 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         public void OnPointerClick(PointerEventData eventData)
         {
             if (eventData == null || eventData.button != PointerEventData.InputButton.Left || closeHandler == null)
+            {
+                return;
+            }
+
+            var clickedTarget = eventData.pointerPressRaycast.gameObject != null
+                ? eventData.pointerPressRaycast.gameObject.transform
+                : eventData.pointerCurrentRaycast.gameObject != null
+                    ? eventData.pointerCurrentRaycast.gameObject.transform
+                    : null;
+            if (clickedTarget != null && clickedTarget != transform && clickedTarget.IsChildOf(transform))
             {
                 return;
             }
@@ -926,6 +942,12 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         mapPanelRoot = FindChild("Map Panel")?.gameObject;
         mapPanelContentRoot = ResolvePanelContentRoot(mapPanelRoot, "Map Panel/Background");
         mapPanelText = FindComponent<TMP_Text>("Map Panel/Text");
+        selectedMonsterImage = FindComponent<Image>("Map Panel/Selected Monster");
+        selectedMonsterDefaultSprite = selectedMonsterImage != null ? selectedMonsterImage.sprite : null;
+        selectedMonsterNameText = FindComponent<TMP_Text>("Map Panel/Monster Name");
+        selectedMonsterDetailsText = FindComponent<TMP_Text>("Map Panel/Monster Details");
+        selectedEnvironmentNameText = FindComponent<TMP_Text>("Map Panel/Environment Name");
+        selectedEnvironmentDetailsText = FindComponent<TMP_Text>("Map Panel/Environment Details");
         mapPanelCloseButton = FindComponent<Button>("Map Panel/Close Button");
         mapStartButton = FindComponent<Button>("Map Panel/Start Button");
         mapStartButtonText = FindComponent<TMP_Text>("Map Panel/Start Button/Text");
@@ -1389,6 +1411,8 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             EnterNextEndlessEncounter();
             return;
         }
+
+        selectedEncounterIndex = GetLastUnlockedEncounterIndex();
 
         RefreshMapPanel();
         SetMapPanelVisible(true);
@@ -2118,7 +2142,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         for (var index = 0; index < mapPanelRoot.childCount; index++)
         {
             if (mapPanelRoot.GetChild(index) is RectTransform child &&
-                child.name.StartsWith("Monster ", StringComparison.OrdinalIgnoreCase))
+                GetMonsterSlotOrder(child) != int.MaxValue)
             {
                 directMonsterSlots.Add(child);
             }
@@ -2128,7 +2152,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
         for (var index = 0; index < directMonsterSlots.Count; index++)
         {
-            monsterSlots.Add(CreateMonsterSlotView(directMonsterSlots[index], index));
+            var slot = CreateMonsterSlotView(directMonsterSlots[index], index);
+            if (slot != null)
+            {
+                monsterSlots.Add(slot);
+            }
         }
     }
 
@@ -2152,6 +2180,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
     private MapMonsterSlotView CreateMonsterSlotView(RectTransform root, int encounterIndex)
     {
+        if (root == null)
+        {
+            return null;
+        }
+
         var slot = new MapMonsterSlotView
         {
             EncounterIndex = encounterIndex,
@@ -2247,6 +2280,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             hoveredEncounterIndex = -1;
         }
 
+        if (!RunSession.CanEnterEncounterFromMap(selectedEncounterIndex))
+        {
+            selectedEncounterIndex = GetLastUnlockedEncounterIndex();
+        }
+
         var encounters = RunSession.CurrentRunConfig.encounters;
         for (var index = 0; index < monsterSlots.Count; index++)
         {
@@ -2282,8 +2320,8 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
             if (slot.Label != null)
             {
-                slot.Label.text = $"Level {slot.EncounterIndex + 1}";
-                slot.Label.color = Color.white;
+                slot.Label.text = string.Empty;
+                slot.Label.gameObject.SetActive(false);
             }
         }
 
@@ -2299,6 +2337,8 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
                 ? MapReviveLabel
                 : MapContinueLabel;
         }
+
+        RefreshMapPanelSelectionDetails(hasSelection ? encounters[selectedEncounterIndex] : null);
 
     }
 
@@ -3415,6 +3455,71 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     {
         var idleFrames = SpriteKeyLookup.LoadCharacterAnimationOrDefault(monster?.spriteKey, BattleAnimationState.Idle, CharacterSpriteKind.Monster);
         return idleFrames.FirstOrDefault() ?? SpriteKeyLookup.LoadMoveSprite(monster?.spriteKey) ?? fallbackSprite;
+    }
+
+    private void RefreshMapPanelSelectionDetails(Monster encounter)
+    {
+        var environment = ResolveEnvironmentForEncounter(encounter);
+
+        if (selectedMonsterImage != null)
+        {
+            selectedMonsterImage.sprite = ResolveMonsterMapSprite(encounter, selectedMonsterDefaultSprite);
+            selectedMonsterImage.preserveAspect = true;
+            selectedMonsterImage.color = selectedMonsterImage.sprite != null ? Color.white : new Color(1f, 1f, 1f, 0f);
+        }
+
+        if (selectedMonsterNameText != null)
+        {
+            selectedMonsterNameText.text = !string.IsNullOrWhiteSpace(encounter?.name) ? encounter.name : string.Empty;
+        }
+
+        if (selectedMonsterDetailsText != null)
+        {
+            selectedMonsterDetailsText.text = !string.IsNullOrWhiteSpace(encounter?.description) ? encounter.description : string.Empty;
+        }
+
+        if (selectedEnvironmentNameText != null)
+        {
+            selectedEnvironmentNameText.text = !string.IsNullOrWhiteSpace(environment?.name) ? environment.name : string.Empty;
+        }
+
+        if (selectedEnvironmentDetailsText != null)
+        {
+            selectedEnvironmentDetailsText.text = !string.IsNullOrWhiteSpace(environment?.description) ? environment.description : string.Empty;
+        }
+    }
+
+    private static TheTower.Environment ResolveEnvironmentForEncounter(Monster encounter)
+    {
+        var runConfig = RunSession.CurrentRunConfig;
+        if (encounter == null ||
+            runConfig?.environmentRegistry == null ||
+            string.IsNullOrWhiteSpace(encounter.environmentId))
+        {
+            return null;
+        }
+
+        runConfig.environmentRegistry.TryGetValue(encounter.environmentId, out var environment);
+        return environment;
+    }
+
+    private static int GetLastUnlockedEncounterIndex()
+    {
+        var encounters = RunSession.CurrentRunConfig?.encounters;
+        if (encounters == null)
+        {
+            return -1;
+        }
+
+        for (var index = encounters.Count - 1; index >= 0; index--)
+        {
+            if (RunSession.CanEnterEncounterFromMap(index))
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private static Button EnsureButton(Transform target)
