@@ -22,7 +22,6 @@ public sealed class AudioManager : MonoBehaviour
     private AudioSource[] musicSources;
     private int activeMusicSourceIndex;
     private Coroutine musicTransitionCoroutine;
-
     public static AudioManager Instance
     {
         get

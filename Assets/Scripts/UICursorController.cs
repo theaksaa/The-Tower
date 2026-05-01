@@ -8,6 +8,7 @@ public sealed class UICursorController : MonoBehaviour
 {
     private const string PointerCursorResourcePath = "Cursors/_Cursors_Pointer";
     private const string PressedCursorResourcePath = "Cursors/_Cursors_PointerClicked";
+    private const string ClickSfxResourcePath = "Sounds/SFX/UI/button_click";
 
     private static UICursorController instance;
 
@@ -15,6 +16,7 @@ public sealed class UICursorController : MonoBehaviour
     private Texture2D pointerCursor;
     private Texture2D pressedCursor;
     private CursorVisualState currentState = CursorVisualState.Normal;
+    private bool wasLeftMousePressed;
 
     private enum CursorVisualState
     {
@@ -53,6 +55,16 @@ public sealed class UICursorController : MonoBehaviour
 
     private void Update()
     {
+        var isPointerOverClickable = TryGetMousePosition(out var mousePosition) && IsPointerOverClickableObject(mousePosition);
+        var isLeftMousePressed = Mouse.current != null && Mouse.current.leftButton.isPressed;
+
+        if (isPointerOverClickable && isLeftMousePressed && !wasLeftMousePressed)
+        {
+            AudioManager.PlaySfx(ClickSfxResourcePath);
+        }
+
+        wasLeftMousePressed = isLeftMousePressed;
+
         var desiredState = ResolveCursorState();
         if (desiredState != currentState)
         {
@@ -66,6 +78,8 @@ public sealed class UICursorController : MonoBehaviour
         {
             ApplyCursorState(CursorVisualState.Normal);
         }
+
+        wasLeftMousePressed = false;
     }
 
     private CursorVisualState ResolveCursorState()
