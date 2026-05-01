@@ -24,6 +24,14 @@ public class TowerBattleController : MonoBehaviour
     private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
     private const string PauseExitMainMenuHoverText = "Exit to main menu without saving the current battle.";
     private const string BattleBackgroundPath = "Canvas/Background";
+    private const string HeartIconKey = "_Icons_Hearth";
+    private const string MagicIconKey = "_Icons_Magic";
+    private const string ShieldIconKey = "_Icons_Shield";
+    private const string SwordIconKey = "_Icons_Sword";
+    private const string HeartIconFallbackKey = "health";
+    private const string MagicIconFallbackKey = "magic";
+    private const string ShieldIconFallbackKey = "defense";
+    private const string SwordIconFallbackKey = "attack";
 
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
@@ -121,12 +129,10 @@ public class TowerBattleController : MonoBehaviour
     private Image battleBackgroundImage;
     private BattleCharacterPresenter heroCharacterPresenter;
     private BattleCharacterPresenter monsterCharacterPresenter;
-    private Image heroEffectAttackIcon;
-    private Image heroEffectDefenseIcon;
-    private Image heroEffectMagicIcon;
-    private Image monsterEffectAttackIcon;
-    private Image monsterEffectDefenseIcon;
-    private Image monsterEffectMagicIcon;
+    private RectTransform heroEffectContainer;
+    private RectTransform monsterEffectContainer;
+    private readonly List<EffectRowUi> heroEffectRows = new();
+    private readonly List<EffectRowUi> monsterEffectRows = new();
     private GameObject endPanelRoot;
     private GameObject defeatPanelRoot;
     private GameObject battleLogPanelRoot;
@@ -210,7 +216,6 @@ public class TowerBattleController : MonoBehaviour
     private bool pendingInstantHealthBarSync = true;
 
     private readonly List<string> monsterMoveHistory = new();
-    private readonly Color inactiveEffectColor = Color.black;
     private readonly Color buffEffectColor = new(0.85f, 1f, 0.3f, 1f);
     private readonly Color debuffEffectColor = new(1f, 0.45f, 0.45f, 1f);
     private readonly Color activeMoveIconColor = Color.white;
@@ -221,6 +226,10 @@ public class TowerBattleController : MonoBehaviour
     private readonly List<GameObject> runtimeDropObjects = new();
     private bool heroReviveAvailable;
     private bool monsterReviveAvailable;
+    private Sprite heartEffectSprite;
+    private Sprite magicEffectSprite;
+    private Sprite shieldEffectSprite;
+    private Sprite swordEffectSprite;
 
     private sealed class BattleLogDescriptor
     {
@@ -770,6 +779,8 @@ public class TowerBattleController : MonoBehaviour
         PlayReactionAnimation(actorIsHero: false, monsterResponse.move);
         monsterMoveHistory.Add(monsterResponse.move.id);
         turnNumber++;
+        AdvanceModifierRounds(heroModifiers);
+        AdvanceModifierRounds(monsterModifiers);
         var heroReactionDelay = GetReactionAnimationDelay(actorIsHero: false, monsterResponse.move);
         var actionRecoveryDelay = Mathf.Max(monsterRecoveryDelay, heroReactionDelay);
         EnvironmentTurnResolution environmentResolution = null;
@@ -1004,8 +1015,6 @@ public class TowerBattleController : MonoBehaviour
                 });
                 break;
         }
-
-        ConsumeMoveStatModifiers(actorIsHero, move);
         return summary;
     }
 
@@ -1034,12 +1043,10 @@ public class TowerBattleController : MonoBehaviour
         if (targetIsHero)
         {
             hero.CurrentHp = Mathf.Max(0, hero.CurrentHp - amount);
-            ConsumeDefenseModifiers(targetIsHero: true);
             return;
         }
 
         currentMonsterHp = Mathf.Max(0, currentMonsterHp - amount);
-        ConsumeDefenseModifiers(targetIsHero: false);
     }
 
     private void ApplyHeal(bool targetIsHero, int amount)
@@ -1070,65 +1077,16 @@ public class TowerBattleController : MonoBehaviour
         {
             Stat = modifier.stat,
             Value = modifier.value,
-            RemainingUses = Mathf.Max(1, modifier.durationTurns),
-            SkipNextConsumption = ShouldDelayFirstConsumption(modifier.stat)
+            RemainingRounds = Mathf.Max(1, modifier.durationTurns)
         });
     }
 
-    private static bool ShouldDelayFirstConsumption(string stat)
-    {
-        return string.Equals(stat, "attack", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(stat, "magic", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void ConsumeMoveStatModifiers(bool actorIsHero, Move move)
-    {
-        var stat = GetScalingStat(move);
-        if (string.IsNullOrEmpty(stat))
-        {
-            return;
-        }
-
-        ConsumeModifierUse(actorIsHero ? heroModifiers : monsterModifiers, stat);
-    }
-
-    private static string GetScalingStat(Move move)
-    {
-        if (move == null)
-        {
-            return null;
-        }
-
-        return move.type switch
-        {
-            "physical" => "attack",
-            "magic" => "magic",
-            _ => null
-        };
-    }
-
-    private void ConsumeDefenseModifiers(bool targetIsHero)
-    {
-        ConsumeModifierUse(targetIsHero ? heroModifiers : monsterModifiers, "defense");
-    }
-
-    private static void ConsumeModifierUse(List<ActiveModifier> modifiers, string stat)
+    private static void AdvanceModifierRounds(List<ActiveModifier> modifiers)
     {
         for (var index = modifiers.Count - 1; index >= 0; index--)
         {
-            if (!string.Equals(modifiers[index].Stat, stat, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (modifiers[index].SkipNextConsumption)
-            {
-                modifiers[index].SkipNextConsumption = false;
-                continue;
-            }
-
-            modifiers[index].RemainingUses--;
-            if (modifiers[index].RemainingUses <= 0)
+            modifiers[index].RemainingRounds--;
+            if (modifiers[index].RemainingRounds <= 0)
             {
                 modifiers.RemoveAt(index);
             }
@@ -1615,12 +1573,8 @@ public class TowerBattleController : MonoBehaviour
 
     private void RefreshEffects()
     {
-        RefreshEffectIcon(heroEffectAttackIcon, targetIsHero: true, "attack");
-        RefreshEffectIcon(heroEffectDefenseIcon, targetIsHero: true, "defense");
-        RefreshEffectIcon(heroEffectMagicIcon, targetIsHero: true, "magic");
-        RefreshEffectIcon(monsterEffectAttackIcon, targetIsHero: false, "attack");
-        RefreshEffectIcon(monsterEffectDefenseIcon, targetIsHero: false, "defense");
-        RefreshEffectIcon(monsterEffectMagicIcon, targetIsHero: false, "magic");
+        RefreshEffectRows(heroEffectContainer, heroEffectRows, heroModifiers);
+        RefreshEffectRows(monsterEffectContainer, monsterEffectRows, monsterModifiers);
 
         if (effectsText == null)
         {
@@ -2886,17 +2840,14 @@ public class TowerBattleController : MonoBehaviour
 
         var who = targetIsHero ? "Hero" : currentMonster.name;
         var direction = modifier.value >= 0 ? "gained" : "lost";
-        var timing = ShouldDelayFirstConsumption(modifier.stat)
-            ? "starting from the next action"
-            : "starting immediately";
-        return $"{who} {direction} {Mathf.Abs(modifier.value)} {modifier.stat} for {modifier.durationTurns} uses, {timing}.";
+        var roundLabel = modifier.durationTurns == 1 ? "round" : "rounds";
+        return $"{who} {direction} {Mathf.Abs(modifier.value)} {modifier.stat} for {modifier.durationTurns} {roundLabel}.";
     }
 
     private static string FormatModifier(ActiveModifier modifier)
     {
-        var sign = modifier.Value >= 0 ? "+" : string.Empty;
-        var timing = modifier.SkipNextConsumption ? ", next use not counted" : string.Empty;
-        return $"{modifier.Stat} {sign}{modifier.Value} ({modifier.RemainingUses} uses{timing})";
+        var roundLabel = modifier.RemainingRounds == 1 ? "round" : "rounds";
+        return $"{modifier.Stat} {modifier.Value} ({modifier.RemainingRounds} {roundLabel})";
     }
 
     private string BuildPassiveItemSummary(bool targetIsHero)
@@ -2920,24 +2871,110 @@ public class TowerBattleController : MonoBehaviour
         return parts.Count == 0 ? "passive none" : "passive " + string.Join(", ", parts);
     }
 
-    private void RefreshEffectIcon(Image icon, bool targetIsHero, string stat)
+    private void RefreshEffectRows(RectTransform container, List<EffectRowUi> rows, IReadOnlyList<ActiveModifier> modifiers)
     {
-        if (icon == null)
+        if (container == null)
         {
             return;
         }
 
-        var temporaryTotal = (targetIsHero ? heroModifiers : monsterModifiers)
-            .Where(modifier => string.Equals(modifier.Stat, stat, StringComparison.OrdinalIgnoreCase))
-            .Sum(modifier => modifier.Value);
-        var total = temporaryTotal + GetPassiveItemStatTotal(targetIsHero, stat);
+        EnsureEffectRows(container, rows, modifiers?.Count ?? 0);
+        var visibleCount = modifiers?.Count ?? 0;
 
-        icon.color = total switch
+        for (var index = 0; index < rows.Count; index++)
         {
-            > 0 => buffEffectColor,
-            < 0 => debuffEffectColor,
-            _ => inactiveEffectColor
-        };
+            var shouldShow = index < visibleCount;
+            rows[index].Root.gameObject.SetActive(shouldShow);
+            if (!shouldShow)
+            {
+                continue;
+            }
+
+            var modifier = modifiers[index];
+            var effectColor = modifier.Value >= 0 ? buffEffectColor : debuffEffectColor;
+            var roundLabel = modifier.RemainingRounds == 1 ? "round" : "rounds";
+
+            rows[index].Icon.sprite = ResolveEffectSprite(modifier.Stat);
+            rows[index].Icon.color = effectColor;
+            rows[index].Description.text = $"{modifier.Value} ({modifier.RemainingRounds} {roundLabel})";
+            rows[index].Description.color = effectColor;
+        }
+    }
+
+    private void EnsureEffectRows(RectTransform container, List<EffectRowUi> rows, int minimumCount)
+    {
+        if (container == null)
+        {
+            return;
+        }
+
+        if (rows.Count == 0)
+        {
+            foreach (Transform child in container)
+            {
+                var row = BuildEffectRowUi(child as RectTransform);
+                if (row != null)
+                {
+                    rows.Add(row);
+                }
+            }
+        }
+
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        while (rows.Count < minimumCount)
+        {
+            var clone = Instantiate(rows[0].Root.gameObject, container).GetComponent<RectTransform>();
+            clone.name = $"Effect ({rows.Count})";
+            rows.Add(BuildEffectRowUi(clone));
+        }
+    }
+
+    private static EffectRowUi BuildEffectRowUi(RectTransform root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        var icon = root.Find("Icon")?.GetComponent<Image>();
+        var description = root.Find("Description")?.GetComponent<TMP_Text>();
+        return icon == null || description == null
+            ? null
+            : new EffectRowUi
+            {
+                Root = root,
+                Icon = icon,
+                Description = description
+            };
+    }
+
+    private Sprite ResolveEffectSprite(string stat)
+    {
+        if (string.Equals(stat, "health", StringComparison.OrdinalIgnoreCase))
+        {
+            return heartEffectSprite;
+        }
+
+        if (string.Equals(stat, "magic", StringComparison.OrdinalIgnoreCase))
+        {
+            return magicEffectSprite;
+        }
+
+        if (string.Equals(stat, "defense", StringComparison.OrdinalIgnoreCase))
+        {
+            return shieldEffectSprite;
+        }
+
+        return swordEffectSprite;
+    }
+
+    private static Sprite LoadEffectIconSprite(string primaryKey, string fallbackKey)
+    {
+        return SpriteKeyLookup.LoadIconSprite(primaryKey) ?? SpriteKeyLookup.LoadIconSprite(fallbackKey);
     }
 
     private int GetPassiveItemStatTotal(bool targetIsHero, string stat)
@@ -3202,15 +3239,15 @@ public class TowerBattleController : MonoBehaviour
 
         if (move.effect == "heal" || move.type == "magic" || string.Equals(move.statModifier?.stat, "magic", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
+            return magicEffectSprite;
         }
 
         if (string.Equals(move.statModifier?.stat, "defense", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectDefenseIcon?.sprite ?? monsterEffectDefenseIcon?.sprite;
+            return shieldEffectSprite;
         }
 
-        return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
+        return swordEffectSprite;
     }
 
     private void RefreshItemIcons()
@@ -4047,12 +4084,14 @@ public class TowerBattleController : MonoBehaviour
         ConfigureHealthBarImage(heroHealthBarImage);
         ConfigureHealthBarImage(monsterHealthBarImage);
 
-        heroEffectAttackIcon = FindComponent<Image>("Canvas/Hero UI/Stat Effects/Sword Icon");
-        heroEffectDefenseIcon = FindComponent<Image>("Canvas/Hero UI/Stat Effects/Shield Icon");
-        heroEffectMagicIcon = FindComponent<Image>("Canvas/Hero UI/Stat Effects/Magic Icon");
-        monsterEffectAttackIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Sword Icon");
-        monsterEffectDefenseIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Shield Icon");
-        monsterEffectMagicIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Magic Icon");
+        heroEffectContainer = FindComponent<RectTransform>("Canvas/Hero UI/Stat Container");
+        monsterEffectContainer = FindComponent<RectTransform>("Canvas/Monster UI/Stat Container");
+        heartEffectSprite = LoadEffectIconSprite(HeartIconKey, HeartIconFallbackKey);
+        magicEffectSprite = LoadEffectIconSprite(MagicIconKey, MagicIconFallbackKey);
+        shieldEffectSprite = LoadEffectIconSprite(ShieldIconKey, ShieldIconFallbackKey);
+        swordEffectSprite = LoadEffectIconSprite(SwordIconKey, SwordIconFallbackKey);
+        EnsureEffectRows(heroEffectContainer, heroEffectRows, 0);
+        EnsureEffectRows(monsterEffectContainer, monsterEffectRows, 0);
         BindItemIcons(heroItemIcons, heroItemHoverTargets, "Canvas/Hero UI/Items", ownerIsHero: true);
         BindItemIcons(monsterItemIcons, monsterItemHoverTargets, "Canvas/Monster UI/Items", ownerIsHero: false);
         endPanelTitleText = FindComponent<TMP_Text>("Canvas/End Panel/Title Image/Title Text");
@@ -4243,17 +4282,17 @@ public class TowerBattleController : MonoBehaviour
     {
         if (string.Equals(statName, "magic", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
+            return magicEffectSprite;
         }
 
         if (string.Equals(statName, "defense", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectDefenseIcon?.sprite ?? monsterEffectDefenseIcon?.sprite;
+            return shieldEffectSprite;
         }
 
         if (string.Equals(statName, "attack", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
+            return swordEffectSprite;
         }
 
         return null;
@@ -5218,15 +5257,15 @@ public class TowerBattleController : MonoBehaviour
     {
         if (string.Equals(statName, "magic", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectMagicIcon?.sprite ?? monsterEffectMagicIcon?.sprite;
+            return magicEffectSprite;
         }
 
         if (string.Equals(statName, "defense", StringComparison.OrdinalIgnoreCase))
         {
-            return heroEffectDefenseIcon?.sprite ?? monsterEffectDefenseIcon?.sprite;
+            return shieldEffectSprite;
         }
 
-        return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
+        return swordEffectSprite;
     }
 
     private static string BuildBattleLogDamageSummary(Move move, int damage, bool continueSentence = false)
@@ -5352,7 +5391,13 @@ public class TowerBattleController : MonoBehaviour
     {
         public string Stat;
         public int Value;
-        public int RemainingUses;
-        public bool SkipNextConsumption;
+        public int RemainingRounds;
+    }
+
+    private sealed class EffectRowUi
+    {
+        public RectTransform Root;
+        public Image Icon;
+        public TMP_Text Description;
     }
 }
