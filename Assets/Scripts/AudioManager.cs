@@ -6,10 +6,18 @@ using UnityEngine.SceneManagement;
 [DefaultExecutionOrder(-2000)]
 public sealed class AudioManager : MonoBehaviour
 {
+    private const string MusicVolumePreferenceKey = "AudioManager.MusicVolume";
+    private const string SfxVolumePreferenceKey = "AudioManager.SfxVolume";
+    private const float DefaultVolume = 1f;
+    private const float MinDecibels = -80f;
+    private const float MinLinearVolume = 0.0001f;
+
     [Header("Mixer")]
     [SerializeField] private AudioMixer audioMixer;
     [SerializeField] private string musicGroupName = "Music";
     [SerializeField] private string sfxGroupName = "SFX";
+    [SerializeField] private string musicVolumeParameter = "MusicVolume";
+    [SerializeField] private string sfxVolumeParameter = "SFXVolume";
 
     [Header("Sources")]
     [SerializeField] private AudioSource musicSource;
@@ -22,6 +30,10 @@ public sealed class AudioManager : MonoBehaviour
     private AudioSource[] musicSources;
     private int activeMusicSourceIndex;
     private Coroutine musicTransitionCoroutine;
+    private Coroutine applySavedVolumesCoroutine;
+    private float musicVolumeSetting = DefaultVolume;
+    private float sfxVolumeSetting = DefaultVolume;
+
     public static AudioManager Instance
     {
         get
@@ -135,6 +147,20 @@ public sealed class AudioManager : MonoBehaviour
         Instance.AssignSfxMixerGroupInternal(source);
     }
 
+    public static float MusicVolume => Instance.musicVolumeSetting;
+
+    public static float SfxVolume => Instance.sfxVolumeSetting;
+
+    public static void SetMusicVolume(float volume)
+    {
+        Instance.SetMusicVolumeInternal(volume);
+    }
+
+    public static void SetSfxVolume(float volume)
+    {
+        Instance.SetSfxVolumeInternal(volume);
+    }
+
     private static AudioClip LoadClip(string resourcesPath)
     {
         if (string.IsNullOrWhiteSpace(resourcesPath))
@@ -154,19 +180,25 @@ public sealed class AudioManager : MonoBehaviour
     private void Initialize()
     {
         DontDestroyOnLoad(gameObject);
+        LoadSavedVolumes();
         CaptureSceneSources();
         TryAssignMixerFromExistingSources();
         TryAssignMixerFromResources();
         ResolveMixerGroups();
         EnsureSourcesExist();
         ApplyMixerGroups();
+        ScheduleApplySavedVolumes();
     }
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         CaptureSceneSources();
+        TryAssignMixerFromExistingSources();
+        TryAssignMixerFromResources();
+        ResolveMixerGroups();
         EnsureSourcesExist();
         ApplyMixerGroups();
+        ScheduleApplySavedVolumes();
     }
 
     private void TryAssignMixerFromResources()
@@ -222,14 +254,26 @@ public sealed class AudioManager : MonoBehaviour
 
     private void CaptureSceneSources()
     {
-        if (musicSource == null)
+        if (musicSource == null || musicSource.outputAudioMixerGroup == null)
         {
-            musicSource = CaptureNamedSource("Music Source", "MusicSource");
+            var capturedMusicSource = CaptureNamedSource("Music Source", "MusicSource");
+            if (capturedMusicSource != null)
+            {
+                musicSource = capturedMusicSource;
+                if (musicSources != null && musicSources.Length > 0)
+                {
+                    musicSources[0] = capturedMusicSource;
+                }
+            }
         }
 
-        if (sfxSource == null)
+        if (sfxSource == null || sfxSource.outputAudioMixerGroup == null)
         {
-            sfxSource = CaptureNamedSource("SFX Source", "Sfx Source", "SFXSource", "SfxSource");
+            var capturedSfxSource = CaptureNamedSource("SFX Source", "Sfx Source", "SFXSource", "SfxSource");
+            if (capturedSfxSource != null)
+            {
+                sfxSource = capturedSfxSource;
+            }
         }
     }
 
@@ -248,7 +292,6 @@ public sealed class AudioManager : MonoBehaviour
                 source.transform.SetParent(transform, true);
             }
 
-            DontDestroyOnLoad(source.gameObject);
             return source;
         }
 
@@ -347,7 +390,6 @@ public sealed class AudioManager : MonoBehaviour
     {
         var sourceObject = new GameObject(sourceName);
         sourceObject.transform.SetParent(transform, false);
-        DontDestroyOnLoad(sourceObject);
 
         var source = sourceObject.AddComponent<AudioSource>();
         source.playOnAwake = false;
@@ -531,5 +573,77 @@ public sealed class AudioManager : MonoBehaviour
             source.Stop();
             source.clip = null;
         }
+    }
+
+    private void LoadSavedVolumes()
+    {
+        musicVolumeSetting = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumePreferenceKey, DefaultVolume));
+        sfxVolumeSetting = Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumePreferenceKey, DefaultVolume));
+    }
+
+    private void ApplySavedVolumes()
+    {
+        ApplyVolumeParameter(musicVolumeParameter, musicVolumeSetting);
+        ApplyVolumeParameter(sfxVolumeParameter, sfxVolumeSetting);
+    }
+
+    private void ScheduleApplySavedVolumes()
+    {
+        if (!isActiveAndEnabled)
+        {
+            ApplySavedVolumes();
+            return;
+        }
+
+        if (applySavedVolumesCoroutine != null)
+        {
+            StopCoroutine(applySavedVolumesCoroutine);
+        }
+
+        applySavedVolumesCoroutine = StartCoroutine(ApplySavedVolumesNextFrame());
+    }
+
+    private IEnumerator ApplySavedVolumesNextFrame()
+    {
+        yield return null;
+        ApplySavedVolumes();
+        applySavedVolumesCoroutine = null;
+    }
+
+    private void SetMusicVolumeInternal(float volume)
+    {
+        musicVolumeSetting = Mathf.Clamp01(volume);
+        PlayerPrefs.SetFloat(MusicVolumePreferenceKey, musicVolumeSetting);
+        PlayerPrefs.Save();
+        ApplyVolumeParameter(musicVolumeParameter, musicVolumeSetting);
+    }
+
+    private void SetSfxVolumeInternal(float volume)
+    {
+        sfxVolumeSetting = Mathf.Clamp01(volume);
+        PlayerPrefs.SetFloat(SfxVolumePreferenceKey, sfxVolumeSetting);
+        PlayerPrefs.Save();
+        ApplyVolumeParameter(sfxVolumeParameter, sfxVolumeSetting);
+    }
+
+    private void ApplyVolumeParameter(string parameterName, float volume)
+    {
+        if (audioMixer == null || string.IsNullOrWhiteSpace(parameterName))
+        {
+            return;
+        }
+
+        audioMixer.SetFloat(parameterName, LinearToDecibels(volume));
+    }
+
+    private static float LinearToDecibels(float volume)
+    {
+        var clampedVolume = Mathf.Clamp01(volume);
+        if (clampedVolume <= 0f)
+        {
+            return MinDecibels;
+        }
+
+        return Mathf.Max(MinDecibels, Mathf.Log10(Mathf.Max(clampedVolume, MinLinearVolume)) * 20f);
     }
 }

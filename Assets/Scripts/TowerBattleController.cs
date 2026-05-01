@@ -143,6 +143,7 @@ public class TowerBattleController : MonoBehaviour
     private float battleLogScrollbarHandleHeight;
     private Button battleLogOpenButton;
     private Button battleLogCloseButton;
+    private Button settingsButton;
     private bool battleLogVisible;
     private bool suppressBattleLogScrollbarCallbacks;
     private TMP_Text endPanelTitleText;
@@ -162,6 +163,7 @@ public class TowerBattleController : MonoBehaviour
     private Button pauseMenuResumeButton;
     private Button pauseMenuExitBattleButton;
     private Button pauseMenuExitToMainMenuButton;
+    private SettingsPanelController settingsPanel;
     private RectTransform monsterDropsRoot;
     private RectTransform monsterDropTemplate;
     private RectTransform canvasRect;
@@ -495,6 +497,12 @@ public class TowerBattleController : MonoBehaviour
         var keyboard = Keyboard.current;
         if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
         {
+            return;
+        }
+
+        if (settingsPanel != null && settingsPanel.IsOpen)
+        {
+            settingsPanel.Close();
             return;
         }
 
@@ -1912,11 +1920,13 @@ public class TowerBattleController : MonoBehaviour
 
     private void ResumeBattleFromPauseMenu()
     {
+        settingsPanel?.Close();
         SetPauseMenuVisible(false);
     }
 
     private void ExitBattleWithoutSaving()
     {
+        settingsPanel?.Close();
         RestoreSavedRunState();
         ReleasePauseState();
         SceneLoader.LoadScene(overviewSceneName);
@@ -1924,6 +1934,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void ExitToMainMenuWithoutSaving()
     {
+        settingsPanel?.Close();
         RestoreSavedRunState();
         ReleasePauseState();
         SceneLoader.LoadScene(mainMenuSceneName);
@@ -1987,6 +1998,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void ReleasePauseState()
     {
+        settingsPanel?.Close();
         pauseMenuOpen = false;
         Time.timeScale = 1f;
 
@@ -2006,6 +2018,27 @@ public class TowerBattleController : MonoBehaviour
         }
 
         ApplyMoveButtonsInteractableState();
+    }
+
+    private void ConfigureSettingsButton()
+    {
+        if (settingsButton == null)
+        {
+            return;
+        }
+
+        ConfigureEndPanelButton(settingsButton, OpenSettingsPanel);
+    }
+
+    private void OpenSettingsPanel()
+    {
+        if (!CanOpenPauseMenu())
+        {
+            return;
+        }
+
+        SetPauseMenuVisible(true);
+        settingsPanel?.Open();
     }
 
     private void ConfigureMoveHoverListener(GameObject moveRoot, int index)
@@ -3922,9 +3955,12 @@ public class TowerBattleController : MonoBehaviour
         battleLogScrollbar = FindComponent<Scrollbar>("Canvas/Battle Log Panel/Scroll Bar");
         battleLogOpenButton = FindComponent<Button>("Canvas/Battle Log Button");
         battleLogCloseButton = FindComponent<Button>("Canvas/Battle Log Panel/Close Button");
+        settingsButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Settings Button") ??
+                         FindComponent<Button>("Canvas/Settings Button");
         pauseMenuResumeButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Resume Button");
         pauseMenuExitBattleButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Exit Battle Button");
         pauseMenuExitToMainMenuButton = FindComponent<Button>("Canvas/Pause Menu Panel/Buttons/Exit To Main Menu Button");
+        settingsPanel = SettingsPanelController.FindOrCreate(canvasRect);
         usingBattleSceneUi = FindGameObject("Canvas/Moves Bar/Moves/Move 1") != null ||
                              endPanelRoot != null ||
                              defeatPanelRoot != null;
@@ -4062,6 +4098,7 @@ public class TowerBattleController : MonoBehaviour
 
         ConfigurePauseMenuButtons();
         ConfigurePauseMenuBackdropCloseTarget();
+        ConfigureSettingsButton();
         ConfigureBattleLogButtons();
 
         SetEndPanelVisible(false);

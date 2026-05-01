@@ -9,6 +9,7 @@ public sealed class UICursorController : MonoBehaviour
     private const string PointerCursorResourcePath = "Cursors/_Cursors_Pointer";
     private const string PressedCursorResourcePath = "Cursors/_Cursors_PointerClicked";
     private const string ClickSfxResourcePath = "Sounds/SFX/UI/button_click";
+    private const float ClickSfxVolume = 0.5f;
 
     private static UICursorController instance;
 
@@ -60,7 +61,7 @@ public sealed class UICursorController : MonoBehaviour
 
         if (isPointerOverClickable && isLeftMousePressed && !wasLeftMousePressed)
         {
-            AudioManager.PlaySfx(ClickSfxResourcePath);
+            AudioManager.PlaySfx(ClickSfxResourcePath, ClickSfxVolume);
         }
 
         wasLeftMousePressed = isLeftMousePressed;

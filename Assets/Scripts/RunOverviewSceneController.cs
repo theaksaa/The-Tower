@@ -131,9 +131,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private GameObject pauseMenuPanelRoot;
     private RectTransform pauseMenuPanelContentRoot;
     private TMP_Text pauseMenuHoverText;
+    private Button settingsButton;
     private Button pauseMenuResumeButton;
     private Button pauseMenuExitGameButton;
     private Button pauseMenuExitToMainMenuButton;
+    private SettingsPanelController settingsPanel;
     private Coroutine pendingDropRefresh;
     private string hoveredMoveId;
     private string hoveredItemId;
@@ -821,6 +823,12 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             return true;
         }
 
+        if (settingsPanel != null && settingsPanel.IsOpen)
+        {
+            settingsPanel.Close();
+            return true;
+        }
+
         if (mapPanelRoot != null && mapPanelRoot.activeSelf)
         {
             SetMapPanelVisible(false);
@@ -928,9 +936,12 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         pauseMenuPanelRoot = FindChild("Pause Menu Panel")?.gameObject;
         pauseMenuPanelContentRoot = ResolvePanelContentRoot(pauseMenuPanelRoot, "Pause Menu Panel/Background");
         pauseMenuHoverText = FindComponent<TMP_Text>("Pause Menu Panel/Buttons Hover Text");
+        settingsButton = FindComponent<Button>("Pause Menu Panel/Buttons/Settings Button") ??
+                         FindComponent<Button>("Settings Button");
         pauseMenuResumeButton = FindComponent<Button>("Pause Menu Panel/Buttons/Resume Button");
         pauseMenuExitGameButton = FindComponent<Button>("Pause Menu Panel/Buttons/Exit Game Button");
         pauseMenuExitToMainMenuButton = FindComponent<Button>("Pause Menu Panel/Buttons/Exit To Main Menu Button");
+        settingsPanel = SettingsPanelController.FindOrCreate(transform);
 
         xpBarButton = EnsureButton(FindChild("XP Bar"));
         if (xpBarButton == null)
@@ -1002,6 +1013,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         }
 
         ConfigureShopUi();
+        ConfigureSettingsButton();
 
         if (xpFillImage != null)
         {
@@ -1957,8 +1969,27 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         SetPauseMenuVisible(true);
     }
 
+    private void ConfigureSettingsButton()
+    {
+        if (settingsButton == null)
+        {
+            return;
+        }
+
+        ConfigurePressedButtonFeedback(settingsButton);
+        settingsButton.onClick.RemoveAllListeners();
+        settingsButton.onClick.AddListener(OpenSettingsPanel);
+    }
+
+    private void OpenSettingsPanel()
+    {
+        SetPauseMenuVisible(true);
+        settingsPanel?.Open();
+    }
+
     private void ResumeFromPauseMenu()
     {
+        settingsPanel?.Close();
         SetPauseMenuVisible(false);
     }
 
@@ -1975,6 +2006,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private void ExitToMainMenuFromPauseMenu()
     {
         RunSaveService.SaveCurrentRun();
+        settingsPanel?.Close();
         SetPauseMenuVisible(false);
         SceneLoader.LoadScene(mainMenuSceneName);
     }

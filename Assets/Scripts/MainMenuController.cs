@@ -46,6 +46,7 @@ public class MainMenuController : MonoBehaviour
     private Button continueButton;
     private Button storyModeButton;
     private Button endlessModeButton;
+    private SettingsPanelController settingsPanel;
     private RectTransform continueGamesRoot;
     private readonly List<ContinueRunCardView> continueRunCards = new();
 
@@ -256,6 +257,7 @@ public class MainMenuController : MonoBehaviour
         ConfigurePressedButtonFeedback();
         CacheContinueRunCards();
         RefreshContinuePanel();
+        settingsPanel?.Close();
         ShowPanel(VisiblePanel.RootMenu);
         HideModePreview();
         AudioManager.PlayMusic(MainMenuMusicPath, true);
@@ -263,6 +265,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OpenSettings()
     {
+        settingsPanel?.Toggle();
     }
 
     public void ExitGame()
@@ -304,6 +307,7 @@ public class MainMenuController : MonoBehaviour
         continueButton = FindComponent<Button>("Game Panel/Buttons/Continue Button");
         storyModeButton = FindComponent<Button>("New Game Panel/Buttons/Story Mode Button");
         endlessModeButton = FindComponent<Button>("New Game Panel/Buttons/Endless Mode Button");
+        settingsPanel = SettingsPanelController.FindOrCreate(transform);
     }
 
     private RectTransform ResolveContinueGamesRoot()
@@ -399,6 +403,11 @@ public class MainMenuController : MonoBehaviour
         if (continuePanel != null)
         {
             continuePanel.SetActive(panel == VisiblePanel.Continue);
+        }
+
+        if (!showRootMenu)
+        {
+            settingsPanel?.Close();
         }
     }
 
