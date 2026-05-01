@@ -2092,21 +2092,62 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         monsterSlots.Clear();
 
         var monstersRoot = FindChild("Map Panel/Monsters") as RectTransform;
-        if (monstersRoot == null)
+        if (monstersRoot != null)
+        {
+            for (var index = 0; index < monstersRoot.childCount; index++)
+            {
+                var child = monstersRoot.GetChild(index) as RectTransform;
+                if (child == null)
+                {
+                    continue;
+                }
+
+                monsterSlots.Add(CreateMonsterSlotView(child, index));
+            }
+
+            return;
+        }
+
+        var mapPanelRoot = FindChild("Map Panel") as RectTransform;
+        if (mapPanelRoot == null)
         {
             return;
         }
 
-        for (var index = 0; index < monstersRoot.childCount; index++)
+        var directMonsterSlots = new List<RectTransform>();
+        for (var index = 0; index < mapPanelRoot.childCount; index++)
         {
-            var child = monstersRoot.GetChild(index) as RectTransform;
-            if (child == null)
+            if (mapPanelRoot.GetChild(index) is RectTransform child &&
+                child.name.StartsWith("Monster ", StringComparison.OrdinalIgnoreCase))
             {
-                continue;
+                directMonsterSlots.Add(child);
             }
-
-            monsterSlots.Add(CreateMonsterSlotView(child, index));
         }
+
+        directMonsterSlots.Sort((left, right) => GetMonsterSlotOrder(left).CompareTo(GetMonsterSlotOrder(right)));
+
+        for (var index = 0; index < directMonsterSlots.Count; index++)
+        {
+            monsterSlots.Add(CreateMonsterSlotView(directMonsterSlots[index], index));
+        }
+    }
+
+    private static int GetMonsterSlotOrder(RectTransform monsterRoot)
+    {
+        if (monsterRoot == null)
+        {
+            return int.MaxValue;
+        }
+
+        var name = monsterRoot.name;
+        const string prefix = "Monster ";
+        if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(name.Substring(prefix.Length), out var number))
+        {
+            return number;
+        }
+
+        return int.MaxValue;
     }
 
     private MapMonsterSlotView CreateMonsterSlotView(RectTransform root, int encounterIndex)
