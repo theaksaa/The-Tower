@@ -4016,7 +4016,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StartGameSceneController
   mainMenuSceneName: MainMenu
-  heroSelectSceneName: HeroSelectScene
+  storySceneName: StoryScene
   runOverviewSceneName: RunOverviewScene
   storyModeTitle: Story mode
   storyModeDescription: Take on a curated tower run, grow your hero, and push through
