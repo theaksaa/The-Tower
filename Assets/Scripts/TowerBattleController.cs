@@ -65,8 +65,12 @@ public class TowerBattleController : MonoBehaviour
     private readonly List<Image> moveButtonIcons = new();
     private readonly List<bool> moveButtonHasMoveStates = new();
     private readonly List<GameObject> moveHoverSelectorRoots = new();
+    private readonly List<Image> heroItemIcons = new();
+    private readonly List<Image> monsterItemIcons = new();
     private readonly List<ActiveModifier> heroModifiers = new();
     private readonly List<ActiveModifier> monsterModifiers = new();
+    private readonly List<GameObject> heroItemHoverTargets = new();
+    private readonly List<GameObject> monsterItemHoverTargets = new();
 
     private TMP_Text heroNameText;
     private TMP_Text monsterNameText;
@@ -90,6 +94,10 @@ public class TowerBattleController : MonoBehaviour
     private TMP_Text moveStatsDescriptionText;
     private TMP_Text moveStatsAttackText;
     private TMP_Text moveStatsHealText;
+    private Image itemStatsIcon;
+    private GameObject currentItemStatsRoot;
+    private TMP_Text itemStatsTitleText;
+    private TMP_Text itemStatsDescriptionText;
     private TMP_Text heroAttackEffectText;
     private TMP_Text heroDefenseEffectText;
     private TMP_Text heroMagicEffectText;
@@ -100,6 +108,9 @@ public class TowerBattleController : MonoBehaviour
     private RectTransform currentMoveStatsRect;
     private CanvasGroup currentMoveStatsCanvasGroup;
     private Vector2 currentMoveStatsBasePosition;
+    private RectTransform currentItemStatsRect;
+    private CanvasGroup currentItemStatsCanvasGroup;
+    private Vector2 currentItemStatsBasePosition;
     private Image heroHealthBarImage;
     private Image monsterHealthBarImage;
     private BattleCharacterPresenter heroCharacterPresenter;
@@ -179,6 +190,11 @@ public class TowerBattleController : MonoBehaviour
     private Coroutine currentMoveStatsAnimation;
     private Coroutine currentMoveStatsHideDelayRoutine;
     private bool currentMoveStatsVisible;
+    private int hoveredHeroItemIndex = -1;
+    private int hoveredMonsterItemIndex = -1;
+    private Coroutine currentItemStatsAnimation;
+    private Coroutine currentItemStatsHideDelayRoutine;
+    private bool currentItemStatsVisible;
     private float heroHealthBarTargetFill = 1f;
     private float monsterHealthBarTargetFill = 1f;
     private bool pendingInstantHealthBarSync = true;
@@ -220,6 +236,7 @@ public class TowerBattleController : MonoBehaviour
         public string LearnedMoveText;
         public string XpText;
         public string LearnedMoveId;
+        public List<string> DroppedItemIds;
         public int CoinsAmount;
         public int KeyAmount;
         public int XpAmount;
@@ -255,6 +272,35 @@ public class TowerBattleController : MonoBehaviour
         private void OnDisable()
         {
             owner?.HandleMoveHoverChanged(moveIndex, false);
+        }
+    }
+
+    private sealed class ItemHoverListener : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private TowerBattleController owner;
+        private bool ownerIsHero;
+        private int itemIndex;
+
+        public void Initialize(TowerBattleController controller, bool isHero, int index)
+        {
+            owner = controller;
+            ownerIsHero = isHero;
+            itemIndex = index;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            owner?.HandleItemHoverChanged(ownerIsHero, itemIndex, true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            owner?.HandleItemHoverChanged(ownerIsHero, itemIndex, false);
+        }
+
+        private void OnDisable()
+        {
+            owner?.HandleItemHoverChanged(ownerIsHero, itemIndex, false);
         }
     }
 
@@ -534,9 +580,13 @@ public class TowerBattleController : MonoBehaviour
     {
         encounterIndex = index;
         currentMonster = encounterMonster;
-        currentMonsterHp = currentMonster.stats.health;
         monsterModifiers.Clear();
         heroModifiers.Clear();
+        var heroBaseMaxHealth = Mathf.Max(1, GetHeroBaseStats().health);
+        var heroEffectiveMaxHealth = GetEffectiveHeroMaxHealth();
+        var heroHealthDelta = heroEffectiveMaxHealth - heroBaseMaxHealth;
+        hero.CurrentHp = Mathf.Clamp(hero.CurrentHp + heroHealthDelta, 0, heroEffectiveMaxHealth);
+        currentMonsterHp = GetEffectiveMonsterMaxHealth();
         monsterMoveHistory.Clear();
         heroLastMoveId = null;
         turnNumber = 1;
@@ -679,7 +729,7 @@ public class TowerBattleController : MonoBehaviour
             monsterId = currentMonster.id,
             monsterCurrentHp = currentMonsterHp,
             heroCurrentHp = hero.CurrentHp,
-            heroMaxHp = RunSession.GetHeroMaxHealth(),
+            heroMaxHp = GetEffectiveHeroMaxHealth(),
             heroStats = GetEffectiveHeroStats(),
             turnNumber = turnNumber,
             heroLastMoveId = heroLastMoveId,
@@ -899,11 +949,11 @@ public class TowerBattleController : MonoBehaviour
 
         if (targetIsHero)
         {
-            hero.CurrentHp = Mathf.Min(RunSession.GetHeroMaxHealth(), hero.CurrentHp + amount);
+            hero.CurrentHp = Mathf.Min(GetEffectiveHeroMaxHealth(), hero.CurrentHp + amount);
             return;
         }
 
-        currentMonsterHp = Mathf.Min(currentMonster.stats.health, currentMonsterHp + amount);
+        currentMonsterHp = Mathf.Min(GetEffectiveMonsterMaxHealth(), currentMonsterHp + amount);
     }
 
     private void ApplyModifier(bool targetIsHero, StatModifier modifier)
@@ -987,6 +1037,8 @@ public class TowerBattleController : MonoBehaviour
     {
         var wasFinalEncounter = !RunSession.IsEndlessMode && IsPendingEncounterFinal();
         var rewards = AwardVictoryRewards();
+        var lootedItemIds = RunSession.TransferMonsterEquippedItemsToHero(currentMonster);
+        rewards.DroppedItemIds = lootedItemIds;
         monsterCharacterPresenter?.PlayState(BattleAnimationState.Death);
         CommitVictoryRewards(rewards);
         pendingVictoryRewards = rewards;
@@ -995,6 +1047,7 @@ public class TowerBattleController : MonoBehaviour
         var statusBuilder = new StringBuilder();
         statusBuilder.AppendLine(heroTurnSummary);
         statusBuilder.AppendLine($"{currentMonster.name} was defeated.");
+        AppendItemTransferLine(statusBuilder, lootedItemIds, $"{RunSession.GetHeroDisplayName()} looted");
         statusBuilder.Append(rewards.Summary);
         if (wasFinalEncounter)
         {
@@ -1022,8 +1075,14 @@ public class TowerBattleController : MonoBehaviour
     {
         SetButtonsInteractable(false);
         heroCharacterPresenter?.PlayState(BattleAnimationState.Death);
+        var droppedItemIds = RunSession.DropAllHeroItems();
         RefreshAllUi();
-        var defeatStatus = $"{heroTurnSummary}\n{monsterTurnSummary}\nThe hero fell on {GetEncounterLabel().ToLowerInvariant()}. Try again.";
+        var statusBuilder = new StringBuilder();
+        statusBuilder.AppendLine(heroTurnSummary);
+        statusBuilder.AppendLine(monsterTurnSummary);
+        AppendItemTransferLine(statusBuilder, droppedItemIds, $"{RunSession.GetHeroDisplayName()} dropped");
+        statusBuilder.Append($"The hero fell on {GetEncounterLabel().ToLowerInvariant()}. Try again.");
+        var defeatStatus = statusBuilder.ToString();
         SetStatus(defeatStatus);
         RunSession.RegisterDefeat(encounterIndex);
         RunSession.SetStatus(defeatStatus);
@@ -1031,7 +1090,7 @@ public class TowerBattleController : MonoBehaviour
 
         if (usingBattleSceneUi && defeatPanelRoot != null)
         {
-            EnterDefeatState();
+            EnterDefeatState(droppedItemIds);
             yield break;
         }
 
@@ -1131,7 +1190,9 @@ public class TowerBattleController : MonoBehaviour
     {
         RefreshLabels();
         RefreshButtons();
+        RefreshItemIcons();
         RefreshCurrentMoveStats();
+        RefreshCurrentItemStats();
         RefreshProgress();
         RefreshEffects();
     }
@@ -1198,14 +1259,14 @@ public class TowerBattleController : MonoBehaviour
         RefreshLabels();
     }
 
-    private void EnterDefeatState()
+    private void EnterDefeatState(IReadOnlyList<string> droppedItemIds)
     {
         pendingVictoryRewards = null;
         returnReady = true;
         isBusy = false;
         heroReviveAvailable = true;
         monsterReviveAvailable = false;
-        ClearMonsterDrops();
+        SpawnHeroDrops(droppedItemIds);
         SetEndPanelVisible(false);
         SetDefeatPanelVisible(RunSession.IsEndlessMode);
         SetContinueArrowVisible(false);
@@ -1332,12 +1393,12 @@ public class TowerBattleController : MonoBehaviour
 
         if (heroHpWorldText != null && hero != null)
         {
-            heroHpWorldText.text = $"HP: {hero.CurrentHp}/{RunSession.GetHeroMaxHealth()}";
+            heroHpWorldText.text = $"HP: {hero.CurrentHp}/{GetEffectiveHeroMaxHealth()}";
         }
 
         if (monsterHpWorldText != null)
         {
-            var maxMonsterHp = currentMonster?.stats.health ?? 0;
+            var maxMonsterHp = currentMonster != null ? GetEffectiveMonsterMaxHealth() : 0;
             monsterHpWorldText.text = $"HP: {currentMonsterHp}/{maxMonsterHp}";
         }
 
@@ -1353,13 +1414,13 @@ public class TowerBattleController : MonoBehaviour
 
         if (heroHealthBarImage != null && hero != null)
         {
-            var heroMaxHp = RunSession.GetHeroMaxHealth();
+            var heroMaxHp = GetEffectiveHeroMaxHealth();
             SetHeroHealthBarTarget(Mathf.Clamp01(hero.CurrentHp / (float)heroMaxHp), pendingInstantHealthBarSync);
         }
 
         if (monsterHealthBarImage != null)
         {
-            var monsterMaxHp = Mathf.Max(1, currentMonster?.stats.health ?? 1);
+            var monsterMaxHp = currentMonster != null ? GetEffectiveMonsterMaxHealth() : 1;
             SetMonsterHealthBarTarget(Mathf.Clamp01(currentMonsterHp / (float)monsterMaxHp), pendingInstantHealthBarSync);
         }
 
@@ -1452,25 +1513,27 @@ public class TowerBattleController : MonoBehaviour
 
     private void RefreshEffects()
     {
-        RefreshEffectIcon(heroEffectAttackIcon, heroModifiers, "attack");
-        RefreshEffectIcon(heroEffectDefenseIcon, heroModifiers, "defense");
-        RefreshEffectIcon(heroEffectMagicIcon, heroModifiers, "magic");
-        RefreshEffectIcon(monsterEffectAttackIcon, monsterModifiers, "attack");
-        RefreshEffectIcon(monsterEffectDefenseIcon, monsterModifiers, "defense");
-        RefreshEffectIcon(monsterEffectMagicIcon, monsterModifiers, "magic");
+        RefreshEffectIcon(heroEffectAttackIcon, targetIsHero: true, "attack");
+        RefreshEffectIcon(heroEffectDefenseIcon, targetIsHero: true, "defense");
+        RefreshEffectIcon(heroEffectMagicIcon, targetIsHero: true, "magic");
+        RefreshEffectIcon(monsterEffectAttackIcon, targetIsHero: false, "attack");
+        RefreshEffectIcon(monsterEffectDefenseIcon, targetIsHero: false, "defense");
+        RefreshEffectIcon(monsterEffectMagicIcon, targetIsHero: false, "magic");
 
         if (effectsText == null)
         {
             return;
         }
 
+        var heroPassiveEffects = BuildPassiveItemSummary(targetIsHero: true);
         var heroEffects = heroModifiers.Count == 0
-            ? "Hero: none"
-            : "Hero: " + string.Join(", ", heroModifiers.Select(FormatModifier));
+            ? $"Hero: {heroPassiveEffects}"
+            : $"Hero: {heroPassiveEffects}; temp " + string.Join(", ", heroModifiers.Select(FormatModifier));
 
+        var monsterPassiveEffects = BuildPassiveItemSummary(targetIsHero: false);
         var monsterEffects = monsterModifiers.Count == 0
-            ? "Monster: none"
-            : "Monster: " + string.Join(", ", monsterModifiers.Select(FormatModifier));
+            ? $"Monster: {monsterPassiveEffects}"
+            : $"Monster: {monsterPassiveEffects}; temp " + string.Join(", ", monsterModifiers.Select(FormatModifier));
 
         effectsText.text =
             $"Turn {turnNumber}\n" +
@@ -1721,6 +1784,22 @@ public class TowerBattleController : MonoBehaviour
         listener.Initialize(this, index);
     }
 
+    private void ConfigureItemHoverListener(GameObject itemRoot, bool ownerIsHero, int index)
+    {
+        if (itemRoot == null)
+        {
+            return;
+        }
+
+        var listener = itemRoot.GetComponent<ItemHoverListener>();
+        if (listener == null)
+        {
+            listener = itemRoot.AddComponent<ItemHoverListener>();
+        }
+
+        listener.Initialize(this, ownerIsHero, index);
+    }
+
     private GameObject CreateMoveHoverSelector(Transform moveRoot)
     {
         if (moveRoot == null ||
@@ -1786,6 +1865,24 @@ public class TowerBattleController : MonoBehaviour
         RefreshCurrentMoveStats();
     }
 
+    private void HandleItemHoverChanged(bool ownerIsHero, int itemIndex, bool isHovered)
+    {
+        if (ownerIsHero)
+        {
+            hoveredHeroItemIndex = isHovered
+                ? itemIndex
+                : hoveredHeroItemIndex == itemIndex ? -1 : hoveredHeroItemIndex;
+        }
+        else
+        {
+            hoveredMonsterItemIndex = isHovered
+                ? itemIndex
+                : hoveredMonsterItemIndex == itemIndex ? -1 : hoveredMonsterItemIndex;
+        }
+
+        RefreshCurrentItemStats();
+    }
+
     private void UpdateMoveHoverSelectors()
     {
         for (var index = 0; index < moveHoverSelectorRoots.Count; index++)
@@ -1811,6 +1908,11 @@ public class TowerBattleController : MonoBehaviour
         RefreshMoveStats(GetHoveredMove());
     }
 
+    private void RefreshCurrentItemStats()
+    {
+        RefreshItemStats(GetHoveredItem());
+    }
+
     private Move GetHoveredMove()
     {
         if (!usingBattleSceneUi ||
@@ -1829,6 +1931,33 @@ public class TowerBattleController : MonoBehaviour
         }
 
         return GetMove(hero.EquippedMoves[hoveredMoveIndex]);
+    }
+
+    private ItemDefinition GetHoveredItem()
+    {
+        var hoveredHeroItem = GetHoveredItem(hero?.EquippedItems, hoveredHeroItemIndex, heroItemHoverTargets);
+        if (hoveredHeroItem != null)
+        {
+            return hoveredHeroItem;
+        }
+
+        return GetHoveredItem(currentMonster?.equippedItems, hoveredMonsterItemIndex, monsterItemHoverTargets);
+    }
+
+    private static ItemDefinition GetHoveredItem(IReadOnlyList<string> itemIds, int hoveredIndex, IReadOnlyList<GameObject> hoverTargets)
+    {
+        if (itemIds == null || hoveredIndex < 0 || hoveredIndex >= itemIds.Count || hoveredIndex >= hoverTargets.Count)
+        {
+            return null;
+        }
+
+        var hoverTarget = hoverTargets[hoveredIndex];
+        if (hoverTarget == null || !hoverTarget.activeInHierarchy)
+        {
+            return null;
+        }
+
+        return RunSession.GetItem(itemIds[hoveredIndex]);
     }
 
     private void RefreshMoveStats(Move move)
@@ -1885,6 +2014,33 @@ public class TowerBattleController : MonoBehaviour
         }
     }
 
+    private void RefreshItemStats(ItemDefinition item)
+    {
+        SetCurrentItemStatsVisible(item != null);
+
+        if (item == null)
+        {
+            return;
+        }
+
+        if (itemStatsIcon != null)
+        {
+            itemStatsIcon.sprite = ResolveItemIconSprite(item, itemStatsIcon.sprite);
+            itemStatsIcon.color = Color.white;
+            itemStatsIcon.preserveAspect = true;
+        }
+
+        if (itemStatsTitleText != null)
+        {
+            itemStatsTitleText.text = item.name;
+        }
+
+        if (itemStatsDescriptionText != null)
+        {
+            itemStatsDescriptionText.text = BuildItemDescription(item);
+        }
+    }
+
     private void ConfigureCurrentMoveStatsAnimation()
     {
         if (currentMoveStatsRoot == null)
@@ -1905,6 +2061,28 @@ public class TowerBattleController : MonoBehaviour
         }
 
         SetCurrentMoveStatsVisibleImmediate(false);
+    }
+
+    private void ConfigureCurrentItemStatsAnimation()
+    {
+        if (currentItemStatsRoot == null)
+        {
+            return;
+        }
+
+        currentItemStatsRect = currentItemStatsRoot.GetComponent<RectTransform>();
+        if (currentItemStatsRect != null)
+        {
+            currentItemStatsBasePosition = currentItemStatsRect.anchoredPosition;
+        }
+
+        currentItemStatsCanvasGroup = currentItemStatsRoot.GetComponent<CanvasGroup>();
+        if (currentItemStatsCanvasGroup == null)
+        {
+            currentItemStatsCanvasGroup = currentItemStatsRoot.AddComponent<CanvasGroup>();
+        }
+
+        SetCurrentItemStatsVisibleImmediate(false);
     }
 
     private void SetCurrentMoveStatsVisible(bool visible)
@@ -1947,6 +2125,46 @@ public class TowerBattleController : MonoBehaviour
         currentMoveStatsAnimation = StartCoroutine(AnimateCurrentMoveStatsVisibility(visible));
     }
 
+    private void SetCurrentItemStatsVisible(bool visible)
+    {
+        if (currentItemStatsRoot == null || !isActiveAndEnabled || !gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
+        if (currentItemStatsHideDelayRoutine != null)
+        {
+            StopCoroutine(currentItemStatsHideDelayRoutine);
+            currentItemStatsHideDelayRoutine = null;
+        }
+
+        if (!visible)
+        {
+            currentItemStatsHideDelayRoutine = StartCoroutine(HideCurrentItemStatsAfterDelay());
+            return;
+        }
+
+        var hadActiveAnimation = currentItemStatsAnimation != null;
+        if (currentItemStatsAnimation != null)
+        {
+            StopCoroutine(currentItemStatsAnimation);
+            currentItemStatsAnimation = null;
+        }
+
+        if (visible == currentItemStatsVisible)
+        {
+            if (hadActiveAnimation || visible != currentItemStatsRoot.activeSelf)
+            {
+                ApplyCurrentItemStatsState(visible);
+                currentItemStatsRoot.SetActive(visible);
+            }
+
+            return;
+        }
+
+        currentItemStatsAnimation = StartCoroutine(AnimateCurrentItemStatsVisibility(visible));
+    }
+
     private IEnumerator HideCurrentMoveStatsAfterDelay()
     {
         yield return new WaitForSecondsRealtime(currentMoveStatsHideDelay);
@@ -1971,6 +2189,32 @@ public class TowerBattleController : MonoBehaviour
         }
 
         currentMoveStatsAnimation = StartCoroutine(AnimateCurrentMoveStatsVisibility(false));
+    }
+
+    private IEnumerator HideCurrentItemStatsAfterDelay()
+    {
+        yield return new WaitForSecondsRealtime(currentMoveStatsHideDelay);
+        currentItemStatsHideDelayRoutine = null;
+
+        var hadActiveAnimation = currentItemStatsAnimation != null;
+        if (currentItemStatsAnimation != null)
+        {
+            StopCoroutine(currentItemStatsAnimation);
+            currentItemStatsAnimation = null;
+        }
+
+        if (!currentItemStatsVisible)
+        {
+            if (hadActiveAnimation || currentItemStatsRoot.activeSelf)
+            {
+                ApplyCurrentItemStatsState(false);
+                currentItemStatsRoot.SetActive(false);
+            }
+
+            yield break;
+        }
+
+        currentItemStatsAnimation = StartCoroutine(AnimateCurrentItemStatsVisibility(false));
     }
 
     private IEnumerator AnimateCurrentMoveStatsVisibility(bool visible)
@@ -2024,6 +2268,57 @@ public class TowerBattleController : MonoBehaviour
         currentMoveStatsAnimation = null;
     }
 
+    private IEnumerator AnimateCurrentItemStatsVisibility(bool visible)
+    {
+        currentItemStatsVisible = visible;
+
+        if (currentItemStatsRect == null || currentItemStatsCanvasGroup == null)
+        {
+            currentItemStatsRoot.SetActive(visible);
+            currentItemStatsAnimation = null;
+            yield break;
+        }
+
+        var hiddenPosition = GetCurrentItemStatsHiddenPosition();
+        var startPosition = visible ? hiddenPosition : currentItemStatsRect.anchoredPosition;
+        var targetPosition = visible ? currentItemStatsBasePosition : hiddenPosition;
+        var startAlpha = visible ? 0f : currentItemStatsCanvasGroup.alpha;
+        var targetAlpha = visible ? 1f : 0f;
+
+        currentItemStatsRoot.SetActive(true);
+
+        if (visible)
+        {
+            currentItemStatsRect.anchoredPosition = startPosition;
+            currentItemStatsCanvasGroup.alpha = startAlpha;
+        }
+
+        currentItemStatsCanvasGroup.blocksRaycasts = visible;
+        currentItemStatsCanvasGroup.interactable = visible;
+
+        var elapsed = 0f;
+        while (elapsed < currentMoveStatsAnimationDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            var progress = Mathf.Clamp01(elapsed / currentMoveStatsAnimationDuration);
+            var eased = 1f - Mathf.Pow(1f - progress, 3f);
+
+            currentItemStatsRect.anchoredPosition = Vector2.Lerp(startPosition, targetPosition, eased);
+            currentItemStatsCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, eased);
+            yield return null;
+        }
+
+        currentItemStatsRect.anchoredPosition = targetPosition;
+        currentItemStatsCanvasGroup.alpha = targetAlpha;
+
+        if (!visible)
+        {
+            currentItemStatsRoot.SetActive(false);
+        }
+
+        currentItemStatsAnimation = null;
+    }
+
     private void SetCurrentMoveStatsVisibleImmediate(bool visible)
     {
         if (currentMoveStatsHideDelayRoutine != null)
@@ -2047,6 +2342,29 @@ public class TowerBattleController : MonoBehaviour
         }
     }
 
+    private void SetCurrentItemStatsVisibleImmediate(bool visible)
+    {
+        if (currentItemStatsHideDelayRoutine != null)
+        {
+            StopCoroutine(currentItemStatsHideDelayRoutine);
+            currentItemStatsHideDelayRoutine = null;
+        }
+
+        if (currentItemStatsAnimation != null)
+        {
+            StopCoroutine(currentItemStatsAnimation);
+            currentItemStatsAnimation = null;
+        }
+
+        currentItemStatsVisible = visible;
+        ApplyCurrentItemStatsState(visible);
+
+        if (currentItemStatsRoot != null)
+        {
+            currentItemStatsRoot.SetActive(visible);
+        }
+    }
+
     private void ApplyCurrentMoveStatsState(bool visible)
     {
         if (currentMoveStatsRect == null || currentMoveStatsCanvasGroup == null)
@@ -2061,6 +2379,22 @@ public class TowerBattleController : MonoBehaviour
         currentMoveStatsCanvasGroup.alpha = visible ? 1f : 0f;
         currentMoveStatsCanvasGroup.blocksRaycasts = visible;
         currentMoveStatsCanvasGroup.interactable = visible;
+    }
+
+    private void ApplyCurrentItemStatsState(bool visible)
+    {
+        if (currentItemStatsRect == null || currentItemStatsCanvasGroup == null)
+        {
+            return;
+        }
+
+        currentItemStatsRect.anchoredPosition = visible
+            ? currentItemStatsBasePosition
+            : GetCurrentItemStatsHiddenPosition();
+
+        currentItemStatsCanvasGroup.alpha = visible ? 1f : 0f;
+        currentItemStatsCanvasGroup.blocksRaycasts = visible;
+        currentItemStatsCanvasGroup.interactable = visible;
     }
 
     private Vector2 GetCurrentMoveStatsHiddenPosition()
@@ -2080,6 +2414,23 @@ public class TowerBattleController : MonoBehaviour
         return new Vector2(currentMoveStatsBasePosition.x, hiddenY);
     }
 
+    private Vector2 GetCurrentItemStatsHiddenPosition()
+    {
+        if (currentItemStatsRect == null)
+        {
+            return currentItemStatsBasePosition;
+        }
+
+        var parentRect = currentItemStatsRect.parent as RectTransform;
+        if (parentRect == null)
+        {
+            return currentItemStatsBasePosition;
+        }
+
+        var hiddenY = (parentRect.rect.height * 0.5f) + (currentItemStatsRect.rect.height * 0.5f) + 24f;
+        return new Vector2(currentItemStatsBasePosition.x, hiddenY);
+    }
+
     private Move GetMove(string moveId)
     {
         return RunSession.GetMove(moveId);
@@ -2090,34 +2441,112 @@ public class TowerBattleController : MonoBehaviour
         return RunSession.GetHeroBaseStats();
     }
 
+    private int GetEffectiveHeroMaxHealth()
+    {
+        return Mathf.Max(1, GetEffectiveHeroStats().health);
+    }
+
+    private int GetEffectiveMonsterMaxHealth()
+    {
+        return Mathf.Max(1, GetEffectiveMonsterStats().health);
+    }
+
     private Stats GetEffectiveHeroStats()
     {
-        return ApplyModifiers(GetHeroBaseStats(), heroModifiers);
+        return ApplyModifiers(
+            ApplyItemModifiers(GetHeroBaseStats(), targetIsHero: true),
+            heroModifiers);
     }
 
     private Stats GetEffectiveMonsterStats()
     {
-        return ApplyModifiers(currentMonster.stats.Clone(), monsterModifiers);
+        return ApplyModifiers(
+            ApplyItemModifiers(currentMonster.stats.Clone(), targetIsHero: false),
+            monsterModifiers);
+    }
+
+    private Stats ApplyItemModifiers(Stats stats, bool targetIsHero)
+    {
+        if (stats == null)
+        {
+            return new Stats();
+        }
+
+        ApplyEquippedItemModifiers(stats, hero?.EquippedItems, ownerIsHero: true, targetIsHero);
+        ApplyEquippedItemModifiers(stats, currentMonster?.equippedItems, ownerIsHero: false, targetIsHero);
+        return ClampStats(stats);
+    }
+
+    private void ApplyEquippedItemModifiers(Stats stats, IEnumerable<string> equippedItemIds, bool ownerIsHero, bool targetIsHero)
+    {
+        if (stats == null || equippedItemIds == null)
+        {
+            return;
+        }
+
+        foreach (var itemId in equippedItemIds.Take(4))
+        {
+            var item = RunSession.GetItem(itemId);
+            var modifier = item?.statModifier;
+            if (modifier == null || modifier.value == 0 || string.IsNullOrWhiteSpace(modifier.stat))
+            {
+                continue;
+            }
+
+            var itemTargetsHero = string.Equals(item.target, "self", StringComparison.OrdinalIgnoreCase)
+                ? ownerIsHero
+                : !ownerIsHero;
+            if (itemTargetsHero != targetIsHero)
+            {
+                continue;
+            }
+
+            ApplyStatModifier(stats, modifier.stat, modifier.value);
+        }
     }
 
     private static Stats ApplyModifiers(Stats stats, IEnumerable<ActiveModifier> modifiers)
     {
         foreach (var modifier in modifiers)
         {
-            switch (modifier.Stat)
-            {
-                case "attack":
-                    stats.attack += modifier.Value;
-                    break;
-                case "defense":
-                    stats.defense += modifier.Value;
-                    break;
-                case "magic":
-                    stats.magic += modifier.Value;
-                    break;
-            }
+            ApplyStatModifier(stats, modifier.Stat, modifier.Value);
         }
 
+        return ClampStats(stats);
+    }
+
+    private static void ApplyStatModifier(Stats stats, string stat, int value)
+    {
+        if (stats == null || string.IsNullOrWhiteSpace(stat) || value == 0)
+        {
+            return;
+        }
+
+        switch (stat.ToLowerInvariant())
+        {
+            case "health":
+                stats.health += value;
+                break;
+            case "attack":
+                stats.attack += value;
+                break;
+            case "defense":
+                stats.defense += value;
+                break;
+            case "magic":
+                stats.magic += value;
+                break;
+        }
+    }
+
+    private static Stats ClampStats(Stats stats)
+    {
+        if (stats == null)
+        {
+            return new Stats();
+        }
+
+        stats.health = Mathf.Max(1, stats.health);
         stats.attack = Mathf.Max(1, stats.attack);
         stats.defense = Mathf.Max(1, stats.defense);
         stats.magic = Mathf.Max(1, stats.magic);
@@ -2136,7 +2565,7 @@ public class TowerBattleController : MonoBehaviour
             return currentMonster.moves.FirstOrDefault();
         }
 
-        if (currentMonsterHp <= currentMonster.stats.health * 0.4f)
+        if (currentMonsterHp <= GetEffectiveMonsterMaxHealth() * 0.4f)
         {
             var sustainMove = availableMoves.FirstOrDefault(move => move.effect is "heal" or "drain" || move.target == "self");
             if (sustainMove != null)
@@ -2172,16 +2601,38 @@ public class TowerBattleController : MonoBehaviour
         return $"{modifier.Stat} {sign}{modifier.Value} ({modifier.RemainingUses} uses{timing})";
     }
 
-    private void RefreshEffectIcon(Image icon, IEnumerable<ActiveModifier> modifiers, string stat)
+    private string BuildPassiveItemSummary(bool targetIsHero)
+    {
+        var stats = new[] { "health", "attack", "defense", "magic" };
+        var parts = stats
+            .Select(stat =>
+            {
+                var total = GetPassiveItemStatTotal(targetIsHero, stat);
+                if (total == 0)
+                {
+                    return null;
+                }
+
+                var sign = total >= 0 ? "+" : string.Empty;
+                return $"{stat} {sign}{total}";
+            })
+            .Where(part => !string.IsNullOrEmpty(part))
+            .ToList();
+
+        return parts.Count == 0 ? "passive none" : "passive " + string.Join(", ", parts);
+    }
+
+    private void RefreshEffectIcon(Image icon, bool targetIsHero, string stat)
     {
         if (icon == null)
         {
             return;
         }
 
-        var total = modifiers
+        var temporaryTotal = (targetIsHero ? heroModifiers : monsterModifiers)
             .Where(modifier => string.Equals(modifier.Stat, stat, StringComparison.OrdinalIgnoreCase))
             .Sum(modifier => modifier.Value);
+        var total = temporaryTotal + GetPassiveItemStatTotal(targetIsHero, stat);
 
         icon.color = total switch
         {
@@ -2189,6 +2640,48 @@ public class TowerBattleController : MonoBehaviour
             < 0 => debuffEffectColor,
             _ => inactiveEffectColor
         };
+    }
+
+    private int GetPassiveItemStatTotal(bool targetIsHero, string stat)
+    {
+        return GetPassiveItemStatTotal(hero?.EquippedItems, ownerIsHero: true, targetIsHero, stat) +
+               GetPassiveItemStatTotal(currentMonster?.equippedItems, ownerIsHero: false, targetIsHero, stat);
+    }
+
+    private static int GetPassiveItemStatTotal(
+        IEnumerable<string> equippedItemIds,
+        bool ownerIsHero,
+        bool targetIsHero,
+        string stat)
+    {
+        if (equippedItemIds == null || string.IsNullOrWhiteSpace(stat))
+        {
+            return 0;
+        }
+
+        var total = 0;
+        foreach (var itemId in equippedItemIds.Take(4))
+        {
+            var item = RunSession.GetItem(itemId);
+            var modifier = item?.statModifier;
+            if (modifier == null ||
+                !string.Equals(modifier.stat, stat, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var itemTargetsHero = string.Equals(item.target, "self", StringComparison.OrdinalIgnoreCase)
+                ? ownerIsHero
+                : !ownerIsHero;
+            if (itemTargetsHero != targetIsHero)
+            {
+                continue;
+            }
+
+            total += modifier.value;
+        }
+
+        return total;
     }
 
     private static string BuildMoveDescription(Move move)
@@ -2234,6 +2727,11 @@ public class TowerBattleController : MonoBehaviour
         }
 
         return "-";
+    }
+
+    private static string BuildItemDescription(ItemDefinition item)
+    {
+        return string.IsNullOrWhiteSpace(item?.description) ? "-" : item.description;
     }
 
     private static void SetEffectValue(TMP_Text targetText, Move move, string statName, bool targetIsHero)
@@ -2415,6 +2913,70 @@ public class TowerBattleController : MonoBehaviour
         }
 
         return heroEffectAttackIcon?.sprite ?? monsterEffectAttackIcon?.sprite;
+    }
+
+    private void RefreshItemIcons()
+    {
+        RefreshItemIcons(heroItemIcons, hero?.EquippedItems);
+        RefreshItemIcons(monsterItemIcons, currentMonster?.equippedItems);
+    }
+
+    private static void RefreshItemIcons(IReadOnlyList<Image> iconSlots, IReadOnlyList<string> equippedItemIds)
+    {
+        if (iconSlots == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < iconSlots.Count; index++)
+        {
+            var icon = iconSlots[index];
+            if (icon == null)
+            {
+                continue;
+            }
+
+            var itemId = equippedItemIds != null && index < equippedItemIds.Count
+                ? equippedItemIds[index]
+                : null;
+            var item = RunSession.GetItem(itemId);
+            var hasItem = item != null;
+            icon.gameObject.SetActive(hasItem);
+            if (!hasItem)
+            {
+                continue;
+            }
+
+            var sprite = ResolveItemIconSprite(item, icon.sprite);
+            if (sprite != null)
+            {
+                icon.sprite = sprite;
+            }
+        }
+    }
+
+    private static Sprite ResolveItemIconSprite(ItemDefinition item, Sprite fallbackSprite)
+    {
+        var keyedSprite = ResolveSpriteFromItemKey(item?.spriteKey)
+            ?? ResolveSpriteFromItemKey(item?.id);
+
+        return keyedSprite ?? fallbackSprite;
+    }
+
+    private static Sprite ResolveDroppedItemIcon(string itemId, ItemDefinition item, Sprite fallbackSprite)
+    {
+        var keyedSprite = ResolveItemIconSprite(item, fallbackSprite);
+        if (keyedSprite == null)
+        {
+            keyedSprite = ResolveSpriteFromItemKey(itemId);
+        }
+
+        return keyedSprite ?? fallbackSprite;
+    }
+
+    private static Sprite ResolveSpriteFromItemKey(string spriteKey)
+    {
+        return SpriteKeyLookup.LoadItemSprite(spriteKey);
     }
 
     private void ReturnToOverview()
@@ -2773,16 +3335,9 @@ public class TowerBattleController : MonoBehaviour
 
     private void SpawnMonsterDrops(VictoryRewards rewards)
     {
-        ClearMonsterDrops();
-        if (monsterDropsRoot == null || monsterDropTemplate == null || rewards == null)
+        if (rewards == null)
         {
             return;
-        }
-
-        var anchorPosition = ResolveDropAnchorPosition();
-        if (anchorPosition.HasValue)
-        {
-            monsterDropsRoot.anchoredPosition = anchorPosition.Value;
         }
 
         var drops = new List<(Sprite sprite, string label)>
@@ -2796,9 +3351,52 @@ public class TowerBattleController : MonoBehaviour
             drops.Add((ResolveDropSprite(keyDropSprite, null), rewards.KeyText));
         }
 
+        if (rewards.DroppedItemIds != null)
+        {
+            for (var index = 0; index < rewards.DroppedItemIds.Count; index++)
+            {
+                var itemId = rewards.DroppedItemIds[index];
+                var item = RunSession.GetItem(itemId);
+                drops.Add((ResolveDroppedItemIcon(itemId, item, null), item?.name ?? itemId));
+            }
+        }
+
         if (rewards.HasLearnedMove)
         {
             drops.Add((ResolveReward2Icon(rewards.LearnedMoveId), rewards.LearnedMoveText));
+        }
+
+        SpawnDrops(drops, anchorToHero: false);
+    }
+
+    private void SpawnHeroDrops(IReadOnlyList<string> droppedItemIds)
+    {
+        var drops = new List<(Sprite sprite, string label)>();
+        if (droppedItemIds != null)
+        {
+            for (var index = 0; index < droppedItemIds.Count; index++)
+            {
+                var itemId = droppedItemIds[index];
+                var item = RunSession.GetItem(itemId);
+                drops.Add((ResolveDroppedItemIcon(itemId, item, null), item?.name ?? itemId));
+            }
+        }
+
+        SpawnDrops(drops, anchorToHero: true);
+    }
+
+    private void SpawnDrops(IReadOnlyList<(Sprite sprite, string label)> drops, bool anchorToHero)
+    {
+        ClearMonsterDrops();
+        if (monsterDropsRoot == null || monsterDropTemplate == null || drops == null || drops.Count == 0)
+        {
+            return;
+        }
+
+        var anchorPosition = ResolveDropAnchorPosition(anchorToHero);
+        if (anchorPosition.HasValue)
+        {
+            monsterDropsRoot.anchoredPosition = anchorPosition.Value;
         }
 
         var offsets = BuildDropOffsets(drops.Count, 64f, 118f, 26f);
@@ -2846,7 +3444,12 @@ public class TowerBattleController : MonoBehaviour
 
         if (iconImage != null)
         {
-            iconImage.sprite = iconSprite;
+            if (iconSprite != null)
+            {
+                iconImage.sprite = iconSprite;
+            }
+
+            iconImage.enabled = iconImage.sprite != null;
             iconImage.preserveAspect = true;
             iconImage.color = Color.white;
         }
@@ -2856,6 +3459,30 @@ public class TowerBattleController : MonoBehaviour
         {
             labelText.text = label;
         }
+    }
+
+    private static void AppendItemTransferLine(StringBuilder builder, IReadOnlyList<string> itemIds, string prefix)
+    {
+        if (builder == null || itemIds == null || itemIds.Count == 0 || string.IsNullOrWhiteSpace(prefix))
+        {
+            return;
+        }
+
+        var distinctNames = itemIds
+            .Select(itemId => RunSession.GetItem(itemId)?.name ?? itemId)
+            .Where(itemName => !string.IsNullOrWhiteSpace(itemName))
+            .Distinct()
+            .ToList();
+
+        if (distinctNames.Count == 0)
+        {
+            return;
+        }
+
+        builder.Append(prefix);
+        builder.Append(": ");
+        builder.Append(string.Join(", ", distinctNames));
+        builder.AppendLine();
     }
 
     private Sprite ResolveDropSprite(Sprite preferredSprite, Image fallbackImage)
@@ -2946,10 +3573,12 @@ public class TowerBattleController : MonoBehaviour
         ClearMonsterDrops();
     }
 
-    private Vector2? ResolveDropAnchorPosition()
+    private Vector2? ResolveDropAnchorPosition(bool anchorToHero)
     {
         var parentRect = monsterDropsRoot != null ? monsterDropsRoot.parent as RectTransform : null;
-        var anchorRect = monsterRootRect != null ? monsterRootRect : monsterCharacterRect;
+        var anchorRect = anchorToHero
+            ? heroRootRect != null ? heroRootRect : heroCharacterRect
+            : monsterRootRect != null ? monsterRootRect : monsterCharacterRect;
         if (parentRect == null || anchorRect == null)
         {
             return null;
@@ -3037,7 +3666,13 @@ public class TowerBattleController : MonoBehaviour
         moveButtonIcons.Clear();
         moveButtonHasMoveStates.Clear();
         moveHoverSelectorRoots.Clear();
+        heroItemIcons.Clear();
+        monsterItemIcons.Clear();
+        heroItemHoverTargets.Clear();
+        monsterItemHoverTargets.Clear();
         hoveredMoveIndex = -1;
+        hoveredHeroItemIndex = -1;
+        hoveredMonsterItemIndex = -1;
 
         if (!usingBattleSceneUi)
         {
@@ -3088,6 +3723,10 @@ public class TowerBattleController : MonoBehaviour
         moveStatsDescriptionText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Description");
         moveStatsAttackText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Attack/Attack Text");
         moveStatsHealText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Heal/Heal Text");
+        itemStatsIcon = FindComponent<Image>("Canvas/Current Item Stats/Item/Item Icon");
+        currentItemStatsRoot = FindGameObject("Canvas/Current Item Stats");
+        itemStatsTitleText = FindComponent<TMP_Text>("Canvas/Current Item Stats/Title");
+        itemStatsDescriptionText = FindComponent<TMP_Text>("Canvas/Current Item Stats/Description");
         heroAttackEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Hero Effects Stat/Attack/Attack Text");
         heroDefenseEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Hero Effects Stat/Defense/Defense Text");
         heroMagicEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Hero Effects Stat/Magic/Magic Text");
@@ -3096,6 +3735,7 @@ public class TowerBattleController : MonoBehaviour
         monsterMagicEffectText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Monster Effects Stat/Magic/Magic Text");
         moveStatsEffectsAmountText = FindComponent<TMP_Text>("Canvas/Current Move Stats/Effects/Effects Amount");
         ConfigureCurrentMoveStatsAnimation();
+        ConfigureCurrentItemStatsAnimation();
 
         heroHealthBarImage = FindComponent<Image>("Canvas/Hero UI/Health Bar/Health Bar");
         monsterHealthBarImage = FindComponent<Image>("Canvas/Monster UI/Health Bar/Health Bar");
@@ -3108,6 +3748,8 @@ public class TowerBattleController : MonoBehaviour
         monsterEffectAttackIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Sword Icon");
         monsterEffectDefenseIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Shield Icon");
         monsterEffectMagicIcon = FindComponent<Image>("Canvas/Monster UI/Stat Effects/Magic Icon");
+        BindItemIcons(heroItemIcons, heroItemHoverTargets, "Canvas/Hero UI/Items", ownerIsHero: true);
+        BindItemIcons(monsterItemIcons, monsterItemHoverTargets, "Canvas/Monster UI/Items", ownerIsHero: false);
         endPanelTitleText = FindComponent<TMP_Text>("Canvas/End Panel/Title Image/Title Text");
         reward2Root = FindGameObject("Canvas/End Panel/Rewards/Reward 2");
         reward1Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 1/Text");
@@ -3368,6 +4010,8 @@ public class TowerBattleController : MonoBehaviour
         var monsterSpriteKey = ResolveMonsterSpriteKey();
         PreloadAnimationStates(heroSpriteKey, CharacterSpriteKind.Hero);
         PreloadAnimationStates(monsterSpriteKey, CharacterSpriteKind.Monster);
+        PreloadItemSprites(hero?.EquippedItems);
+        PreloadItemSprites(currentMonster?.equippedItems);
 
         if (hero?.EquippedMoves != null)
         {
@@ -3393,6 +4037,44 @@ public class TowerBattleController : MonoBehaviour
             {
                 SpriteKeyLookup.LoadMoveSprite(move.spriteKey);
             }
+        }
+    }
+
+    private void BindItemIcons(List<Image> destination, List<GameObject> hoverTargets, string itemsRootPath, bool ownerIsHero)
+    {
+        destination.Clear();
+        hoverTargets.Clear();
+
+        var slotNames = new[] { "Item", "Item (1)", "Item (2)", "Item (3)" };
+        for (var index = 0; index < slotNames.Length; index++)
+        {
+            var slotName = slotNames[index];
+            var icon = FindComponent<Image>($"{itemsRootPath}/{slotName}");
+            destination.Add(icon);
+
+            var hoverTarget = icon != null ? icon.gameObject : FindGameObject($"{itemsRootPath}/{slotName}");
+            hoverTargets.Add(hoverTarget);
+            ConfigureItemHoverListener(hoverTarget, ownerIsHero, index);
+        }
+    }
+
+    private static void PreloadItemSprites(IEnumerable<string> equippedItemIds)
+    {
+        if (equippedItemIds == null)
+        {
+            return;
+        }
+
+        foreach (var itemId in equippedItemIds.Take(4))
+        {
+            var item = RunSession.GetItem(itemId);
+            if (string.IsNullOrWhiteSpace(item?.spriteKey))
+            {
+                continue;
+            }
+
+            SpriteKeyLookup.LoadItemSprite(item.spriteKey);
+            SpriteKeyLookup.LoadMoveSprite(item.spriteKey);
         }
     }
 

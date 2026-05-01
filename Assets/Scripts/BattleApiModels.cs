@@ -48,6 +48,22 @@ namespace TheTower
     }
 
     [Serializable]
+    public class ItemDefinition
+    {
+        public string id;
+        public string name;
+        public string description;
+        public string spriteKey;
+        public string type;
+        public string effect;
+        public string target;
+        public int basePower;
+        public float statMultiplier;
+        public StatModifier statModifier;
+        public int? hpCost;
+    }
+
+    [Serializable]
     public class Monster
     {
         public string id;
@@ -56,6 +72,8 @@ namespace TheTower
         public Stats stats;
         public List<string> moves;
         public List<string> learnableMoves;
+        public List<string> equippedItems;
+        public List<string> inventoryItems;
         public int xpReward;
         public int coinReward;
         public string spriteKey;
@@ -92,6 +110,8 @@ namespace TheTower
         public Stats baseStats;
         public Stats statsPerLevel;
         public List<string> moves;
+        public List<string> equippedItems;
+        public List<string> inventoryItems;
     }
 
     [Serializable]
@@ -104,6 +124,8 @@ namespace TheTower
         public Stats baseStats;
         public Stats statsPerLevel;
         public List<string> moves;
+        public List<string> equippedItems;
+        public List<string> inventoryItems;
         public string portraitKey;
     }
 
@@ -119,6 +141,7 @@ namespace TheTower
         public CoinRewardScaling coinRewardScaling;
         public XpRewardScaling xpRewardScaling;
         public Dictionary<string, Move> moveRegistry;
+        public Dictionary<string, ItemDefinition> itemRegistry;
         public List<ShopItemConfig> shopItems;
         public EndlessModeConfig endlessMode;
     }

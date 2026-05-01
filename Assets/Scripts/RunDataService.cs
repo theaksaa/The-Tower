@@ -53,6 +53,8 @@ public static class RunDataService
       ""stats"": { ""health"": 60, ""attack"": 10, ""defense"": 6, ""magic"": 4 },
       ""moves"": [""rusty_blade"", ""dirty_kick""],
       ""learnableMoves"": [""rusty_blade"", ""dirty_kick""],
+      ""equippedItems"": [],
+      ""inventoryItems"": [],
       ""xpReward"": 60,
       ""coinReward"": 24,
       ""spriteKey"": ""training_dummy""
@@ -64,6 +66,8 @@ public static class RunDataService
       ""stats"": { ""health"": 110, ""attack"": 16, ""defense"": 12, ""magic"": 16 },
       ""moves"": [""flame_breath"", ""claw_swipe"", ""dragon_scales""],
       ""learnableMoves"": [""flame_breath"", ""dragon_scales""],
+      ""equippedItems"": [],
+      ""inventoryItems"": [],
       ""xpReward"": 140,
       ""coinReward"": 56,
       ""spriteKey"": ""emberscale""
@@ -77,7 +81,9 @@ public static class RunDataService
       ""spriteKey"": ""hero_knight"",
       ""baseStats"": { ""health"": 100, ""attack"": 18, ""defense"": 10, ""magic"": 12 },
       ""statsPerLevel"": { ""health"": 18, ""attack"": 4, ""defense"": 3, ""magic"": 3 },
-      ""moves"": [""slash"", ""shield_up"", ""battle_cry"", ""second_wind""]
+      ""moves"": [""slash"", ""shield_up"", ""battle_cry"", ""second_wind""],
+      ""equippedItems"": [],
+      ""inventoryItems"": []
     },
     {
       ""id"": ""spellblade"",
@@ -86,7 +92,9 @@ public static class RunDataService
       ""spriteKey"": ""hero_spellblade"",
       ""baseStats"": { ""health"": 92, ""attack"": 14, ""defense"": 8, ""magic"": 18 },
       ""statsPerLevel"": { ""health"": 16, ""attack"": 3, ""defense"": 2, ""magic"": 4 },
-      ""moves"": [""slash"", ""flame_breath"", ""battle_cry"", ""second_wind""]
+      ""moves"": [""slash"", ""flame_breath"", ""battle_cry"", ""second_wind""],
+      ""equippedItems"": [],
+      ""inventoryItems"": []
     }
   ],
   ""levelProgression"": {
@@ -111,7 +119,8 @@ public static class RunDataService
     ""flame_breath"": { ""id"": ""flame_breath"", ""name"": ""Flame Breath"", ""description"": ""Heavy magic damage."", ""spriteKey"": ""flame_breath"", ""type"": ""magic"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 30, ""statMultiplier"": 1.3, ""statModifier"": null, ""hpCost"": null },
     ""claw_swipe"": { ""id"": ""claw_swipe"", ""name"": ""Claw Swipe"", ""description"": ""Moderate physical damage."", ""spriteKey"": ""claw_swipe"", ""type"": ""physical"", ""effect"": ""damage"", ""target"": ""opponent"", ""basePower"": 18, ""statMultiplier"": 1, ""statModifier"": null, ""hpCost"": null },
     ""dragon_scales"": { ""id"": ""dragon_scales"", ""name"": ""Dragon Scales"", ""description"": ""Raises the user's Defense for two turns."", ""spriteKey"": ""dragon_scales"", ""type"": ""status"", ""effect"": ""stat_modifier"", ""target"": ""self"", ""basePower"": 0, ""statMultiplier"": 0, ""statModifier"": { ""stat"": ""defense"", ""value"": 8, ""durationTurns"": 2 }, ""hpCost"": null }
-  }
+  },
+  ""itemRegistry"": {}
 }";
 
         return JsonConvert.DeserializeObject<RunConfig>(fallbackJson);

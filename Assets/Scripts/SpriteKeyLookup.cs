@@ -25,6 +25,7 @@ public static class SpriteKeyLookup
     private const string CharacterResourceRoot = "Sprites/Characters";
     private const string MoveResourceRoot = "Sprites/Moves";
     private const string IconResourceRoot = "Sprites/Icons";
+    private const string ItemResourceRoot = "Sprites/Items";
     private const string DefaultSpriteKey = "default";
     private const string DefaultHeroResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/hero";
     private const string DefaultMonsterResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/monster";
@@ -84,6 +85,17 @@ public static class SpriteKeyLookup
 
         var sprite = LoadSingleSprite($"{IconResourceRoot}/{spriteKey}");
         IconSpriteCache[spriteKey] = sprite;
+        return sprite;
+    }
+
+    public static Sprite LoadItemSprite(string spriteKey)
+    {
+        if (string.IsNullOrWhiteSpace(spriteKey))
+        {
+            return null;
+        }
+
+        var sprite = LoadSingleSprite($"{ItemResourceRoot}/{spriteKey}");
         return sprite;
     }
 

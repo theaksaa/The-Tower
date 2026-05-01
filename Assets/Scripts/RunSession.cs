@@ -20,6 +20,8 @@ public sealed class HeroRuntimeState
     public int BonusDefense;
     public int BonusMagic;
     public List<string> EquippedMoves = new();
+    public List<string> EquippedItems = new();
+    public List<string> InventoryItems = new();
     public HashSet<string> KnownMoves = new();
     public Dictionary<string, int> MonsterKillCounts = new();
 }
@@ -100,6 +102,8 @@ public static class RunSession
             CurrentHp = defaults.baseStats.health,
             BonusHealth = 0,
             EquippedMoves = defaults.moves.Take(4).ToList(),
+            EquippedItems = defaults.equippedItems?.ToList() ?? new List<string>(),
+            InventoryItems = defaults.inventoryItems?.ToList() ?? new List<string>(),
             KnownMoves = new HashSet<string>(defaults.moves),
             MonsterKillCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         };
@@ -146,6 +150,8 @@ public static class RunSession
             BonusDefense = runData.Hero.BonusDefense,
             BonusMagic = runData.Hero.BonusMagic,
             EquippedMoves = runData.Hero.EquippedMoves?.ToList() ?? new List<string>(),
+            EquippedItems = runData.Hero.EquippedItems?.ToList() ?? new List<string>(),
+            InventoryItems = runData.Hero.InventoryItems?.ToList() ?? new List<string>(),
             KnownMoves = runData.Hero.KnownMoves != null
                 ? new HashSet<string>(runData.Hero.KnownMoves)
                 : new HashSet<string>(),
@@ -231,7 +237,9 @@ public static class RunSession
                 spriteKey = runConfig.heroDefaults.spriteKey,
                 baseStats = runConfig.heroDefaults.baseStats?.Clone(),
                 statsPerLevel = runConfig.heroDefaults.statsPerLevel?.Clone(),
-                moves = runConfig.heroDefaults.moves?.ToList() ?? new List<string>()
+                moves = runConfig.heroDefaults.moves?.ToList() ?? new List<string>(),
+                equippedItems = runConfig.heroDefaults.equippedItems?.ToList() ?? new List<string>(),
+                inventoryItems = runConfig.heroDefaults.inventoryItems?.ToList() ?? new List<string>()
             }
         };
     }
@@ -428,6 +436,33 @@ public static class RunSession
         Hero.Coins += amount;
     }
 
+    public static List<string> TransferMonsterEquippedItemsToHero(Monster monster)
+    {
+        var transferredItems = CollectNonEmptyItems(monster?.equippedItems);
+        if (Hero == null || transferredItems.Count == 0)
+        {
+            return transferredItems;
+        }
+
+        Hero.InventoryItems ??= new List<string>();
+        Hero.InventoryItems.AddRange(transferredItems);
+
+        monster.equippedItems?.Clear();
+        return transferredItems;
+    }
+
+    public static List<string> DropAllHeroItems()
+    {
+        if (Hero == null)
+        {
+            return new List<string>();
+        }
+
+        var droppedItems = CollectNonEmptyItems(Hero.EquippedItems);
+        Hero.EquippedItems?.Clear();
+        return droppedItems;
+    }
+
     public static bool TryPurchaseStatBoost(string stat, int amount, int coinCost)
     {
         if (Hero == null || string.IsNullOrWhiteSpace(stat) || amount <= 0 || coinCost < 0)
@@ -592,6 +627,17 @@ public static class RunSession
         return move;
     }
 
+    public static ItemDefinition GetItem(string itemId)
+    {
+        if (CurrentRunConfig?.itemRegistry == null || string.IsNullOrEmpty(itemId))
+        {
+            return null;
+        }
+
+        CurrentRunConfig.itemRegistry.TryGetValue(itemId, out var item);
+        return item;
+    }
+
     public static int GetNextLevelXpThreshold()
     {
         if (!HasActiveRun || Hero == null)
@@ -694,6 +740,18 @@ public static class RunSession
         Hero.CurrentHp = GetHeroMaxHealth();
     }
 
+    private static List<string> CollectNonEmptyItems(IEnumerable<string> itemIds)
+    {
+        if (itemIds == null)
+        {
+            return new List<string>();
+        }
+
+        return itemIds
+            .Where(itemId => !string.IsNullOrWhiteSpace(itemId))
+            .ToList();
+    }
+
     public static int GetXpThresholdForLevel(int level)
     {
         if (level <= 1)
@@ -764,7 +822,9 @@ public static class RunSession
                 spriteKey = runData.SelectedHeroDefinition.spriteKey,
                 baseStats = runData.SelectedHeroDefinition.baseStats?.Clone(),
                 statsPerLevel = runData.SelectedHeroDefinition.statsPerLevel?.Clone(),
-                moves = runData.SelectedHeroDefinition.moves?.ToList() ?? new List<string>()
+                moves = runData.SelectedHeroDefinition.moves?.ToList() ?? new List<string>(),
+                equippedItems = runData.SelectedHeroDefinition.equippedItems?.ToList() ?? new List<string>(),
+                inventoryItems = runData.SelectedHeroDefinition.inventoryItems?.ToList() ?? new List<string>()
             };
         }
 
@@ -781,7 +841,9 @@ public static class RunSession
                 spriteKey = matchingHero.spriteKey,
                 baseStats = matchingHero.baseStats?.Clone(),
                 statsPerLevel = matchingHero.statsPerLevel?.Clone(),
-                moves = matchingHero.moves?.ToList() ?? new List<string>()
+                moves = matchingHero.moves?.ToList() ?? new List<string>(),
+                equippedItems = matchingHero.equippedItems?.ToList() ?? new List<string>(),
+                inventoryItems = matchingHero.inventoryItems?.ToList() ?? new List<string>()
             }
             : null;
     }
@@ -988,6 +1050,8 @@ public static class RunSaveService
                 BonusDefense = RunSession.Hero.BonusDefense,
                 BonusMagic = RunSession.Hero.BonusMagic,
                 EquippedMoves = RunSession.Hero.EquippedMoves?.ToList() ?? new List<string>(),
+                EquippedItems = RunSession.Hero.EquippedItems?.ToList() ?? new List<string>(),
+                InventoryItems = RunSession.Hero.InventoryItems?.ToList() ?? new List<string>(),
                 KnownMoves = RunSession.Hero.KnownMoves != null
                     ? new HashSet<string>(RunSession.Hero.KnownMoves)
                     : new HashSet<string>(),
@@ -1014,6 +1078,8 @@ public static class RunSaveService
                 BonusDefense = hero.BonusDefense,
                 BonusMagic = hero.BonusMagic,
                 EquippedMoves = hero.EquippedMoves?.ToList() ?? new List<string>(),
+                EquippedItems = hero.EquippedItems?.ToList() ?? new List<string>(),
+                InventoryItems = hero.InventoryItems?.ToList() ?? new List<string>(),
                 KnownMoves = hero.KnownMoves != null
                     ? new HashSet<string>(hero.KnownMoves)
                     : new HashSet<string>(),
@@ -1039,7 +1105,9 @@ public static class RunSaveService
             spriteKey = hero.spriteKey,
             baseStats = hero.baseStats?.Clone(),
             statsPerLevel = hero.statsPerLevel?.Clone(),
-            moves = hero.moves?.ToList() ?? new List<string>()
+            moves = hero.moves?.ToList() ?? new List<string>(),
+            equippedItems = hero.equippedItems?.ToList() ?? new List<string>(),
+            inventoryItems = hero.inventoryItems?.ToList() ?? new List<string>()
         };
     }
 

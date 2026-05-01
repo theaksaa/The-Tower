@@ -13,7 +13,7 @@ using UnityEngine.UI;
 using UnityEditor;
 #endif
 
-public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
+public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController, IItemLoadoutController
 {
     private static readonly Color EmptyMoveSlotTint = new(1f, 1f, 1f, 0.28f);
     private static readonly Color LockedMonsterTint = Color.black;
@@ -81,6 +81,15 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private RectTransform movesBarBackgroundRoot;
     private RectTransform movesBarOpenPanelIndicatorRoot;
     private Button movesPanelCloseButton;
+    private Button itemsBarButton;
+    private RectTransform itemsBarRoot;
+    private RectTransform itemsBarBackgroundRoot;
+    private RectTransform bottomItemsRoot;
+    private RectTransform panelItemsRoot;
+    private RectTransform itemsInventoryRoot;
+    private ScrollRect itemsInventoryScrollRect;
+    private GameObject itemsPanelRoot;
+    private Button itemsPanelCloseButton;
     private RectTransform dragLayer;
     private Image moveStatsIcon;
     private TMP_Text moveStatsTitleText;
@@ -96,6 +105,10 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private TMP_Text monsterDefenseEffectText;
     private TMP_Text monsterMagicEffectText;
     private TMP_Text moveStatsEffectsAmountText;
+    private Image itemStatsIcon;
+    private TMP_Text itemStatsTitleText;
+    private TMP_Text itemStatsDescriptionText;
+    private GameObject currentItemStatsRoot;
     private GameObject mapPanelRoot;
     private TMP_Text mapPanelText;
     private Button mapButton;
@@ -115,15 +128,22 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private Button pauseMenuExitToMainMenuButton;
     private Coroutine pendingDropRefresh;
     private string hoveredMoveId;
+    private string hoveredItemId;
     private int hoveredEncounterIndex = -1;
     private int selectedEncounterIndex = -1;
     private int initialBottomEquippedSlotCount;
     private int initialPanelEquippedSlotCount;
     private int initialInventorySlotCount;
+    private int initialBottomEquippedItemSlotCount;
+    private int initialEquippedItemSlotCount;
+    private int initialInventoryItemSlotCount;
     private bool pauseMenuOpen;
     private readonly List<MoveSlotView> bottomEquippedSlots = new();
     private readonly List<MoveSlotView> panelEquippedSlots = new();
     private readonly List<MoveSlotView> inventorySlots = new();
+    private readonly List<ItemSlotView> bottomEquippedItemSlots = new();
+    private readonly List<ItemSlotView> equippedItemSlots = new();
+    private readonly List<ItemSlotView> inventoryItemSlots = new();
     private readonly List<MapMonsterSlotView> monsterSlots = new();
     private readonly List<ShopItemView> shopItems = new();
 
@@ -150,6 +170,19 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         public GameObject DisabledBackground;
         public Sprite DefaultIconSprite;
         public ShopItemConfig Config;
+    }
+
+    private sealed class ItemSlotView
+    {
+        public RectTransform Root;
+        public Image Icon;
+        public Image Background;
+        public TMP_Text NameText;
+        public TMP_Text DescriptionText;
+        public GameObject SelectorRoot;
+        public Sprite DefaultIconSprite;
+        public Sprite DefaultBackgroundSprite;
+        public string ItemId;
     }
 
     private sealed class MoveHoverPreviewItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -197,6 +230,32 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         public void OnPointerExit(PointerEventData eventData)
         {
             owner?.HandleMonsterHoverChanged(encounterIndex, false);
+        }
+
+        private void OnDisable()
+        {
+        }
+    }
+
+    private sealed class ItemHoverPreviewItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private RunOverviewSceneController owner;
+        private string itemId;
+
+        public void Initialize(RunOverviewSceneController controller, string currentItemId)
+        {
+            owner = controller;
+            itemId = currentItemId;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            owner?.HandleItemHoverChanged(itemId, true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            owner?.HandleItemHoverChanged(itemId, false);
         }
 
         private void OnDisable()
@@ -426,6 +485,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         private RectTransform indicatorTarget;
         private Vector2 backgroundBaseAnchoredPosition;
         private Vector2 indicatorBaseAnchoredPosition;
+        private Vector2 hoverOffset = Vector2.up;
         private float hoverLift;
         private float animationSpeed;
         private bool isHovered;
@@ -455,6 +515,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
                 indicatorBaseAnchoredPosition = indicatorTarget.anchoredPosition;
                 indicatorTarget.anchoredPosition = indicatorBaseAnchoredPosition;
             }
+        }
+
+        public void SetHoverOffset(Vector2 offset)
+        {
+            hoverOffset = offset == Vector2.zero ? Vector2.up : offset;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -506,7 +571,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
                 return;
             }
 
-            var targetPosition = basePosition + (shouldLift ? Vector2.up * hoverLift : Vector2.zero);
+            var targetPosition = basePosition + (shouldLift ? hoverOffset.normalized * hoverLift : Vector2.zero);
             target.anchoredPosition = Vector2.Lerp(target.anchoredPosition, targetPosition, interpolation);
 
             if ((target.anchoredPosition - targetPosition).sqrMagnitude <= 0.01f)
@@ -662,6 +727,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         SetLevelPanelVisible(false);
         SetMapPanelVisible(false);
         SetMovesPanelVisible(false);
+        SetItemsPanelVisible(false);
         SetPauseMenuVisible(false);
     }
 
@@ -714,10 +780,21 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         movesBarBackgroundRoot = FindChild("Moves Bar/Moves Background") as RectTransform;
         movesBarOpenPanelIndicatorRoot = FindChild("Moves Bar/Open Moves Panel") as RectTransform;
         bottomMovesRoot = FindChild("Moves Bar/Moves") as RectTransform;
+        itemsBarRoot = FindChild("Items Bar") as RectTransform;
+        itemsBarBackgroundRoot = FindChild("Items Bar/Items Background") as RectTransform;
+        bottomItemsRoot = FindChild("Items Bar/Items") as RectTransform;
         panelMovesRoot = FindChild("Moves Panel/Moves") as RectTransform;
         movesInventoryRoot = ResolveMovesInventoryRoot();
         movesPanelRoot = FindChild("Moves Panel")?.gameObject;
         movesPanelCloseButton = FindComponent<Button>("Moves Panel/Close Button");
+        itemsPanelRoot = FindChild("Items Panel")?.gameObject;
+        panelItemsRoot = FindChild("Items Panel/Items Bar/Items") as RectTransform
+            ?? FindChild("Items Panel/Items Bar") as RectTransform;
+        itemsInventoryRoot = ResolveItemsInventoryRoot();
+        itemsInventoryScrollRect = FindComponent<ScrollRect>("Items Panel/Items Inventory")
+            ?? FindComponent<ScrollRect>("Items Panel/Items Inventory/Viewport")
+            ?? itemsInventoryRoot?.GetComponentInParent<ScrollRect>();
+        itemsPanelCloseButton = FindComponent<Button>("Items Panel/Close Button");
         moveStatsIcon = FindComponent<Image>("Moves Panel/Current Move Stats/Move/Move Icon");
         currentMoveStatsRoot = FindChild("Moves Panel/Current Move Stats")?.gameObject;
         moveStatsTitleText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Title");
@@ -732,6 +809,10 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         monsterDefenseEffectText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Monster Effects Stat/Defense/Defense Text");
         monsterMagicEffectText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Monster Effects Stat/Magic/Magic Text");
         moveStatsEffectsAmountText = FindComponent<TMP_Text>("Moves Panel/Current Move Stats/Effects/Effects Amount");
+        itemStatsIcon = FindComponent<Image>("Items Panel/Current Item Stats/Item/Item Icon");
+        currentItemStatsRoot = FindChild("Items Panel/Current Item Stats")?.gameObject;
+        itemStatsTitleText = FindComponent<TMP_Text>("Items Panel/Current Item Stats/Title");
+        itemStatsDescriptionText = FindComponent<TMP_Text>("Items Panel/Current Item Stats/Description");
         mapButton = EnsureButton(FindChild("Map Button"));
         nextEncounterButton = EnsureButton(FindChild("Next Encounter Button"));
         mapButtonBackgroundRoot = FindChild("Map Button/Background") as RectTransform;
@@ -866,14 +947,59 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
             movesPanelCloseButton.onClick.AddListener(() => SetMovesPanelVisible(false));
         }
 
+        if (itemsBarRoot != null)
+        {
+            var itemsBarImage = itemsBarRoot.GetComponent<Image>();
+            if (itemsBarImage == null)
+            {
+                itemsBarImage = itemsBarRoot.gameObject.AddComponent<Image>();
+                itemsBarImage.color = new Color(1f, 1f, 1f, 0.001f);
+            }
+
+            itemsBarButton = itemsBarRoot.GetComponent<Button>();
+            if (itemsBarButton == null)
+            {
+                itemsBarButton = itemsBarRoot.gameObject.AddComponent<Button>();
+            }
+
+            itemsBarButton.onClick.RemoveAllListeners();
+            itemsBarButton.onClick.AddListener(ToggleItemsPanel);
+
+            var hoverFeedback = itemsBarRoot.GetComponent<HoverLiftFeedback>();
+            if (hoverFeedback == null)
+            {
+                hoverFeedback = itemsBarRoot.gameObject.AddComponent<HoverLiftFeedback>();
+            }
+
+            hoverFeedback.Initialize(
+                itemsBarBackgroundRoot,
+                indicatorRectTransform: null,
+                movesBarHoverLift,
+                movesBarHoverAnimationSpeed,
+                ShouldLiftItemsBarOnHover);
+            hoverFeedback.SetHoverOffset(Vector2.right);
+        }
+
+        if (itemsPanelCloseButton != null)
+        {
+            itemsPanelCloseButton.onClick.RemoveAllListeners();
+            itemsPanelCloseButton.onClick.AddListener(() => SetItemsPanelVisible(false));
+        }
+
         EnsureDragLayer();
         CacheMoveSlots(bottomMovesRoot, bottomEquippedSlots);
         CacheMoveSlots(panelMovesRoot, panelEquippedSlots);
         CacheMoveSlots(movesInventoryRoot, inventorySlots);
+        CacheItemSlots(bottomItemsRoot, bottomEquippedItemSlots);
+        CacheItemSlots(panelItemsRoot, equippedItemSlots);
+        CacheItemSlots(itemsInventoryRoot, inventoryItemSlots);
         CacheMonsterSlots();
         initialBottomEquippedSlotCount = bottomEquippedSlots.Count;
         initialPanelEquippedSlotCount = panelEquippedSlots.Count;
         initialInventorySlotCount = inventorySlots.Count;
+        initialBottomEquippedItemSlotCount = bottomEquippedItemSlots.Count;
+        initialEquippedItemSlotCount = equippedItemSlots.Count;
+        initialInventoryItemSlotCount = inventoryItemSlots.Count;
         ConfigurePauseMenuButtons();
     }
 
@@ -911,6 +1037,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         RefreshCoinsText();
         RefreshLevelPanel();
         RefreshMovesUi();
+        RefreshItemsUi();
         RefreshMapPanel();
         RefreshShopUi();
         RefreshMapButton();
@@ -1368,7 +1495,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         var itemType = (config.type ?? string.Empty).Trim().ToLowerInvariant();
         var keyedSprite = itemType == "move"
             ? SpriteKeyLookup.LoadMoveSprite(config.spriteKey)
-            : SpriteKeyLookup.LoadIconSprite(config.spriteKey);
+            : SpriteKeyLookup.LoadItemSprite(config.spriteKey);
 
         return keyedSprite != null ? keyedSprite : fallbackSprite;
     }
@@ -1557,6 +1684,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         SetMovesPanelVisible(movesPanelRoot == null || !movesPanelRoot.activeSelf);
     }
 
+    private void ToggleItemsPanel()
+    {
+        SetItemsPanelVisible(itemsPanelRoot == null || !itemsPanelRoot.activeSelf);
+    }
+
     private void SetMovesPanelVisible(bool isVisible)
     {
         if (movesPanelRoot != null)
@@ -1583,6 +1715,29 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         return movesBarButton != null &&
                movesBarButton.IsInteractable() &&
                (movesPanelRoot == null || !movesPanelRoot.activeSelf);
+    }
+
+    private void SetItemsPanelVisible(bool isVisible)
+    {
+        if (itemsPanelRoot != null)
+        {
+            itemsPanelRoot.SetActive(isVisible);
+        }
+
+        if (!isVisible)
+        {
+            hoveredItemId = null;
+        }
+
+        RefreshItemSelectors();
+        RefreshItemStats(hoveredItemId);
+    }
+
+    private bool ShouldLiftItemsBarOnHover()
+    {
+        return itemsBarButton != null &&
+               itemsBarButton.IsInteractable() &&
+               (itemsPanelRoot == null || !itemsPanelRoot.activeSelf);
     }
 
     private void ConfigurePauseMenuButtons()
@@ -1713,6 +1868,36 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         ConfigureInventorySlots(orderedKnownMoves);
         RefreshMoveSelectors();
         RefreshMoveStats(hoveredMoveId);
+    }
+
+    private void RefreshItemsUi()
+    {
+        if (!RunSession.HasActiveRun || RunSession.Hero == null)
+        {
+            return;
+        }
+
+        var hero = RunSession.Hero;
+        var equippedItemIds = hero.EquippedItems ?? new List<string>();
+        var inventoryItemIds = hero.InventoryItems ?? new List<string>();
+
+        EnsureItemSlotCount(bottomItemsRoot, bottomEquippedItemSlots, Mathf.Max(initialBottomEquippedItemSlotCount, equippedItemIds.Count));
+        EnsureItemSlotCount(panelItemsRoot, equippedItemSlots, Mathf.Max(initialEquippedItemSlotCount, equippedItemIds.Count));
+        EnsureItemSlotCount(itemsInventoryRoot, inventoryItemSlots, Mathf.Max(initialInventoryItemSlotCount, inventoryItemIds.Count + 1));
+
+        if (!string.IsNullOrWhiteSpace(hoveredItemId) &&
+            !equippedItemIds.Contains(hoveredItemId) &&
+            !inventoryItemIds.Contains(hoveredItemId))
+        {
+            hoveredItemId = null;
+        }
+
+        ConfigureEquippedItemSlots(bottomEquippedItemSlots, equippedItemIds, canDrag: false, canHoverPreview: false);
+        ConfigureEquippedItemSlots(equippedItemSlots, equippedItemIds, canDrag: true, canHoverPreview: true);
+        ConfigureInventoryItemSlots(inventoryItemIds);
+        ResetItemsInventoryScrollToTop();
+        RefreshItemSelectors();
+        RefreshItemStats(hoveredItemId);
     }
 
     private void CacheMonsterSlots()
@@ -2124,6 +2309,177 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         SetSelectorState(slot.SelectorRoot, isSelected: false, isHovered: hoveredMoveId == moveId && moveId != null);
     }
 
+    private void ConfigureEquippedItemSlots(IReadOnlyList<ItemSlotView> slots, IReadOnlyList<string> equippedItems, bool canDrag, bool canHoverPreview)
+    {
+        for (var index = 0; index < slots.Count; index++)
+        {
+            var itemId = index < equippedItems.Count && !string.IsNullOrWhiteSpace(equippedItems[index]) ? equippedItems[index] : null;
+            ConfigureItemSlot(
+                slots[index],
+                itemId,
+                sourceWasEquipped: true,
+                sourceIndex: index,
+                targetIsEquipped: true,
+                targetIndex: index,
+                canDrop: canDrag,
+                canDrag: canDrag && itemId != null,
+                canHoverPreview: canHoverPreview && itemId != null,
+                useEmptyBackgroundWhenEmpty: true);
+        }
+    }
+
+    private void ConfigureInventoryItemSlots(IReadOnlyList<string> itemIds)
+    {
+        for (var index = 0; index < inventoryItemSlots.Count; index++)
+        {
+            var itemId = index < itemIds.Count && !string.IsNullOrWhiteSpace(itemIds[index]) ? itemIds[index] : null;
+            ConfigureItemSlot(
+                inventoryItemSlots[index],
+                itemId,
+                sourceWasEquipped: false,
+                sourceIndex: index,
+                targetIsEquipped: false,
+                targetIndex: index,
+                canDrop: true,
+                canDrag: itemId != null,
+                canHoverPreview: itemId != null,
+                useEmptyBackgroundWhenEmpty: true);
+        }
+    }
+
+    private void ConfigureItemSlot(
+        ItemSlotView slot,
+        string itemId,
+        bool sourceWasEquipped,
+        int sourceIndex,
+        bool targetIsEquipped,
+        int targetIndex,
+        bool canDrop,
+        bool canDrag,
+        bool canHoverPreview,
+        bool useEmptyBackgroundWhenEmpty)
+    {
+        itemId = string.IsNullOrWhiteSpace(itemId) ? null : itemId;
+        slot.ItemId = itemId;
+        slot.SelectorRoot = EnsureSelectorRoot(slot.Root, slot.SelectorRoot);
+
+        if (slot.Icon != null)
+        {
+            var item = RunSession.GetItem(itemId);
+            slot.Icon.sprite = ResolveItemIconSprite(item, slot.DefaultIconSprite);
+            slot.Icon.color = itemId == null ? new Color(1f, 1f, 1f, 0f) : Color.white;
+            slot.Icon.preserveAspect = true;
+        }
+
+        if (slot.NameText != null)
+        {
+            slot.NameText.text = itemId == null ? string.Empty : RunSession.GetItem(itemId)?.name ?? itemId;
+        }
+
+        if (slot.DescriptionText != null)
+        {
+            slot.DescriptionText.text = itemId == null ? string.Empty : BuildItemDescription(RunSession.GetItem(itemId));
+        }
+
+        if (slot.Background != null)
+        {
+            var hasEmptyBackground = useEmptyBackgroundWhenEmpty && itemId == null;
+            slot.Background.sprite = hasEmptyBackground ? slot.DefaultBackgroundSprite : slot.DefaultBackgroundSprite;
+            slot.Background.color = hasEmptyBackground
+                ? EmptyMoveSlotTint
+                : itemId == null ? EmptyMoveSlotTint : Color.white;
+            slot.Background.preserveAspect = true;
+        }
+
+        var canvasGroup = slot.Root.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = slot.Root.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        var dragItem = slot.Root.GetComponent<ItemSlotDragItem>();
+        if (itemId == null || !canDrag)
+        {
+            if (dragItem != null)
+            {
+                Destroy(dragItem);
+            }
+        }
+        else
+        {
+            if (dragItem == null)
+            {
+                dragItem = slot.Root.gameObject.AddComponent<ItemSlotDragItem>();
+            }
+
+            dragItem.Initialize(this, itemId, sourceIndex, sourceWasEquipped, dragLayer, canvas, slot.DefaultBackgroundSprite, false);
+        }
+
+        var hoverItem = slot.Root.GetComponent<ItemHoverPreviewItem>();
+        if (itemId == null || !canHoverPreview)
+        {
+            if (hoverItem != null)
+            {
+                Destroy(hoverItem);
+            }
+        }
+        else
+        {
+            if (hoverItem == null)
+            {
+                hoverItem = slot.Root.gameObject.AddComponent<ItemHoverPreviewItem>();
+            }
+
+            hoverItem.Initialize(this, itemId);
+        }
+
+        var dropZone = slot.Root.GetComponent<ItemDropZone>();
+        if (canDrop)
+        {
+            if (dropZone == null)
+            {
+                dropZone = slot.Root.gameObject.AddComponent<ItemDropZone>();
+            }
+
+            dropZone.Initialize(this, targetIsEquipped, targetIndex);
+        }
+        else if (dropZone != null)
+        {
+            Destroy(dropZone);
+        }
+
+        SetSelectorState(slot.SelectorRoot, isSelected: false, isHovered: hoveredItemId == itemId && itemId != null);
+    }
+
+    private void RefreshItemStats(string itemId)
+    {
+        var item = RunSession.GetItem(itemId);
+
+        if (currentItemStatsRoot != null)
+        {
+            currentItemStatsRoot.SetActive(item != null);
+        }
+
+        if (itemStatsIcon != null)
+        {
+            itemStatsIcon.sprite = ResolveItemIconSprite(item, itemStatsIcon.sprite);
+            itemStatsIcon.color = item == null ? new Color(1f, 1f, 1f, 0f) : Color.white;
+            itemStatsIcon.preserveAspect = true;
+        }
+
+        if (itemStatsTitleText != null)
+        {
+            itemStatsTitleText.text = item?.name ?? "Item Stats";
+        }
+
+        if (itemStatsDescriptionText != null)
+        {
+            itemStatsDescriptionText.text = item == null
+                ? "Hover an item to see its details."
+                : BuildItemDescription(item);
+        }
+    }
+
     private void RefreshMoveStats(string moveId)
     {
         var move = RunSession.GetMove(moveId);
@@ -2197,6 +2553,21 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         RefreshMoveStats(hoveredMoveId);
     }
 
+    public void HandleItemHoverChanged(string itemId, bool isHovered)
+    {
+        if (itemsPanelRoot == null || !itemsPanelRoot.activeSelf)
+        {
+            hoveredItemId = null;
+            RefreshItemSelectors();
+            RefreshItemStats(null);
+            return;
+        }
+
+        hoveredItemId = isHovered ? itemId : null;
+        RefreshItemSelectors();
+        RefreshItemStats(hoveredItemId);
+    }
+
     public bool TryApplyMoveDrop(string moveId, bool sourceWasEquipped, int sourceEquippedIndex, int targetEquippedIndex)
     {
         if (!RunSession.HasActiveRun || RunSession.Hero == null)
@@ -2254,6 +2625,104 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         return true;
     }
 
+    public bool TryApplyItemDrop(string itemId, bool sourceWasEquipped, int sourceIndex, bool targetIsEquipped, int targetIndex)
+    {
+        if (!RunSession.HasActiveRun || RunSession.Hero == null || string.IsNullOrWhiteSpace(itemId))
+        {
+            return false;
+        }
+
+        var hero = RunSession.Hero;
+        hero.EquippedItems ??= new List<string>();
+        hero.InventoryItems ??= new List<string>();
+
+        if (sourceWasEquipped)
+        {
+            if (!TryGetListValue(hero.EquippedItems, sourceIndex, out var sourceItemId) || sourceItemId != itemId)
+            {
+                return false;
+            }
+        }
+        else if (!TryGetListValue(hero.InventoryItems, sourceIndex, out var sourceItemId) || sourceItemId != itemId)
+        {
+            return false;
+        }
+
+        if (targetIsEquipped)
+        {
+            EnsureStringListSize(hero.EquippedItems, targetIndex + 1);
+
+            if (sourceWasEquipped)
+            {
+                if (sourceIndex == targetIndex)
+                {
+                    return false;
+                }
+
+                EnsureStringListSize(hero.EquippedItems, sourceIndex + 1);
+                SwapListEntries(hero.EquippedItems, sourceIndex, targetIndex);
+            }
+            else
+            {
+                EnsureStringListSize(hero.InventoryItems, sourceIndex + 1);
+                var replacedItemId = hero.EquippedItems[targetIndex];
+                hero.EquippedItems[targetIndex] = hero.InventoryItems[sourceIndex];
+                if (string.IsNullOrWhiteSpace(replacedItemId))
+                {
+                    hero.InventoryItems.RemoveAt(sourceIndex);
+                }
+                else
+                {
+                    hero.InventoryItems[sourceIndex] = replacedItemId;
+                }
+            }
+
+            var equippedItemName = RunSession.GetItem(hero.EquippedItems[targetIndex])?.name ?? hero.EquippedItems[targetIndex];
+            hoveredItemId = null;
+            RunSession.SetStatus($"{equippedItemName} is now equipped in slot {targetIndex + 1}.");
+            RunSaveService.SaveCurrentRun();
+            return true;
+        }
+
+        if (sourceWasEquipped)
+        {
+            EnsureStringListSize(hero.EquippedItems, sourceIndex + 1);
+            var movedItemId = hero.EquippedItems[sourceIndex];
+            hero.EquippedItems[sourceIndex] = null;
+            InsertInventoryItemAt(hero.InventoryItems, targetIndex, movedItemId);
+            TrimTrailingEmptyEntries(hero.EquippedItems);
+        }
+        else
+        {
+            TrimTrailingEmptyEntries(hero.InventoryItems);
+            if (sourceIndex == targetIndex)
+            {
+                return false;
+            }
+
+            if (sourceIndex < 0 || sourceIndex >= hero.InventoryItems.Count)
+            {
+                return false;
+            }
+
+            var movedItemId = hero.InventoryItems[sourceIndex];
+            hero.InventoryItems.RemoveAt(sourceIndex);
+            if (targetIndex > sourceIndex)
+            {
+                targetIndex--;
+            }
+
+            InsertInventoryItemAt(hero.InventoryItems, targetIndex, movedItemId);
+        }
+
+        TrimTrailingEmptyEntries(hero.InventoryItems);
+        hoveredItemId = null;
+        var inventoryItemName = RunSession.GetItem(itemId)?.name ?? itemId;
+        RunSession.SetStatus($"{inventoryItemName} is now in your inventory.");
+        RunSaveService.SaveCurrentRun();
+        return true;
+    }
+
     public void QueueDropRefresh()
     {
         if (pendingDropRefresh != null)
@@ -2264,12 +2733,27 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         pendingDropRefresh = StartCoroutine(RefreshAfterDrop());
     }
 
+    public void QueueItemDropRefresh()
+    {
+        QueueDropRefresh();
+    }
+
     public void NotifyDragStateChanged(bool isDragging)
     {
         if (movesBarButton != null)
         {
             movesBarButton.interactable = !isDragging;
         }
+
+        if (itemsBarButton != null)
+        {
+            itemsBarButton.interactable = !isDragging;
+        }
+    }
+
+    public void NotifyItemDragStateChanged(bool isDragging)
+    {
+        NotifyDragStateChanged(isDragging);
     }
 
     private IEnumerator RefreshAfterDrop()
@@ -2311,6 +2795,27 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         }
     }
 
+    private void CacheItemSlots(RectTransform root, ICollection<ItemSlotView> slots)
+    {
+        slots.Clear();
+        root = ResolveItemSlotContainer(root);
+        if (root == null)
+        {
+            return;
+        }
+
+        for (var index = 0; index < root.childCount; index++)
+        {
+            var child = root.GetChild(index) as RectTransform;
+            if (child == null)
+            {
+                continue;
+            }
+
+            slots.Add(CreateItemSlotView(child));
+        }
+    }
+
     private void EnsureSlotCount(RectTransform root, List<MoveSlotView> slots, int requiredCount)
     {
         root = ResolveMoveSlotContainer(root);
@@ -2346,6 +2851,41 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         }
     }
 
+    private void EnsureItemSlotCount(RectTransform root, List<ItemSlotView> slots, int requiredCount)
+    {
+        root = ResolveItemSlotContainer(root);
+        if (root == null || slots == null || slots.Count == 0)
+        {
+            return;
+        }
+
+        while (slots.Count < requiredCount)
+        {
+            var slotObject = Instantiate(slots[0].Root.gameObject, root, false);
+            slotObject.name = $"{slots[0].Root.name} {slots.Count + 1}";
+
+            var dragItem = slotObject.GetComponent<ItemSlotDragItem>();
+            if (dragItem != null)
+            {
+                Destroy(dragItem);
+            }
+
+            var dropZone = slotObject.GetComponent<ItemDropZone>();
+            if (dropZone != null)
+            {
+                Destroy(dropZone);
+            }
+
+            var hoverPreview = slotObject.GetComponent<ItemHoverPreviewItem>();
+            if (hoverPreview != null)
+            {
+                Destroy(hoverPreview);
+            }
+
+            slots.Add(CreateItemSlotView(slotObject.GetComponent<RectTransform>()));
+        }
+    }
+
     private static MoveSlotView CreateMoveSlotView(RectTransform root)
     {
         var slot = new MoveSlotView
@@ -2353,6 +2893,31 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
             Root = root,
             Background = root.Find("Move Background")?.GetComponent<Image>(),
             Icon = root.Find("Move Icon")?.GetComponent<Image>(),
+            SelectorRoot = root.Find("Selector")?.gameObject
+        };
+        slot.DefaultIconSprite = slot.Icon != null ? slot.Icon.sprite : null;
+        slot.DefaultBackgroundSprite = slot.Background != null ? slot.Background.sprite : null;
+        return slot;
+    }
+
+    private static ItemSlotView CreateItemSlotView(RectTransform root)
+    {
+        var slot = new ItemSlotView
+        {
+            Root = root,
+            Background = root.Find("Item Background")?.GetComponent<Image>()
+                ?? root.Find("Move Background")?.GetComponent<Image>()
+                ?? root.Find("Background")?.GetComponent<Image>(),
+            Icon = root.Find("Item Icon")?.GetComponent<Image>()
+                ?? root.Find("Move Icon")?.GetComponent<Image>()
+                ?? root.Find("Item/Item Icon")?.GetComponent<Image>()
+                ?? root.Find("Item/Icon")?.GetComponent<Image>(),
+            NameText = root.Find("Item/Name")?.GetComponent<TMP_Text>()
+                ?? root.Find("Name")?.GetComponent<TMP_Text>()
+                ?? root.Find("Item/Title")?.GetComponent<TMP_Text>()
+                ?? root.Find("Title")?.GetComponent<TMP_Text>(),
+            DescriptionText = root.Find("Item/Description")?.GetComponent<TMP_Text>()
+                ?? root.Find("Description")?.GetComponent<TMP_Text>(),
             SelectorRoot = root.Find("Selector")?.gameObject
         };
         slot.DefaultIconSprite = slot.Icon != null ? slot.Icon.sprite : null;
@@ -2369,6 +2934,29 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
             ?? FindChild("Moves Panel/Moves Inventory/Content/Moves") as RectTransform
             ?? FindChild("Moves Panel/Moves Inventory/Content") as RectTransform
             ?? FindChild("Moves Panel/Moves Inventory") as RectTransform;
+    }
+
+    private RectTransform ResolveItemsInventoryRoot()
+    {
+        return FindChild("Items Panel/Items Inventory/Viewport/Content/Items") as RectTransform
+            ?? FindChild("Items Panel/Items Inventory/Viewport/Content/items") as RectTransform
+            ?? FindChild("Items Panel/Items Inventory/Viewport/Content") as RectTransform
+            ?? FindChild("Items Panel/Items Inventory/Content/Items") as RectTransform
+            ?? FindChild("Items Panel/Items Inventory/Content/items") as RectTransform
+            ?? FindChild("Items Panel/Items Inventory/Content") as RectTransform
+            ?? FindChild("Items Panel/Items Inventory") as RectTransform;
+    }
+
+    private void ResetItemsInventoryScrollToTop()
+    {
+        if (itemsInventoryScrollRect == null)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        itemsInventoryScrollRect.StopMovement();
+        itemsInventoryScrollRect.verticalNormalizedPosition = 1f;
     }
 
     private static RectTransform ResolveMoveSlotContainer(RectTransform root)
@@ -2388,11 +2976,36 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         return contentChild ?? root;
     }
 
+    private static RectTransform ResolveItemSlotContainer(RectTransform root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        var contentChild = root.Find("Viewport/Content/Items") as RectTransform
+            ?? root.Find("Viewport/Content/items") as RectTransform
+            ?? root.Find("Viewport/Content") as RectTransform
+            ?? root.Find("Content/Items") as RectTransform
+            ?? root.Find("Content/items") as RectTransform
+            ?? root.Find("Content") as RectTransform
+            ?? root.Find("Items") as RectTransform;
+
+        return contentChild ?? root;
+    }
+
     private void RefreshMoveSelectors()
     {
         RefreshMoveSelectors(bottomEquippedSlots);
         RefreshMoveSelectors(panelEquippedSlots);
         RefreshMoveSelectors(inventorySlots);
+    }
+
+    private void RefreshItemSelectors()
+    {
+        RefreshItemSelectors(bottomEquippedItemSlots);
+        RefreshItemSelectors(equippedItemSlots);
+        RefreshItemSelectors(inventoryItemSlots);
     }
 
     private void RefreshMoveSelectors(IEnumerable<MoveSlotView> slots)
@@ -2408,16 +3021,39 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         }
     }
 
+    private void RefreshItemSelectors(IEnumerable<ItemSlotView> slots)
+    {
+        foreach (var slot in slots)
+        {
+            if (slot == null)
+            {
+                continue;
+            }
+
+            SetSelectorState(slot.SelectorRoot, isSelected: false, isHovered: hoveredItemId == slot.ItemId && !string.IsNullOrWhiteSpace(slot.ItemId));
+        }
+    }
+
     private void EnsureDragLayer()
     {
-        if (movesPanelRoot == null || dragLayer != null)
+        if (dragLayer != null)
         {
             return;
         }
 
         var dragLayerObject = new GameObject("Drag Layer", typeof(RectTransform));
         dragLayer = dragLayerObject.GetComponent<RectTransform>();
-        dragLayer.SetParent(movesPanelRoot.transform, false);
+        var dragLayerParent = canvasRoot
+            ?? movesPanelRoot?.transform
+            ?? itemsPanelRoot?.transform;
+        if (dragLayerParent == null)
+        {
+            Destroy(dragLayerObject);
+            dragLayer = null;
+            return;
+        }
+
+        dragLayer.SetParent(dragLayerParent, false);
         dragLayer.anchorMin = Vector2.zero;
         dragLayer.anchorMax = Vector2.one;
         dragLayer.offsetMin = Vector2.zero;
@@ -2439,6 +3075,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
     private static string BuildMoveDescription(Move move)
     {
         return string.IsNullOrWhiteSpace(move?.description) ? "-" : move.description;
+    }
+
+    private static string BuildItemDescription(ItemDefinition item)
+    {
+        return string.IsNullOrWhiteSpace(item?.description) ? "-" : item.description;
     }
 
     private static string BuildAttackValue(Move move)
@@ -2531,6 +3172,17 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         return keyedSprite != null ? keyedSprite : fallbackSprite;
     }
 
+    private static Sprite ResolveItemIconSprite(ItemDefinition item, Sprite fallbackSprite)
+    {
+        var keyedSprite = SpriteKeyLookup.LoadItemSprite(item?.spriteKey);
+        if (keyedSprite == null)
+        {
+            keyedSprite = SpriteKeyLookup.LoadMoveSprite(item?.spriteKey);
+        }
+
+        return keyedSprite != null ? keyedSprite : fallbackSprite;
+    }
+
     private static Sprite ResolveMonsterMapSprite(Monster monster, Sprite fallbackSprite)
     {
         var idleFrames = SpriteKeyLookup.LoadCharacterAnimationOrDefault(monster?.spriteKey, BattleAnimationState.Idle, CharacterSpriteKind.Monster);
@@ -2561,6 +3213,77 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController
         button.targetGraphic = image;
 
         return button;
+    }
+
+    private static void EnsureStringListSize(List<string> values, int requiredCount)
+    {
+        if (values == null)
+        {
+            return;
+        }
+
+        while (values.Count < requiredCount)
+        {
+            values.Add(null);
+        }
+    }
+
+    private static bool TryGetListValue(IReadOnlyList<string> values, int index, out string value)
+    {
+        value = null;
+        if (values == null || index < 0 || index >= values.Count)
+        {
+            return false;
+        }
+
+        value = values[index];
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+    private static void SwapListEntries(List<string> values, int firstIndex, int secondIndex)
+    {
+        if (values == null ||
+            firstIndex < 0 ||
+            secondIndex < 0 ||
+            firstIndex >= values.Count ||
+            secondIndex >= values.Count)
+        {
+            return;
+        }
+
+        var temp = values[firstIndex];
+        values[firstIndex] = values[secondIndex];
+        values[secondIndex] = temp;
+    }
+
+    private static void TrimTrailingEmptyEntries(List<string> values)
+    {
+        if (values == null)
+        {
+            return;
+        }
+
+        for (var index = values.Count - 1; index >= 0; index--)
+        {
+            if (!string.IsNullOrWhiteSpace(values[index]))
+            {
+                break;
+            }
+
+            values.RemoveAt(index);
+        }
+    }
+
+    private static void InsertInventoryItemAt(List<string> inventoryItems, int targetIndex, string itemId)
+    {
+        if (inventoryItems == null || string.IsNullOrWhiteSpace(itemId))
+        {
+            return;
+        }
+
+        TrimTrailingEmptyEntries(inventoryItems);
+        var clampedIndex = Mathf.Clamp(targetIndex, 0, inventoryItems.Count);
+        inventoryItems.Insert(clampedIndex, itemId);
     }
 
     private static void ResizeSelectorCorners(Transform selectorRoot, float size)
