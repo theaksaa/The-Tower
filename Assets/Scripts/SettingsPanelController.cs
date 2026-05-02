@@ -113,8 +113,13 @@ public sealed class SettingsPanelController : MonoBehaviour, IPointerClickHandle
             return;
         }
 
-        if (contentRoot != null &&
-            RectTransformUtility.RectangleContainsScreenPoint(contentRoot, eventData.position, eventData.pressEventCamera))
+        var clickedObject = eventData.pointerPressRaycast.gameObject;
+        if (clickedObject == null)
+        {
+            clickedObject = eventData.pointerCurrentRaycast.gameObject;
+        }
+
+        if (clickedObject != gameObject)
         {
             return;
         }
@@ -127,6 +132,7 @@ public sealed class SettingsPanelController : MonoBehaviour, IPointerClickHandle
         musicSlider ??= FindSlider("Music Slider");
         sfxSlider ??= FindSlider("SFX Slider");
         contentRoot ??= transform.Find("Background") as RectTransform;
+        closeButton ??= transform.Find("Back Button")?.GetComponent<Button>();
         closeButton ??= transform.Find("Close Button")?.GetComponent<Button>();
     }
 
