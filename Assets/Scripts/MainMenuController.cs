@@ -31,6 +31,10 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Color buttonPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
     [SerializeField] private Vector2 pressedButtonTextOffset = new(0f, -6f);
 
+    [Header("Continue Card Hover")]
+    [SerializeField] private float continueCardHoverScale = 1.05f;
+    [SerializeField] private float continueCardHoverAnimationSpeed = 14f;
+
     private GameObject gamePanel;
     private GameObject newGamePanel;
     private GameObject continuePanel;
@@ -245,6 +249,64 @@ public class MainMenuController : MonoBehaviour
         public void OnPointerExit(PointerEventData eventData)
         {
             owner?.HideModePreview();
+        }
+    }
+
+    private sealed class HoverScaleFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        private RectTransform target;
+        private Vector3 baseScale;
+        private float hoverScaleMultiplier;
+        private float animationSpeed;
+        private bool isHovered;
+
+        public void Initialize(RectTransform targetRectTransform, float scaleMultiplier, float speed)
+        {
+            target = targetRectTransform;
+            hoverScaleMultiplier = Mathf.Max(1f, scaleMultiplier);
+            animationSpeed = Mathf.Max(0.01f, speed);
+
+            if (target != null)
+            {
+                baseScale = target.localScale;
+                target.localScale = baseScale;
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            if (target != null)
+            {
+                target.localScale = baseScale;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var targetScale = isHovered ? baseScale * hoverScaleMultiplier : baseScale;
+            var t = 1f - Mathf.Exp(-animationSpeed * Time.unscaledDeltaTime);
+            target.localScale = Vector3.Lerp(target.localScale, targetScale, t);
+
+            if ((target.localScale - targetScale).sqrMagnitude <= 0.0001f)
+            {
+                target.localScale = targetScale;
+            }
         }
     }
 
@@ -568,6 +630,7 @@ public class MainMenuController : MonoBehaviour
         var backgroundImage = root.Find("Background")?.GetComponent<Image>();
         var button = EnsureButton(root, backgroundImage);
         var deleteButton = EnsureButton(root.Find("Delete Button") as RectTransform);
+        ConfigureContinueCardHover(button, root.Find("Content") as RectTransform);
         return new ContinueRunCardView
         {
             Root = root,
@@ -579,6 +642,25 @@ public class MainMenuController : MonoBehaviour
             LastSaveText = root.Find("Content/Last Save/Last Date Text")?.GetComponent<TMP_Text>(),
             DefaultHeroSprite = root.Find("Content/Hero")?.GetComponent<Image>()?.sprite
         };
+    }
+
+    private void ConfigureContinueCardHover(Button button, RectTransform contentRoot)
+    {
+        if (button == null || contentRoot == null)
+        {
+            return;
+        }
+
+        var hoverFeedback = button.GetComponent<HoverScaleFeedback>();
+        if (hoverFeedback == null)
+        {
+            hoverFeedback = button.gameObject.AddComponent<HoverScaleFeedback>();
+        }
+
+        hoverFeedback.Initialize(
+            contentRoot,
+            continueCardHoverScale,
+            continueCardHoverAnimationSpeed);
     }
 
     private void RefreshContinuePanel()
