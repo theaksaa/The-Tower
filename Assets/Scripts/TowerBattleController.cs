@@ -91,6 +91,8 @@ public class TowerBattleController : MonoBehaviour
 
     private TMP_Text heroNameText;
     private TMP_Text monsterNameText;
+    private TMP_Text heroHealthValueText;
+    private TMP_Text monsterHealthValueText;
     private TextMesh heroHpWorldText;
     private TextMesh monsterHpWorldText;
 
@@ -1518,10 +1520,23 @@ public class TowerBattleController : MonoBehaviour
             heroHpWorldText.text = $"HP: {hero.CurrentHp}/{GetEffectiveHeroMaxHealth()}";
         }
 
+        if (heroHealthValueText != null)
+        {
+            var heroCurrentHp = hero != null ? hero.CurrentHp : 0;
+            var heroMaxHp = hero != null ? GetEffectiveHeroMaxHealth() : 0;
+            heroHealthValueText.text = $"{heroCurrentHp}/{heroMaxHp}";
+        }
+
         if (monsterHpWorldText != null)
         {
             var maxMonsterHp = currentMonster != null ? GetEffectiveMonsterMaxHealth() : 0;
             monsterHpWorldText.text = $"HP: {currentMonsterHp}/{maxMonsterHp}";
+        }
+
+        if (monsterHealthValueText != null)
+        {
+            var monsterMaxHp = currentMonster != null ? GetEffectiveMonsterMaxHealth() : 0;
+            monsterHealthValueText.text = $"{currentMonsterHp}/{monsterMaxHp}";
         }
 
         if (levelText != null)
@@ -4395,6 +4410,10 @@ public class TowerBattleController : MonoBehaviour
 
         heroHealthBarImage = FindComponent<Image>("Canvas/Hero UI/Health Bar/Health Bar");
         monsterHealthBarImage = FindComponent<Image>("Canvas/Monster UI/Health Bar/Health Bar");
+        heroHealthValueText = FindComponent<TMP_Text>("Canvas/Hero UI/Health Bar/Hero Health Value") ??
+                              FindComponent<TMP_Text>("Canvas/Hero Health Value");
+        monsterHealthValueText = FindComponent<TMP_Text>("Canvas/Monster UI/Health Bar/Monster Health Value") ??
+                                 FindComponent<TMP_Text>("Canvas/Monster Health Value");
         battleBackgroundImage = FindComponent<Image>(BattleBackgroundPath);
         ConfigureHealthBarImage(heroHealthBarImage);
         ConfigureHealthBarImage(monsterHealthBarImage);
