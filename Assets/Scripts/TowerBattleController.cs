@@ -1132,7 +1132,8 @@ public class TowerBattleController : MonoBehaviour
         {
             Stat = modifier.stat,
             Value = modifier.value,
-            RemainingRounds = Mathf.Max(1, modifier.durationTurns)
+            RemainingRounds = Mathf.Max(1, modifier.durationTurns),
+            SkipNextRoundAdvance = !ShouldConsumeCurrentRound(modifier.stat)
         });
     }
 
@@ -1140,12 +1141,23 @@ public class TowerBattleController : MonoBehaviour
     {
         for (var index = modifiers.Count - 1; index >= 0; index--)
         {
+            if (modifiers[index].SkipNextRoundAdvance)
+            {
+                modifiers[index].SkipNextRoundAdvance = false;
+                continue;
+            }
+
             modifiers[index].RemainingRounds--;
             if (modifiers[index].RemainingRounds <= 0)
             {
                 modifiers.RemoveAt(index);
             }
         }
+    }
+
+    private static bool ShouldConsumeCurrentRound(string stat)
+    {
+        return string.Equals(stat?.Trim(), "defense", StringComparison.OrdinalIgnoreCase);
     }
 
     private void HandleVictory(string heroTurnSummary)
@@ -5744,6 +5756,7 @@ public class TowerBattleController : MonoBehaviour
         public string Stat;
         public int Value;
         public int RemainingRounds;
+        public bool SkipNextRoundAdvance;
     }
 
     private sealed class EffectRowUi
