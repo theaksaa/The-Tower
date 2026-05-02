@@ -14,6 +14,7 @@ using UnityEditor;
 public class MainMenuController : MonoBehaviour
 {
     private const string MainMenuMusicPath = AudioPaths.MainMenuMusic;
+    private const string EndlessMapIconResourcePath = "Sprites/Icons/tower";
 
     [Header("Navigation")]
     [SerializeField] private string storySceneName = GameScenes.Story;
@@ -76,10 +77,12 @@ public class MainMenuController : MonoBehaviour
         public Button OpenButton;
         public Button DeleteButton;
         public Image HeroImage;
+        public Image MapIconImage;
         public TMP_Text ModeText;
         public TMP_Text ProgressText;
         public TMP_Text LastSaveText;
         public Sprite DefaultHeroSprite;
+        public Sprite DefaultMapIconSprite;
     }
 
     private sealed class PressedButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
@@ -638,10 +641,12 @@ public class MainMenuController : MonoBehaviour
             OpenButton = button,
             DeleteButton = deleteButton,
             HeroImage = root.Find("Content/Hero")?.GetComponent<Image>(),
+            MapIconImage = root.Find("Content/Mode/Map Icon")?.GetComponent<Image>(),
             ModeText = root.Find("Content/Mode/Mode Text")?.GetComponent<TMP_Text>(),
             ProgressText = root.Find("Content/Progress/Progress Text")?.GetComponent<TMP_Text>(),
             LastSaveText = root.Find("Content/Last Save/Last Date Text")?.GetComponent<TMP_Text>(),
-            DefaultHeroSprite = root.Find("Content/Hero")?.GetComponent<Image>()?.sprite
+            DefaultHeroSprite = root.Find("Content/Hero")?.GetComponent<Image>()?.sprite,
+            DefaultMapIconSprite = root.Find("Content/Mode/Map Icon")?.GetComponent<Image>()?.sprite
         };
     }
 
@@ -723,6 +728,13 @@ public class MainMenuController : MonoBehaviour
             card.ModeText.text = modeName;
         }
 
+        if (card.MapIconImage != null)
+        {
+            card.MapIconImage.sprite = ResolveMapIconSprite(save, card.DefaultMapIconSprite);
+            card.MapIconImage.preserveAspect = true;
+            card.MapIconImage.color = Color.white;
+        }
+
         if (card.ProgressText != null)
         {
             var progressPercent = save.TotalEncounterCount > 0
@@ -782,6 +794,16 @@ public class MainMenuController : MonoBehaviour
             BattleAnimationState.Idle,
             CharacterSpriteKind.Hero);
         return idleFrames.FirstOrDefault(sprite => sprite != null) ?? fallbackSprite;
+    }
+
+    private static Sprite ResolveMapIconSprite(RunSaveSummary save, Sprite fallbackSprite)
+    {
+        if (!string.Equals(save.Mode, "Endless", StringComparison.OrdinalIgnoreCase))
+        {
+            return fallbackSprite;
+        }
+
+        return Resources.Load<Sprite>(EndlessMapIconResourcePath) ?? fallbackSprite;
     }
 
     private static Button EnsureButton(RectTransform target, Image fallbackGraphic = null)
