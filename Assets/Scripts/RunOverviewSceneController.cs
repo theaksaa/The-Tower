@@ -27,6 +27,38 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private const string NextEncounterLabel = "Next Encounter";
     private const string PauseExitGameHoverText = "Exit the game application.";
     private const string PauseExitMainMenuHoverText = "Return to the main menu.";
+    private static readonly string[] TraderGreetingMessages =
+    {
+        "Hi, I have something to sell. Want to take a look?",
+        "Welcome back. Spend your coins wisely and you might leave stronger.",
+        "See anything you like? A good trader always has one more trick in stock.",
+        "Need help for the next fight? Browse around, something here may save your run.",
+        "Take your time. The right purchase can change the whole battle."
+    };
+    private static readonly string[] TraderHelpfulMessages =
+    {
+        "Short on coins? Win the next encounter and come back richer.",
+        "Hover over items and moves before buying. A careful buyer survives longer.",
+        "If your build feels weak, try covering a missing role instead of buying more of the same.",
+        "A small upgrade now can be better than saving forever for the perfect deal.",
+        "Balance attack, defense, and utility. Surviving one extra turn can win the fight."
+    };
+    private static readonly string[] TraderSuccessMessages =
+    {
+        "A fine choice. That should help on the road ahead.",
+        "Pleasure doing business with you.",
+        "Excellent pick. I think you'll get good use out of that.",
+        "Smart buy. Power like that is never wasted.",
+        "There we go. That's one less problem for your next battle."
+    };
+    private static readonly string[] TraderFailureMessages =
+    {
+        "Not enough coins for that one yet.",
+        "Looks like that deal won't work right now.",
+        "Hold on. You can't take that just yet.",
+        "Come back after another fight and we can talk again.",
+        "That purchase is off the table for now."
+    };
 
     [Header("Navigation")]
     [SerializeField] private string battleSceneName = "BattleScene";
@@ -134,6 +166,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private GameObject shopPanelRoot;
     private RectTransform shopPanelContentRoot;
     private Button shopPanelCloseButton;
+    private TMP_Text traderInfoText;
     private GameObject pauseMenuPanelRoot;
     private RectTransform pauseMenuPanelContentRoot;
     private TMP_Text pauseMenuHoverText;
@@ -162,6 +195,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private readonly List<ItemSlotView> inventoryItemSlots = new();
     private readonly List<MapMonsterSlotView> monsterSlots = new();
     private readonly List<ShopItemView> shopItems = new();
+    private string lastTraderMessage;
 
     private sealed class MoveSlotView
     {
@@ -797,6 +831,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
         AudioManager.PlayMusic(RunOverviewMusicPath, true);
         RefreshUi();
+        RefreshTraderMessageForShopOpen();
         SetLevelPanelVisible(false);
         SetMapPanelVisible(false);
         SetMovesPanelVisible(false);
@@ -955,6 +990,8 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         shopPanelRoot = FindChild("Shop Panel")?.gameObject;
         shopPanelContentRoot = ResolvePanelContentRoot(shopPanelRoot, "Shop Panel/Background");
         shopPanelCloseButton = FindComponent<Button>("Shop Panel/Close Button") ?? EnsureButton(FindChild("Shop Panel/Close Button"));
+        traderInfoText = FindComponent<TMP_Text>("Shop Panel/Trader Info")
+            ?? FindComponent<TMP_Text>("Trader Info");
         pauseMenuPanelRoot = FindChild("Pause Menu Panel")?.gameObject;
         pauseMenuPanelContentRoot = ResolvePanelContentRoot(pauseMenuPanelRoot, "Pause Menu Panel/Background");
         pauseMenuHoverText = FindComponent<TMP_Text>("Pause Menu Panel/Buttons Hover Text");
@@ -1795,6 +1832,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     private void OpenShopPanel()
     {
         RefreshShopUi();
+        RefreshTraderMessageForShopOpen();
         SetShopPanelVisible(true);
     }
 
@@ -1817,10 +1855,14 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     {
         if (item?.Config == null)
         {
+            SetRandomTraderMessage(TraderFailureMessages);
             RefreshShopUi();
             return;
         }
 
+        var config = item.Config;
+        var heroCoins = RunSession.Hero?.Coins ?? 0;
+        var cost = Mathf.Max(0, config.cost);
         var purchaseSucceeded = (item.Config.type ?? string.Empty).Trim().ToLowerInvariant() switch
         {
             "stat" => RunSession.TryPurchaseStatBoost(item.Config.stat, item.Config.value, item.Config.cost),
@@ -1831,11 +1873,85 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
         if (!purchaseSucceeded)
         {
+            if (heroCoins < cost)
+            {
+                SetTraderMessage("Not enough coins for that one yet. Win another fight and come back.");
+            }
+            else if (!CanPurchaseShopItem(config))
+            {
+                SetTraderMessage($"You've already got {ResolveShopItemName(config)} covered. Pick something else.");
+            }
+            else
+            {
+                SetRandomTraderMessage(TraderFailureMessages);
+            }
+
             RefreshShopUi();
             return;
         }
 
+        SetTraderPurchaseSuccessMessage(config);
         RefreshUi();
+    }
+
+    private void RefreshTraderMessageForShopOpen()
+    {
+        if (traderInfoText == null)
+        {
+            return;
+        }
+
+        var useHelpfulMessage = UnityEngine.Random.value < 0.35f;
+        SetRandomTraderMessage(useHelpfulMessage ? TraderHelpfulMessages : TraderGreetingMessages);
+    }
+
+    private void SetRandomTraderMessage(IReadOnlyList<string> messages)
+    {
+        if (messages == null || messages.Count == 0)
+        {
+            return;
+        }
+
+        if (messages.Count == 1)
+        {
+            SetTraderMessage(messages[0]);
+            return;
+        }
+
+        var startIndex = UnityEngine.Random.Range(0, messages.Count);
+        for (var offset = 0; offset < messages.Count; offset++)
+        {
+            var candidate = messages[(startIndex + offset) % messages.Count];
+            if (string.Equals(candidate, lastTraderMessage, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            SetTraderMessage(candidate);
+            return;
+        }
+
+        SetTraderMessage(messages[startIndex]);
+    }
+
+    private void SetTraderMessage(string message)
+    {
+        if (traderInfoText == null)
+        {
+            return;
+        }
+
+        lastTraderMessage = string.IsNullOrWhiteSpace(message) ? null : message;
+        traderInfoText.text = lastTraderMessage ?? string.Empty;
+    }
+
+    private void SetTraderPurchaseSuccessMessage(ShopItemConfig config)
+    {
+        var itemName = ResolveShopItemName(config);
+        var prefix = TraderSuccessMessages[UnityEngine.Random.Range(0, TraderSuccessMessages.Length)];
+        SetTraderMessage(string.IsNullOrWhiteSpace(itemName)
+            ? prefix
+            : $"{prefix} {itemName} is yours.");
     }
 
     private void ResetMapPanelState()
