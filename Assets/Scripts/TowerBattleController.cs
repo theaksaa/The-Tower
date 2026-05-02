@@ -64,6 +64,7 @@ public class TowerBattleController : MonoBehaviour
     [SerializeField] private Sprite coinDropSprite;
     [SerializeField] private Sprite keyDropSprite;
     [SerializeField] private Sprite xpDropSprite;
+    [SerializeField] private float revivePickupPauseDuration = 0.28f;
 
     private readonly string[] buttonObjectNames =
     {
@@ -1442,11 +1443,21 @@ public class TowerBattleController : MonoBehaviour
     {
         if (heroNameText != null)
         {
+            if (!heroNameText.gameObject.activeSelf)
+            {
+                heroNameText.gameObject.SetActive(true);
+            }
+
             heroNameText.text = heroReviveAvailable ? "Revive" : RunSession.GetHeroDisplayName();
         }
 
         if (monsterNameText != null)
         {
+            if (!monsterNameText.gameObject.activeSelf)
+            {
+                monsterNameText.gameObject.SetActive(true);
+            }
+
             monsterNameText.text = monsterReviveAvailable
                 ? "Revive"
                 : currentMonster != null ? currentMonster.name : "Monster";
@@ -3488,15 +3499,30 @@ public class TowerBattleController : MonoBehaviour
         var shouldShowEndScene = ShouldShowEndSceneAfterVictory();
         reviveSequencePlaying = true;
         SetContinueArrowVisible(false);
+        SetEndPanelVisible(false);
+        SetBackArrowVisible(false);
         SetButtonsInteractable(false);
-
-        if (heroCharacterPresenter != null)
+        if (reviveButton != null)
         {
-            var travelDuration = heroCharacterPresenter.PlayMoveToOffset(
-                new Vector3(260f, 0f, 0f),
+            reviveButton.gameObject.SetActive(false);
+        }
+
+        if (monsterNameText != null)
+        {
+            monsterNameText.gameObject.SetActive(false);
+        }
+
+        yield return PlayVictoryRewardCollectionSequence();
+
+        var exitDuration = heroCharacterPresenter != null
+            ? heroCharacterPresenter.PlayMoveToOffset(
+                ResolveVictoryExitOffset(),
                 moveState: BattleAnimationState.Move,
-                endState: BattleAnimationState.Idle);
-            yield return new WaitForSecondsRealtime(travelDuration);
+                endState: BattleAnimationState.Idle)
+            : 0f;
+        if (exitDuration > 0f)
+        {
+            yield return new WaitForSecondsRealtime(exitDuration);
         }
 
         CommitVictoryRewardsAndReturn();
@@ -3510,6 +3536,26 @@ public class TowerBattleController : MonoBehaviour
         }
 
         ReturnToOverview();
+    }
+
+    private System.Collections.IEnumerator PlayVictoryRewardCollectionSequence()
+    {
+        if (heroCharacterPresenter == null)
+        {
+            yield return FadeOutMonsterDropsSequentially(0.2f, 0.08f);
+            yield break;
+        }
+
+        if (monsterCharacterPresenter != null)
+        {
+            var approachDuration = heroCharacterPresenter.PlayMoveToTarget(
+                monsterCharacterPresenter,
+                moveState: BattleAnimationState.Move,
+                endState: BattleAnimationState.Idle);
+            yield return new WaitForSecondsRealtime(approachDuration);
+        }
+
+        yield return FadeOutMonsterDropsSequentially(0.2f, 0.08f);
     }
 
     private System.Collections.IEnumerator RestartEncounterFromReviveRoutine(bool isHeroRevive)
@@ -3526,10 +3572,27 @@ public class TowerBattleController : MonoBehaviour
 
         if (isHeroRevive)
         {
+            SetDefeatPanelVisible(false);
+            if (heroNameText != null)
+            {
+                heroNameText.gameObject.SetActive(false);
+            }
+
             yield return PlayHeroReviveAnimation();
         }
         else
         {
+            SetEndPanelVisible(false);
+            if (reviveButton != null)
+            {
+                reviveButton.gameObject.SetActive(false);
+            }
+
+            if (monsterNameText != null)
+            {
+                monsterNameText.gameObject.SetActive(false);
+            }
+
             yield return PlayMonsterReviveAnimation();
         }
 
@@ -3539,33 +3602,41 @@ public class TowerBattleController : MonoBehaviour
 
     private System.Collections.IEnumerator PlayMonsterReviveAnimation()
     {
-        if (heroCharacterPresenter == null || monsterCharacterPresenter == null)
+        var heroHomePosition = GetHeroMotionAnchoredPosition();
+        yield return PlayVictoryRewardCollectionSequence();
+
+        if (monsterCharacterPresenter == null)
         {
             yield break;
         }
-
-        yield return FadeOutMonsterDrops(0.22f);
-
-        var timing = heroCharacterPresenter.PlayMoveLunge(
-            monsterCharacterPresenter,
-            moveState: BattleAnimationState.Move,
-            returnState: BattleAnimationState.Idle);
-
-        yield return new WaitForSecondsRealtime(timing.ImpactDelay);
 
         PlayCharacterReviveSfx(ResolveMonsterSpriteKey());
         monsterCharacterPresenter.PlayReverseState(BattleAnimationState.Death, BattleAnimationState.Idle);
         yield return new WaitForSecondsRealtime(monsterCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
 
-        var remainingReturn = Mathf.Max(0f, timing.TotalDuration - timing.ImpactDelay);
-        if (remainingReturn > 0f)
+        if (heroCharacterPresenter != null && heroHomePosition.HasValue)
         {
-            yield return new WaitForSecondsRealtime(remainingReturn);
+            var heroMotionRect = GetHeroMotionRect();
+            if (heroMotionRect != null)
+            {
+                var returnOffset = heroHomePosition.Value - heroMotionRect.anchoredPosition;
+                if (returnOffset.sqrMagnitude > 0.01f)
+                {
+                    var returnDuration = heroCharacterPresenter.PlayMoveToOffset(
+                        returnOffset,
+                        moveState: BattleAnimationState.Move,
+                        endState: BattleAnimationState.Idle);
+                    yield return new WaitForSecondsRealtime(returnDuration);
+                }
+            }
         }
     }
 
     private System.Collections.IEnumerator PlayHeroReviveAnimation()
     {
+        var monsterHomePosition = GetMonsterMotionAnchoredPosition();
+        yield return PlayDefeatRewardCollectionSequence(monsterHomePosition);
+
         if (heroCharacterPresenter == null)
         {
             yield break;
@@ -3574,6 +3645,69 @@ public class TowerBattleController : MonoBehaviour
         PlayCharacterReviveSfx(ResolveHeroSpriteKey());
         heroCharacterPresenter.PlayReverseState(BattleAnimationState.Death, BattleAnimationState.Idle);
         yield return new WaitForSecondsRealtime(heroCharacterPresenter.GetStateDuration(BattleAnimationState.Death));
+    }
+
+    private System.Collections.IEnumerator PlayDefeatRewardCollectionSequence(Vector2? monsterHomePosition)
+    {
+        if (monsterCharacterPresenter == null)
+        {
+            if (runtimeDropObjects.Count > 0)
+            {
+                yield return FadeOutMonsterDropsSequentially(0.2f, 0.08f);
+            }
+            yield break;
+        }
+
+        if (heroCharacterPresenter != null)
+        {
+            var approachDuration = monsterCharacterPresenter.PlayMoveToTarget(
+                heroCharacterPresenter,
+                moveState: BattleAnimationState.Move,
+                endState: BattleAnimationState.Idle);
+            yield return new WaitForSecondsRealtime(approachDuration);
+        }
+
+        if (revivePickupPauseDuration > 0f)
+        {
+            yield return new WaitForSecondsRealtime(revivePickupPauseDuration);
+        }
+
+        if (runtimeDropObjects.Count > 0)
+        {
+            yield return FadeOutMonsterDropsSequentially(0.2f, 0.08f);
+        }
+        else if (revivePickupPauseDuration > 0f)
+        {
+            yield return new WaitForSecondsRealtime(revivePickupPauseDuration);
+        }
+
+        if (runtimeDropObjects.Count > 0 && revivePickupPauseDuration > 0f)
+        {
+            yield return new WaitForSecondsRealtime(revivePickupPauseDuration);
+        }
+
+        if (!monsterHomePosition.HasValue)
+        {
+            yield break;
+        }
+
+        var monsterMotionRect = GetMonsterMotionRect();
+        if (monsterMotionRect == null)
+        {
+            yield break;
+        }
+
+        var returnOffset = monsterHomePosition.Value - monsterMotionRect.anchoredPosition;
+        if (returnOffset.sqrMagnitude <= 0.01f)
+        {
+            yield break;
+        }
+
+        var returnDuration = monsterCharacterPresenter.PlayMoveToOffset(
+            returnOffset,
+            moveState: BattleAnimationState.Move,
+            endState: BattleAnimationState.Idle);
+        yield return new WaitForSecondsRealtime(returnDuration);
     }
 
     private void CommitVictoryRewards(VictoryRewards rewards)
@@ -3909,6 +4043,136 @@ public class TowerBattleController : MonoBehaviour
         }
 
         ClearMonsterDrops();
+    }
+
+    private System.Collections.IEnumerator FadeOutMonsterDropsSequentially(float perDropDuration, float pauseBetweenDrops)
+    {
+        if (runtimeDropObjects.Count == 0)
+        {
+            yield break;
+        }
+
+        var dropsToFade = runtimeDropObjects.Where(dropObject => dropObject != null).ToList();
+        if (dropsToFade.Count == 0)
+        {
+            ClearMonsterDrops();
+            yield break;
+        }
+
+        for (var index = 0; index < dropsToFade.Count; index++)
+        {
+            yield return FadeOutDropObject(dropsToFade[index], perDropDuration);
+            if (pauseBetweenDrops > 0f && index < dropsToFade.Count - 1)
+            {
+                yield return new WaitForSecondsRealtime(pauseBetweenDrops);
+            }
+        }
+
+        ClearMonsterDrops();
+    }
+
+    private System.Collections.IEnumerator FadeOutDropObject(GameObject dropObject, float duration)
+    {
+        if (dropObject == null)
+        {
+            yield break;
+        }
+
+        var images = dropObject.GetComponentsInChildren<Image>(true);
+        var texts = dropObject.GetComponentsInChildren<TMP_Text>(true);
+        var imageColors = new Color[images.Length];
+        var textColors = new Color[texts.Length];
+
+        for (var index = 0; index < images.Length; index++)
+        {
+            imageColors[index] = images[index].color;
+        }
+
+        for (var index = 0; index < texts.Length; index++)
+        {
+            textColors[index] = texts[index].color;
+        }
+
+        if (duration <= 0f)
+        {
+            dropObject.SetActive(false);
+            yield break;
+        }
+
+        var elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            var t = Mathf.Clamp01(elapsed / duration);
+            var eased = 1f - Mathf.Pow(1f - t, 3f);
+
+            for (var index = 0; index < images.Length; index++)
+            {
+                if (images[index] == null)
+                {
+                    continue;
+                }
+
+                var color = imageColors[index];
+                color.a = Mathf.Lerp(imageColors[index].a, 0f, eased);
+                images[index].color = color;
+            }
+
+            for (var index = 0; index < texts.Length; index++)
+            {
+                if (texts[index] == null)
+                {
+                    continue;
+                }
+
+                var color = textColors[index];
+                color.a = Mathf.Lerp(textColors[index].a, 0f, eased);
+                texts[index].color = color;
+            }
+
+            yield return null;
+        }
+
+        dropObject.SetActive(false);
+    }
+
+    private Vector3 ResolveVictoryExitOffset()
+    {
+        var movingHeroRect = GetHeroMotionRect();
+        if (movingHeroRect == null)
+        {
+            return new Vector3(420f, 0f, 0f);
+        }
+
+        var heroWidth = Mathf.Max(movingHeroRect.rect.width, 120f);
+        var rightBoundary = canvasRect != null
+            ? (canvasRect.rect.width * 0.5f) + (heroWidth * 2f) + 120f
+            : 760f;
+        var currentX = movingHeroRect.anchoredPosition.x;
+        var requiredOffset = rightBoundary - currentX;
+        return new Vector3(Mathf.Max(420f, requiredOffset), 0f, 0f);
+    }
+
+    private RectTransform GetHeroMotionRect()
+    {
+        return heroRootRect != null ? heroRootRect : heroCharacterRect;
+    }
+
+    private Vector2? GetHeroMotionAnchoredPosition()
+    {
+        var heroMotionRect = GetHeroMotionRect();
+        return heroMotionRect != null ? heroMotionRect.anchoredPosition : null;
+    }
+
+    private RectTransform GetMonsterMotionRect()
+    {
+        return monsterRootRect != null ? monsterRootRect : monsterCharacterRect;
+    }
+
+    private Vector2? GetMonsterMotionAnchoredPosition()
+    {
+        var monsterMotionRect = GetMonsterMotionRect();
+        return monsterMotionRect != null ? monsterMotionRect.anchoredPosition : null;
     }
 
     private Vector2? ResolveDropAnchorPosition(bool anchorToHero)

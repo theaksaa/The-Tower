@@ -298,9 +298,10 @@ public class BattleCharacterPresenter : MonoBehaviour
             return new AttackMotionTiming(fallbackDuration, fallbackDuration);
         }
 
+        var currentMotionPosition = GetMotionPosition();
         StopTransientAnimation();
 
-        homeMotionPosition = GetMotionPosition();
+        homeMotionPosition = currentMotionPosition;
         hasHomeMotionPosition = true;
 
         var targetPosition = CalculateAttackTargetPosition(targetPresenter);
@@ -330,13 +331,40 @@ public class BattleCharacterPresenter : MonoBehaviour
             return GetStateDuration(moveState);
         }
 
+        var currentMotionPosition = GetMotionPosition();
         StopTransientAnimation();
-        homeMotionPosition = GetMotionPosition();
+        homeMotionPosition = currentMotionPosition;
         hasHomeMotionPosition = true;
 
         var travelDuration = Mathf.Max(0.01f, attackAdvanceDuration);
         attackMotionRoutine = StartCoroutine(PlayMoveToOffsetRoutine(
             homeMotionPosition + worldOffset,
+            travelDuration,
+            moveState,
+            endState));
+        return travelDuration;
+    }
+
+    public float PlayMoveToTarget(
+        BattleCharacterPresenter targetPresenter,
+        BattleAnimationState moveState = BattleAnimationState.Move,
+        BattleAnimationState endState = BattleAnimationState.Idle)
+    {
+        var fallbackDuration = GetStateDuration(moveState);
+        if (!Application.isPlaying || targetPresenter == null || cachedMotionRect == null)
+        {
+            PlayTemporaryState(moveState, returnState: endState);
+            return fallbackDuration;
+        }
+
+        var currentMotionPosition = GetMotionPosition();
+        StopTransientAnimation();
+        homeMotionPosition = currentMotionPosition;
+        hasHomeMotionPosition = true;
+
+        var travelDuration = Mathf.Max(0.01f, attackAdvanceDuration);
+        attackMotionRoutine = StartCoroutine(PlayMoveToOffsetRoutine(
+            CalculateAttackTargetPosition(targetPresenter),
             travelDuration,
             moveState,
             endState));
@@ -400,6 +428,8 @@ public class BattleCharacterPresenter : MonoBehaviour
         currentState = moveState;
         ApplyPresentation();
         yield return MoveToPosition(targetPosition, duration);
+        homeMotionPosition = targetPosition;
+        hasHomeMotionPosition = true;
         currentState = endState;
         ApplyPresentation();
         attackMotionRoutine = null;
