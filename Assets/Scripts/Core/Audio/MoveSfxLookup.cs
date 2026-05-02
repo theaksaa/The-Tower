@@ -12,7 +12,8 @@ public enum MoveSfxType
     DefenseDebuff,
     MagicBuff,
     MagicDebuff,
-    Heal
+    Heal,
+    Bleed
 }
 
 public static class MoveSfxLookup
@@ -69,6 +70,7 @@ public static class MoveSfxLookup
         var isBuff = statModifier.value > 0;
         return statModifier.stat.Trim().ToLowerInvariant() switch
         {
+            "health" when statModifier.value < 0 => MoveSfxType.Bleed,
             "attack" => isBuff ? MoveSfxType.AttackBuff : MoveSfxType.AttackDebuff,
             "defense" => isBuff ? MoveSfxType.DefenseBuff : MoveSfxType.DefenseDebuff,
             "magic" => isBuff ? MoveSfxType.MagicBuff : MoveSfxType.MagicDebuff,
@@ -116,6 +118,7 @@ public static class MoveSfxLookup
             MoveSfxType.MagicBuff => "magic_buff",
             MoveSfxType.MagicDebuff => "magic_debuff",
             MoveSfxType.Heal => "heal",
+            MoveSfxType.Bleed => "bleed",
             _ => throw new ArgumentOutOfRangeException(nameof(sfxType), sfxType, null)
         };
     }

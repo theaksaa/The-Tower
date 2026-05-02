@@ -24,11 +24,13 @@ public class TowerBattleController : MonoBehaviour
     private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
     private const string PauseExitMainMenuHoverText = "Exit to main menu without saving the current battle.";
     private const string BattleBackgroundPath = "Canvas/Background";
-    private const string HeartIconKey = "heart";
+    private const string HeartIconKey = "_Icons_Hearth";
+    private const string BleedIconKey = "bleed";
     private const string MagicIconKey = "_Icons_Magic";
     private const string ShieldIconKey = "_Icons_Shield";
     private const string SwordIconKey = "_Icons_Sword";
     private const string HeartIconFallbackKey = "health";
+    private const string BleedIconFallbackKey = "bleed";
     private const string MagicIconFallbackKey = "magic";
     private const string ShieldIconFallbackKey = "defense";
     private const string SwordIconFallbackKey = "attack";
@@ -232,6 +234,7 @@ public class TowerBattleController : MonoBehaviour
     private bool heroReviveAvailable;
     private bool monsterReviveAvailable;
     private Sprite heartEffectSprite;
+    private Sprite bleedEffectSprite;
     private Sprite magicEffectSprite;
     private Sprite shieldEffectSprite;
     private Sprite swordEffectSprite;
@@ -273,6 +276,13 @@ public class TowerBattleController : MonoBehaviour
     }
 
     private sealed class EnvironmentTurnResolution
+    {
+        public string Summary;
+        public bool HeroDefeated;
+        public bool MonsterDefeated;
+    }
+
+    private sealed class ModifierRoundResolution
     {
         public string Summary;
         public bool HeroDefeated;
@@ -838,6 +848,7 @@ public class TowerBattleController : MonoBehaviour
         var heroReactionDelay = GetReactionAnimationDelay(actorIsHero: false, monsterResponse.move);
         var actionRecoveryDelay = Mathf.Max(monsterRecoveryDelay, heroReactionDelay);
         EnvironmentTurnResolution environmentResolution = null;
+
         if (HasPendingEnvironmentTurnEffects())
         {
             if (actionRecoveryDelay > 0f)
@@ -854,25 +865,37 @@ public class TowerBattleController : MonoBehaviour
             environmentResolution = new EnvironmentTurnResolution();
         }
 
+        ModifierRoundResolution modifierResolution = null;
+        if (HasPendingModifierRoundEffects())
+        {
+            yield return StartCoroutine(ApplyModifierRoundEffectsRoutine(
+                resolution => modifierResolution = resolution));
+            modifierResolution ??= new ModifierRoundResolution();
+        }
+        else
+        {
+            modifierResolution = new ModifierRoundResolution();
+        }
+
         RefreshAllUi();
 
-        if (hero.CurrentHp <= 0)
+        if (hero.CurrentHp <= 0 || modifierResolution.HeroDefeated)
         {
             yield return StartCoroutine(HandleDefeatSequence(
                 heroTurnSummary,
-                JoinSummaryLines(monsterTurnSummary, environmentResolution.Summary)));
+                JoinSummaryLines(monsterTurnSummary, modifierResolution.Summary, environmentResolution.Summary)));
             isBusy = false;
             yield break;
         }
 
-        if (environmentResolution.MonsterDefeated)
+        if (modifierResolution.MonsterDefeated || environmentResolution.MonsterDefeated)
         {
-            HandleVictory(JoinSummaryLines(heroTurnSummary, monsterTurnSummary, environmentResolution.Summary));
+            HandleVictory(JoinSummaryLines(heroTurnSummary, monsterTurnSummary, modifierResolution.Summary, environmentResolution.Summary));
             isBusy = false;
             yield break;
         }
 
-        var combinedTurnSummary = JoinSummaryLines(heroTurnSummary, monsterTurnSummary, environmentResolution.Summary);
+        var combinedTurnSummary = JoinSummaryLines(heroTurnSummary, monsterTurnSummary, modifierResolution.Summary, environmentResolution.Summary);
         SetStatus(combinedTurnSummary);
 
         var postTurnDelay = HasPendingEnvironmentTurnEffects()
@@ -1028,7 +1051,7 @@ public class TowerBattleController : MonoBehaviour
                     ShowTargetIcon = true,
                     TargetIsHero = targetIsHero,
                     SuffixText = "applied effect,",
-                    SecondaryDetailSprite = ResolveBattleLogStatSprite(move.statModifier?.stat),
+                    SecondaryDetailSprite = ResolveBattleLogStatSprite(move.statModifier),
                     SecondaryText = BuildModifierBattleLogSummary(move.statModifier),
                     ShowSecondaryTargetIcon = true,
                     SecondaryTargetIsHero = targetIsHero
@@ -1052,7 +1075,7 @@ public class TowerBattleController : MonoBehaviour
                     ShowTargetIcon = true,
                     TargetIsHero = !actorIsHero,
                     SuffixText = BuildBattleLogDamageSummary(move, hybridDamage, true),
-                    SecondaryDetailSprite = ResolveBattleLogStatSprite(move.statModifier?.stat),
+                    SecondaryDetailSprite = ResolveBattleLogStatSprite(move.statModifier),
                     SecondaryText = BuildModifierBattleLogSummary(move.statModifier),
                     ShowSecondaryTargetIcon = true,
                     SecondaryTargetIsHero = modifierTargetIsHero
@@ -1159,6 +1182,116 @@ public class TowerBattleController : MonoBehaviour
     private static bool ShouldConsumeCurrentRound(string stat)
     {
         return string.Equals(stat?.Trim(), "defense", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private ModifierRoundResolution ApplyModifierRoundEffects()
+    {
+        var resolution = new ModifierRoundResolution();
+        var summaryLines = new List<string>();
+
+        ApplyHealthModifierRoundEffects(heroModifiers, targetIsHero: true, summaryLines);
+        ApplyHealthModifierRoundEffects(monsterModifiers, targetIsHero: false, summaryLines);
+
+        resolution.HeroDefeated = hero.CurrentHp <= 0;
+        resolution.MonsterDefeated = currentMonsterHp <= 0;
+        resolution.Summary = string.Join("\n", summaryLines.Where(line => !string.IsNullOrWhiteSpace(line)));
+        return resolution;
+    }
+
+    private bool HasPendingModifierRoundEffects()
+    {
+        return HasPendingHealthModifierRoundEffects(heroModifiers) ||
+               HasPendingHealthModifierRoundEffects(monsterModifiers);
+    }
+
+    private static bool HasPendingHealthModifierRoundEffects(IEnumerable<ActiveModifier> modifiers)
+    {
+        return modifiers != null && modifiers.Any(modifier =>
+            string.Equals(modifier?.Stat, "health", StringComparison.OrdinalIgnoreCase) &&
+            modifier.Value != 0);
+    }
+
+    private IEnumerator ApplyModifierRoundEffectsRoutine(Action<ModifierRoundResolution> onResolved)
+    {
+        var resolution = new ModifierRoundResolution();
+        if (!HasPendingModifierRoundEffects())
+        {
+            onResolved?.Invoke(resolution);
+            yield break;
+        }
+
+        if (environmentEffectDelay > 0f)
+        {
+            yield return new WaitForSeconds(environmentEffectDelay);
+        }
+
+        resolution = ApplyModifierRoundEffects();
+        RefreshAllUi();
+
+        var feedbackDelay = Mathf.Max(
+            GetModifierRoundEffectFeedbackDelay(heroModifiers, targetIsHero: true),
+            GetModifierRoundEffectFeedbackDelay(monsterModifiers, targetIsHero: false));
+        if (feedbackDelay > 0f)
+        {
+            yield return new WaitForSeconds(feedbackDelay);
+        }
+
+        onResolved?.Invoke(resolution);
+    }
+
+    private void ApplyHealthModifierRoundEffects(
+        IEnumerable<ActiveModifier> modifiers,
+        bool targetIsHero,
+        List<string> summaryLines)
+    {
+        if (modifiers == null)
+        {
+            return;
+        }
+
+        foreach (var modifier in modifiers)
+        {
+            if (!string.Equals(modifier?.Stat, "health", StringComparison.OrdinalIgnoreCase) || modifier.Value == 0)
+            {
+                continue;
+            }
+
+            var targetName = targetIsHero ? RunSession.GetHeroDisplayName() : currentMonster?.name ?? "Monster";
+            var amount = Mathf.Abs(modifier.Value);
+            if (modifier.Value > 0)
+            {
+                PlayEnvironmentTurnEffectFeedback(targetIsHero, "heal");
+                ApplyHeal(targetIsHero, amount);
+                summaryLines.Add($"{targetName} recovers {amount} health.");
+            }
+            else
+            {
+                PlayEnvironmentTurnEffectFeedback(targetIsHero, "damage");
+                ApplyDamage(targetIsHero, amount);
+                summaryLines.Add($"{targetName} loses {amount} health.");
+            }
+        }
+    }
+
+    private float GetModifierRoundEffectFeedbackDelay(IEnumerable<ActiveModifier> modifiers, bool targetIsHero)
+    {
+        if (modifiers == null)
+        {
+            return 0f;
+        }
+
+        var hasDamageTick = modifiers.Any(modifier =>
+            string.Equals(modifier?.Stat, "health", StringComparison.OrdinalIgnoreCase) &&
+            modifier.Value < 0);
+        if (!hasDamageTick)
+        {
+            return 0f;
+        }
+
+        var targetPresenter = targetIsHero ? heroCharacterPresenter : monsterCharacterPresenter;
+        return targetPresenter != null
+            ? targetPresenter.GetStateDuration(BattleAnimationState.Hurt, 0.05f)
+            : 0f;
     }
 
     private void HandleVictory(string heroTurnSummary)
@@ -2847,6 +2980,11 @@ public class TowerBattleController : MonoBehaviour
     {
         foreach (var modifier in modifiers)
         {
+            if (string.Equals(modifier?.Stat, "health", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             ApplyStatModifier(stats, modifier.Stat, modifier.Value);
         }
 
@@ -3001,7 +3139,7 @@ public class TowerBattleController : MonoBehaviour
             var effectColor = modifier.Value >= 0 ? buffEffectColor : debuffEffectColor;
             var roundLabel = modifier.RemainingRounds == 1 ? "round" : "rounds";
 
-            rows[index].Icon.sprite = ResolveEffectSprite(modifier.Stat);
+            rows[index].Icon.sprite = ResolveEffectSprite(modifier);
             rows[index].Icon.color = effectColor;
             rows[index].Description.text = $"{modifier.Value} ({modifier.RemainingRounds} {roundLabel})";
             rows[index].Description.color = effectColor;
@@ -3059,19 +3197,20 @@ public class TowerBattleController : MonoBehaviour
             };
     }
 
-    private Sprite ResolveEffectSprite(string stat)
+    private Sprite ResolveEffectSprite(ActiveModifier modifier)
     {
-        if (string.Equals(stat, "health", StringComparison.OrdinalIgnoreCase))
+        if (modifier != null &&
+            string.Equals(modifier.Stat, "health", StringComparison.OrdinalIgnoreCase))
         {
-            return heartEffectSprite;
+            return modifier.Value < 0 ? bleedEffectSprite : heartEffectSprite;
         }
 
-        if (string.Equals(stat, "magic", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.Stat, "magic", StringComparison.OrdinalIgnoreCase))
         {
             return magicEffectSprite;
         }
 
-        if (string.Equals(stat, "defense", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.Stat, "defense", StringComparison.OrdinalIgnoreCase))
         {
             return shieldEffectSprite;
         }
@@ -4451,6 +4590,7 @@ public class TowerBattleController : MonoBehaviour
         heroEffectContainer = FindComponent<RectTransform>("Canvas/Hero UI/Stat Container");
         monsterEffectContainer = FindComponent<RectTransform>("Canvas/Monster UI/Stat Container");
         heartEffectSprite = LoadEffectIconSprite(HeartIconKey, HeartIconFallbackKey);
+        bleedEffectSprite = LoadEffectIconSprite(BleedIconKey, BleedIconFallbackKey);
         magicEffectSprite = LoadEffectIconSprite(MagicIconKey, MagicIconFallbackKey);
         shieldEffectSprite = LoadEffectIconSprite(ShieldIconKey, ShieldIconFallbackKey);
         swordEffectSprite = LoadEffectIconSprite(SwordIconKey, SwordIconFallbackKey);
@@ -4594,7 +4734,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        var iconSprite = ResolveStatParticleSprite(modifier.stat);
+        var iconSprite = ResolveStatParticleSprite(modifier);
         if (iconSprite == null)
         {
             return;
@@ -4649,19 +4789,24 @@ public class TowerBattleController : MonoBehaviour
         defaultColor = particleSystem.main.startColor;
     }
 
-    private Sprite ResolveStatParticleSprite(string statName)
+    private Sprite ResolveStatParticleSprite(StatModifier modifier)
     {
-        if (string.Equals(statName, "magic", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.stat, "health", StringComparison.OrdinalIgnoreCase))
+        {
+            return modifier.value < 0 ? bleedEffectSprite : heartEffectSprite;
+        }
+
+        if (string.Equals(modifier?.stat, "magic", StringComparison.OrdinalIgnoreCase))
         {
             return magicEffectSprite;
         }
 
-        if (string.Equals(statName, "defense", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.stat, "defense", StringComparison.OrdinalIgnoreCase))
         {
             return shieldEffectSprite;
         }
 
-        if (string.Equals(statName, "attack", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.stat, "attack", StringComparison.OrdinalIgnoreCase))
         {
             return swordEffectSprite;
         }
@@ -5625,14 +5770,19 @@ public class TowerBattleController : MonoBehaviour
         return frames.FirstOrDefault(sprite => sprite != null);
     }
 
-    private Sprite ResolveBattleLogStatSprite(string statName)
+    private Sprite ResolveBattleLogStatSprite(StatModifier modifier)
     {
-        if (string.Equals(statName, "magic", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.stat, "health", StringComparison.OrdinalIgnoreCase))
+        {
+            return modifier.value < 0 ? bleedEffectSprite : heartEffectSprite;
+        }
+
+        if (string.Equals(modifier?.stat, "magic", StringComparison.OrdinalIgnoreCase))
         {
             return magicEffectSprite;
         }
 
-        if (string.Equals(statName, "defense", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(modifier?.stat, "defense", StringComparison.OrdinalIgnoreCase))
         {
             return shieldEffectSprite;
         }
