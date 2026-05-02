@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TheTower;
 using TMPro;
@@ -11,6 +12,8 @@ using UnityEngine.UI;
 public class HeroSelectController : MonoBehaviour
 {
     private const string HeroSelectMusicPath = "Sounds/Background Music/Background/Ambient 3";
+    private const string DefaultServerBaseUrl = "http://127.0.0.1:3000";
+    private const string ServerConfigFileName = "server_config.json";
 
     [Header("API")]
     [SerializeField] private string baseUrl = "http://localhost:3000";
@@ -201,6 +204,7 @@ public class HeroSelectController : MonoBehaviour
 
     private void Awake()
     {
+        baseUrl = ResolveBaseUrl();
         AutoBindScene();
         ConfigureStaticUi();
         AudioManager.PlayMusic(HeroSelectMusicPath, true);
@@ -250,6 +254,52 @@ public class HeroSelectController : MonoBehaviour
         SetMoveTexts("...", "...", "...", "...");
         SetStatTexts("-", "-", "-");
         UpdateSelectButtonLabel();
+    }
+
+    private string ResolveBaseUrl()
+    {
+        var configPath = Path.Combine(Application.persistentDataPath, ServerConfigFileName);
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            var existingConfig = JsonUtility.FromJson<ServerUrlConfig>(existingJson);
+            var normalizedExistingUrl = NormalizeServerBaseUrl(existingConfig);
+            if (!string.IsNullOrWhiteSpace(normalizedExistingUrl))
+            {
+                return normalizedExistingUrl;
+            }
+        }
+
+        var fallbackConfig = new ServerUrlConfig
+        {
+            serverUrl = DefaultServerBaseUrl
+        };
+
+        File.WriteAllText(configPath, JsonUtility.ToJson(fallbackConfig, true));
+        return DefaultServerBaseUrl;
+    }
+
+    [System.Serializable]
+    private sealed class ServerUrlConfig
+    {
+        public string serverUrl;
+    }
+
+    private string NormalizeServerBaseUrl(ServerUrlConfig config)
+    {
+        if (config == null || string.IsNullOrWhiteSpace(config.serverUrl))
+        {
+            return null;
+        }
+
+        var trimmedValue = config.serverUrl.Trim().TrimEnd('/');
+        if (trimmedValue.StartsWith("http://", System.StringComparison.OrdinalIgnoreCase) ||
+            trimmedValue.StartsWith("https://", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmedValue;
+        }
+
+        return $"http://{trimmedValue}:3000";
     }
 
     private void ConfigurePressedButtonFeedback(Button button)

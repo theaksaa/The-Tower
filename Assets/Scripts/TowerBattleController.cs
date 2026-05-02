@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -19,6 +20,8 @@ using Random = UnityEngine.Random;
 public class TowerBattleController : MonoBehaviour
 {
     private const string BattleMusicFolderPath = "Sounds/Background Music/Battles";
+    private const string DefaultServerBaseUrl = "http://127.0.0.1:3000";
+    private const string ServerConfigFileName = "server_config.json";
     private const string DefaultMonsterSpriteKey = "";
     private const string DefaultHeroSpriteKey = "";
     private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
@@ -488,6 +491,7 @@ public class TowerBattleController : MonoBehaviour
 
     private void Start()
     {
+        baseUrl = ResolveBaseUrl();
         AutoBindScene();
         CreateRuntimeHud();
         PrepareHealParticleSystems();
@@ -1049,6 +1053,52 @@ public class TowerBattleController : MonoBehaviour
         }
 
         currentMonsterHp = Mathf.Max(0, currentMonsterHp - amount);
+    }
+
+    private string ResolveBaseUrl()
+    {
+        var configPath = Path.Combine(Application.persistentDataPath, ServerConfigFileName);
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            var existingConfig = JsonUtility.FromJson<ServerUrlConfig>(existingJson);
+            var normalizedExistingUrl = NormalizeServerBaseUrl(existingConfig);
+            if (!string.IsNullOrWhiteSpace(normalizedExistingUrl))
+            {
+                return normalizedExistingUrl;
+            }
+        }
+
+        var fallbackConfig = new ServerUrlConfig
+        {
+            serverUrl = DefaultServerBaseUrl
+        };
+
+        File.WriteAllText(configPath, JsonUtility.ToJson(fallbackConfig, true));
+        return DefaultServerBaseUrl;
+    }
+
+    [Serializable]
+    private sealed class ServerUrlConfig
+    {
+        public string serverUrl;
+    }
+
+    private string NormalizeServerBaseUrl(ServerUrlConfig config)
+    {
+        if (config == null || string.IsNullOrWhiteSpace(config.serverUrl))
+        {
+            return null;
+        }
+
+        var trimmedValue = config.serverUrl.Trim().TrimEnd('/');
+        if (trimmedValue.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            trimmedValue.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmedValue;
+        }
+
+        return $"http://{trimmedValue}:3000";
     }
 
     private void ApplyHeal(bool targetIsHero, int amount)

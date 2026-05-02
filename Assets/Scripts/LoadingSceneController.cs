@@ -1,11 +1,14 @@
 using System.Collections;
 using TMPro;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 [DefaultExecutionOrder(-1000)]
 public sealed class LoadingSceneController : MonoBehaviour
 {
+    private const string DefaultServerBaseUrl = "http://127.0.0.1:3000";
+    private const string ServerConfigFileName = "server_config.json";
     [SerializeField] private string loadingSceneName = SceneLoader.LoadingSceneName;
     [SerializeField] private string loadingLabelObjectName = "Title Text";
     [SerializeField] private string loadingMessage = "Loading...";
@@ -55,6 +58,7 @@ public sealed class LoadingSceneController : MonoBehaviour
             return;
         }
 
+        defaultBaseUrl = ResolveBaseUrl();
         loadingText = FindLoadingText();
         SetLoadingText(loadingMessage);
     }
@@ -118,6 +122,52 @@ public sealed class LoadingSceneController : MonoBehaviour
         }
 
         return null;
+    }
+
+    private string ResolveBaseUrl()
+    {
+        var configPath = Path.Combine(Application.persistentDataPath, ServerConfigFileName);
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            var existingConfig = JsonUtility.FromJson<ServerUrlConfig>(existingJson);
+            var normalizedExistingUrl = NormalizeServerBaseUrl(existingConfig);
+            if (!string.IsNullOrWhiteSpace(normalizedExistingUrl))
+            {
+                return normalizedExistingUrl;
+            }
+        }
+
+        var fallbackConfig = new ServerUrlConfig
+        {
+            serverUrl = DefaultServerBaseUrl
+        };
+
+        File.WriteAllText(configPath, JsonUtility.ToJson(fallbackConfig, true));
+        return DefaultServerBaseUrl;
+    }
+
+    [System.Serializable]
+    private sealed class ServerUrlConfig
+    {
+        public string serverUrl;
+    }
+
+    private string NormalizeServerBaseUrl(ServerUrlConfig config)
+    {
+        if (config == null || string.IsNullOrWhiteSpace(config.serverUrl))
+        {
+            return null;
+        }
+
+        var trimmedValue = config.serverUrl.Trim().TrimEnd('/');
+        if (trimmedValue.StartsWith("http://", System.StringComparison.OrdinalIgnoreCase) ||
+            trimmedValue.StartsWith("https://", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmedValue;
+        }
+
+        return $"http://{trimmedValue}:3000";
     }
 
     private void SetLoadingText(string value)
