@@ -263,6 +263,25 @@ public class MainMenuController : MonoBehaviour
         AudioManager.PlayMusic(MainMenuMusicPath, true);
     }
 
+    private void Update()
+    {
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
+        {
+            return;
+        }
+
+        if (settingsPanel != null && settingsPanel.IsOpen)
+        {
+            return;
+        }
+
+        if (activePanel != VisiblePanel.RootMenu)
+        {
+            HandleBackButtonPressed();
+        }
+    }
+
     public void OpenSettings()
     {
         settingsPanel?.Toggle();
