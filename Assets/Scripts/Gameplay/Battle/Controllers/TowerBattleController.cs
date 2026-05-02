@@ -24,7 +24,7 @@ public class TowerBattleController : MonoBehaviour
     private const string PauseExitBattleHoverText = "Exit to map without saving the current battle.";
     private const string PauseExitMainMenuHoverText = "Exit to main menu without saving the current battle.";
     private const string BattleBackgroundPath = "Canvas/Background";
-    private const string HeartIconKey = "_Icons_Hearth";
+    private const string HeartIconKey = "heart";
     private const string MagicIconKey = "_Icons_Magic";
     private const string ShieldIconKey = "_Icons_Shield";
     private const string SwordIconKey = "_Icons_Sword";
@@ -4525,9 +4525,15 @@ public class TowerBattleController : MonoBehaviour
 
     private void PlayHealParticleEffect(bool targetIsHero)
     {
+        var healTexture = heartEffectSprite != null
+            ? heartEffectSprite.texture
+            : targetIsHero
+                ? heroParticleDefaultTexture
+                : monsterParticleDefaultTexture;
+
         PlayParticleEffect(
             targetIsHero,
-            defaultTexture: targetIsHero ? heroParticleDefaultTexture : monsterParticleDefaultTexture,
+            defaultTexture: healTexture,
             startColor: targetIsHero ? heroParticleDefaultColor : monsterParticleDefaultColor);
     }
 

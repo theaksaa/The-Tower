@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 42a5946359ce9124db05fce3e65ab33b
+guid: 1f3e7e39f89813d499953d9b1e6fa8cb
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4791527756249832895
-    second: fa433_0
+      213: 966352664693656736
+    second: fa59_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,12 +113,12 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: fa433_0
+      name: fa59_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 2
         y: 0
-        width: 16
+        width: 12
         height: 16
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 142ed4d64e2118db0800000000000000
-      internalID: -4791527756249832895
+      spriteID: 0ac41dae0ac296d00800000000000000
+      internalID: 966352664693656736
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      fa433_0: -4791527756249832895
+      fa59_0: 966352664693656736
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
