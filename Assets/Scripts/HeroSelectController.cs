@@ -4,6 +4,7 @@ using System.Linq;
 using TheTower;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -17,6 +18,12 @@ public class HeroSelectController : MonoBehaviour
 
     [Header("Navigation")]
     [SerializeField] private string overviewSceneName = "RunOverviewScene";
+
+    [Header("Button Feedback")]
+    [SerializeField] private Sprite pressedButtonSprite;
+    [SerializeField] private Color buttonHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
+    [SerializeField] private Color buttonPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
+    [SerializeField] private Vector2 pressedButtonTextOffset = new(0f, -6f);
 
     private Transform heroSelectorRoot;
     private TMP_Text heroNameText;
@@ -44,6 +51,154 @@ public class HeroSelectController : MonoBehaviour
         public Button Button;
     }
 
+    private sealed class PressedButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+    {
+        private Button button;
+        private Image backgroundImage;
+        private RectTransform labelRect;
+        private TMP_Text labelText;
+        private Sprite normalSprite;
+        private Sprite pressedSprite;
+        private Color normalColor;
+        private Color disabledColor;
+        private Color labelNormalColor;
+        private Color hoverColor;
+        private Color pressedColor;
+        private Vector2 labelBasePosition;
+        private Vector2 pressedLabelOffset;
+        private bool isHovered;
+        private bool isPressed;
+        private bool wasInteractable;
+
+        public void Initialize(
+            Button targetButton,
+            Image targetImage,
+            RectTransform targetLabelRect,
+            Sprite targetPressedSprite,
+            Color targetHoverColor,
+            Color targetPressedColor,
+            Vector2 targetPressedLabelOffset)
+        {
+            button = targetButton;
+            backgroundImage = targetImage;
+            labelRect = targetLabelRect;
+            labelText = targetLabelRect != null ? targetLabelRect.GetComponent<TMP_Text>() : null;
+            pressedSprite = targetPressedSprite;
+            hoverColor = targetHoverColor;
+            pressedColor = targetPressedColor;
+            pressedLabelOffset = targetPressedLabelOffset;
+            disabledColor = targetButton != null
+                ? targetButton.colors.disabledColor
+                : new Color(0.78431374f, 0.78431374f, 0.78431374f, 0.5019608f);
+
+            if (backgroundImage != null)
+            {
+                normalSprite = backgroundImage.sprite;
+                normalColor = backgroundImage.color;
+            }
+
+            if (labelRect != null)
+            {
+                labelBasePosition = labelRect.anchoredPosition;
+            }
+
+            if (labelText != null)
+            {
+                labelNormalColor = labelText.color;
+            }
+
+            wasInteractable = button == null || button.IsInteractable();
+            ApplyVisualState();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            isHovered = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            isHovered = false;
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (button == null || !button.IsInteractable())
+            {
+                return;
+            }
+
+            isPressed = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        private void OnDisable()
+        {
+            isHovered = false;
+            isPressed = false;
+            ApplyVisualState();
+        }
+
+        private void LateUpdate()
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var isInteractable = button.IsInteractable();
+            if (isInteractable == wasInteractable)
+            {
+                return;
+            }
+
+            wasInteractable = isInteractable;
+            if (!isInteractable)
+            {
+                isHovered = false;
+                isPressed = false;
+            }
+
+            ApplyVisualState();
+        }
+
+        private void ApplyVisualState()
+        {
+            var isInteractable = button == null || button.IsInteractable();
+
+            if (backgroundImage != null)
+            {
+                backgroundImage.sprite = isInteractable && isPressed && pressedSprite != null
+                    ? pressedSprite
+                    : normalSprite;
+                backgroundImage.color = isInteractable
+                    ? isPressed
+                        ? pressedColor
+                        : isHovered ? hoverColor : normalColor
+                    : normalColor;
+            }
+
+            if (labelRect != null)
+            {
+                labelRect.anchoredPosition = labelBasePosition + (isInteractable && isPressed ? pressedLabelOffset : Vector2.zero);
+            }
+
+            if (labelText != null)
+            {
+                labelText.color = labelNormalColor;
+            }
+        }
+    }
+
     private void Awake()
     {
         AutoBindScene();
@@ -58,7 +213,10 @@ public class HeroSelectController : MonoBehaviour
 
     private void AutoBindScene()
     {
-        heroSelectorRoot = GameObject.Find("Canvas/Hero Selection Panel/Hero Selector")?.transform;
+        heroSelectorRoot = FindFirstExistingTransform(
+            "Canvas/Hero Selection Panel/Hero Selector",
+            "Canvas/Hero Selection Panel/Hero Selection/Viewport/Content",
+            "Canvas/Hero Selection Panel/Scroll View/Viewport/Content");
         heroNameText = FindComponent<TMP_Text>("Canvas/Hero Selection Panel/Hero Name");
         heroDescriptionText = FindComponent<TMP_Text>("Canvas/Hero Selection Panel/Hero Description");
         selectButton = FindComponent<Button>("Canvas/Hero Selection Panel/Select Button");
@@ -75,7 +233,8 @@ public class HeroSelectController : MonoBehaviour
         {
             selectButton.onClick.RemoveAllListeners();
             selectButton.onClick.AddListener(SelectCurrentHeroAndStartRun);
-            selectButton.interactable = false;
+            selectButton.interactable = true;
+            ConfigurePressedButtonFeedback(selectButton);
         }
 
         if (heroNameText != null)
@@ -91,6 +250,38 @@ public class HeroSelectController : MonoBehaviour
         SetMoveTexts("...", "...", "...", "...");
         SetStatTexts("-", "-", "-");
         UpdateSelectButtonLabel();
+    }
+
+    private void ConfigurePressedButtonFeedback(Button button)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        button.transition = Selectable.Transition.None;
+
+        var buttonImage = button.targetGraphic as Image ?? button.GetComponent<Image>();
+        if (buttonImage != null)
+        {
+            button.targetGraphic = buttonImage;
+        }
+
+        var feedback = button.GetComponent<PressedButtonFeedback>();
+        if (feedback == null)
+        {
+            feedback = button.gameObject.AddComponent<PressedButtonFeedback>();
+        }
+
+        var labelRect = button.GetComponentInChildren<TMP_Text>(true)?.rectTransform;
+        feedback.Initialize(
+            button,
+            buttonImage,
+            labelRect,
+            pressedButtonSprite,
+            buttonHoverTint,
+            buttonPressedTint,
+            pressedButtonTextOffset);
     }
 
     private IEnumerator LoadHeroesRoutine()
@@ -444,5 +635,29 @@ public class HeroSelectController : MonoBehaviour
     {
         var target = GameObject.Find(path);
         return target != null ? target.GetComponent<T>() : null;
+    }
+
+    private static Transform FindFirstExistingTransform(params string[] paths)
+    {
+        if (paths == null)
+        {
+            return null;
+        }
+
+        foreach (var path in paths)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                continue;
+            }
+
+            var target = GameObject.Find(path);
+            if (target != null)
+            {
+                return target.transform;
+            }
+        }
+
+        return null;
     }
 }
