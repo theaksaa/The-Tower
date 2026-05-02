@@ -159,6 +159,7 @@ public class TowerBattleController : MonoBehaviour
     private bool battleLogVisible;
     private bool suppressBattleLogScrollbarCallbacks;
     private TMP_Text endPanelTitleText;
+    private TMP_Text defeatStatsText;
     private TMP_Text reward1Text;
     private TMP_Text reward2Text;
     private TMP_Text reward3Text;
@@ -1486,9 +1487,25 @@ public class TowerBattleController : MonoBehaviour
         if (isVisible)
         {
             defeatPanelRoot.transform.SetAsLastSibling();
+            RefreshDefeatPanelStats();
         }
 
         defeatPanelRoot.SetActive(isVisible);
+    }
+
+    private void RefreshDefeatPanelStats()
+    {
+        if (defeatStatsText == null)
+        {
+            return;
+        }
+
+        var heroLevel = Mathf.Max(1, RunSession.Hero?.Level ?? 1);
+        var encounterCount = encounterIndex >= 0
+            ? encounterIndex + 1
+            : Mathf.Max(1, RunSession.GetClearedEncounterCount() + 1);
+
+        defeatStatsText.text = $"Hero level: {heroLevel}\nEncounters: {encounterCount}";
     }
 
     private void RefreshLabels()
@@ -4429,6 +4446,7 @@ public class TowerBattleController : MonoBehaviour
         BindItemIcons(heroItemIcons, heroItemHoverTargets, "Canvas/Hero UI/Items", ownerIsHero: true);
         BindItemIcons(monsterItemIcons, monsterItemHoverTargets, "Canvas/Monster UI/Items", ownerIsHero: false);
         endPanelTitleText = FindComponent<TMP_Text>("Canvas/End Panel/Title Image/Title Text");
+        defeatStatsText = FindComponent<TMP_Text>("Canvas/Defeat Panel/Stats");
         reward2Root = FindGameObject("Canvas/End Panel/Rewards/Reward 2");
         reward1Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 1/Text");
         reward2Text = FindComponent<TMP_Text>("Canvas/End Panel/Rewards/Reward 2/Text");
