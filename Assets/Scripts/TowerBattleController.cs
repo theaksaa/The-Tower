@@ -777,6 +777,7 @@ public class TowerBattleController : MonoBehaviour
 
         var monsterTurnSummary = ResolveMove(monsterResponse.move, actorIsHero: false);
         PlayReactionAnimation(actorIsHero: false, monsterResponse.move);
+        RefreshAllUi();
         monsterMoveHistory.Add(monsterResponse.move.id);
         turnNumber++;
         AdvanceModifierRounds(heroModifiers);
