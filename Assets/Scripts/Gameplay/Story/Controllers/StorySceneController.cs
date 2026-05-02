@@ -8,6 +8,10 @@ using UnityEngine.UI;
 public sealed class StorySceneController : MonoBehaviour
 {
     private const string StorySceneMusicPath = AudioPaths.StoryMusic;
+    private const string PressedButtonSpriteResourcePath = "Sprites/UI/Classic/_Classic_UI_Button1_Pressed";
+    private static readonly Color ButtonHoverTint = new(0.9f, 0.9f, 0.9f, 1f);
+    private static readonly Color ButtonPressedTint = new(0.82f, 0.82f, 0.82f, 1f);
+    private static readonly Vector2 PressedButtonTextOffset = new(0f, -6f);
 
     [SerializeField] private string storySceneName = GameScenes.Story;
     [SerializeField] private string heroSelectSceneName = GameScenes.HeroSelect;
@@ -37,6 +41,7 @@ public sealed class StorySceneController : MonoBehaviour
     private TMP_Text nextButtonLabel;
     private int pageIndex;
     private IReadOnlyList<string> pages;
+    private Sprite pressedButtonSprite;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterSceneHook()
@@ -75,6 +80,8 @@ public sealed class StorySceneController : MonoBehaviour
         }
 
         BindScene();
+        ConfigurePressedButtonFeedback(nextButton);
+        ConfigurePressedButtonFeedback(skipButton);
         BindButtons();
         LoadPagesForPendingMode();
         ShowPage(0);
@@ -153,6 +160,41 @@ public sealed class StorySceneController : MonoBehaviour
 
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(action);
+    }
+
+    private void ConfigurePressedButtonFeedback(Button button)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        button.transition = Selectable.Transition.None;
+
+        var buttonImage = button.targetGraphic as Image ?? button.GetComponent<Image>();
+        if (buttonImage != null)
+        {
+            button.targetGraphic = buttonImage;
+        }
+
+        pressedButtonSprite ??= Resources.Load<Sprite>(PressedButtonSpriteResourcePath);
+
+        var feedback = button.GetComponent<global::PressedButtonFeedback>();
+        if (feedback == null)
+        {
+            feedback = button.gameObject.AddComponent<global::PressedButtonFeedback>();
+        }
+
+        var labelRect = button.GetComponentInChildren<TMP_Text>(true)?.rectTransform;
+        feedback.Initialize(
+            button,
+            buttonImage,
+            labelRect,
+            pressedButtonSprite,
+            ButtonHoverTint,
+            ButtonPressedTint,
+            PressedButtonTextOffset,
+            shouldApplyDisabledTint: false);
     }
 
     private static Button FindButton(string name, Transform parent = null)
