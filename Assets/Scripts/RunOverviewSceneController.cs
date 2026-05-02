@@ -217,6 +217,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         public RectTransform HoverScaleTarget;
         public Button Button;
         public TMP_Text NameText;
+        public TMP_Text TypeText;
         public TMP_Text DescriptionText;
         public TMP_Text CoinsText;
         public Image Icon;
@@ -1629,6 +1630,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
         var button = EnsureButton(root);
         var nameText = root.Find("Item/Name")?.GetComponent<TMP_Text>() ?? root.Find("Name")?.GetComponent<TMP_Text>();
+        var typeText = root.Find("Item/Type")?.GetComponent<TMP_Text>() ?? root.Find("Type")?.GetComponent<TMP_Text>();
         var descriptionText = root.Find("Item/Description")?.GetComponent<TMP_Text>();
         var coinsValueText = root.Find("Coins/Coins Value")?.GetComponent<TMP_Text>();
         var icon = FindShopItemIcon(root);
@@ -1642,6 +1644,11 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         if (descriptionText != null)
         {
             descriptionText.text = ResolveShopItemDescription(config);
+        }
+
+        if (typeText != null)
+        {
+            typeText.text = ResolveShopItemTypeLabel(config);
         }
 
         if (coinsValueText != null)
@@ -1666,6 +1673,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
             HoverScaleTarget = root.Find("Item") as RectTransform ?? root,
             Button = button,
             NameText = nameText,
+            TypeText = typeText,
             DescriptionText = descriptionText,
             CoinsText = coinsValueText,
             Icon = icon,
@@ -1762,6 +1770,39 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         }
 
         return config.description ?? string.Empty;
+    }
+
+    private static string ResolveShopItemTypeLabel(ShopItemConfig config)
+    {
+        if (config == null)
+        {
+            return string.Empty;
+        }
+
+        var rawType = (config.type ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(rawType))
+        {
+            if (!string.IsNullOrWhiteSpace(config.moveId))
+            {
+                rawType = "move";
+            }
+            else if (!string.IsNullOrWhiteSpace(config.itemId))
+            {
+                rawType = "item";
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(rawType))
+        {
+            return string.Empty;
+        }
+
+        if (rawType.Length == 1)
+        {
+            return rawType.ToUpperInvariant();
+        }
+
+        return char.ToUpperInvariant(rawType[0]) + rawType.Substring(1).ToLowerInvariant();
     }
 
     private static bool IsMoveShopItem(ShopItemConfig config)
