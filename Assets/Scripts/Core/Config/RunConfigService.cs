@@ -11,10 +11,14 @@ public static class RunConfigService
     private static RunConfig cachedRunConfig;
     private static bool cachedUsingFallbackData;
 
+    public static string LastRunConfigRequestError { get; private set; }
+    public static string LastEndlessEncounterRequestError { get; private set; }
+
     public static IEnumerator LoadRunConfig(string baseUrl, bool useLocalFallbackIfApiFails, Action<RunConfig, bool> onLoaded)
     {
         RunConfig runConfig = null;
         var usingFallbackData = false;
+        LastRunConfigRequestError = null;
 
         using (var request = UnityWebRequest.Get($"{baseUrl}/run/config"))
         {
@@ -31,6 +35,11 @@ public static class RunConfigService
                 {
                     Debug.LogWarning($"Failed to deserialize run config: {exception}");
                 }
+            }
+            else
+            {
+                LastRunConfigRequestError = request.error;
+                Debug.LogWarning($"Failed to load run config: {request.error}");
             }
         }
 
@@ -147,6 +156,7 @@ public static class RunConfigService
     public static IEnumerator LoadNextEndlessEncounter(string baseUrl, int encountersCleared, Action<Monster> onLoaded)
     {
         Monster monster = null;
+        LastEndlessEncounterRequestError = null;
         var requestBody = new NextEncounterRequest
         {
             encountersCleared = Mathf.Max(0, encountersCleared)
@@ -175,6 +185,7 @@ public static class RunConfigService
             }
             else
             {
+                LastEndlessEncounterRequestError = request.error;
                 Debug.LogWarning($"Failed to load endless encounter: {request.error}");
             }
         }

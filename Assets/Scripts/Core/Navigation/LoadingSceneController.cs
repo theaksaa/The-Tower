@@ -12,8 +12,8 @@ public sealed class LoadingSceneController : MonoBehaviour
     [SerializeField] private string missingTargetMessage = "Nothing to load.";
     [SerializeField] private float minimumVisibleDuration = 0.1f;
     [SerializeField] private string heroSelectSceneName = GameScenes.HeroSelect;
+    [SerializeField] private string mainMenuSceneName = GameScenes.MainMenu;
     [SerializeField] private string defaultBaseUrl = "http://localhost:3000";
-    [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     private static bool sceneHookRegistered;
     private TMP_Text loadingText;
@@ -87,13 +87,26 @@ public sealed class LoadingSceneController : MonoBehaviour
 
         if (string.Equals(targetSceneName, heroSelectSceneName, System.StringComparison.Ordinal))
         {
-            yield return RunConfigService.LoadRunConfig(defaultBaseUrl, useLocalFallbackIfApiFails, (config, usingFallback) =>
+            var loadedConfig = default(TheTower.RunConfig);
+            var usedFallback = false;
+            yield return RunConfigService.LoadRunConfig(defaultBaseUrl, useLocalFallbackIfApiFails: false, (config, usingFallback) =>
             {
-                if (config != null)
-                {
-                    RunConfigService.CacheRunConfig(config, usingFallback);
-                }
+                loadedConfig = config;
+                usedFallback = usingFallback;
             });
+
+            if (loadedConfig == null)
+            {
+                var requestError = string.IsNullOrWhiteSpace(RunConfigService.LastRunConfigRequestError)
+                    ? "The game server is not responding."
+                    : $"The game server is not responding.\n{RunConfigService.LastRunConfigRequestError}";
+                ErrorOverlayService.QueueError($"Unable to start a new session.\n{requestError}", mainMenuSceneName);
+                SceneManager.LoadScene(mainMenuSceneName, LoadSceneMode.Single);
+                SceneLoader.CancelLoad();
+                yield break;
+            }
+
+            RunConfigService.CacheRunConfig(loadedConfig, usedFallback);
         }
 
         SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);

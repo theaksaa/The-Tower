@@ -68,7 +68,7 @@ public static class RunPersistenceService
         }
         catch (Exception exception)
         {
-            Debug.LogWarning($"Failed to save run '{RunSession.CurrentSaveId}': {exception.Message}");
+            Debug.LogError($"Failed to save run '{RunSession.CurrentSaveId}': {exception.Message}");
             return false;
         }
     }
@@ -98,7 +98,16 @@ public static class RunPersistenceService
             return false;
         }
 
-        File.Delete(filePath);
+        try
+        {
+            File.Delete(filePath);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError($"Failed to delete run '{saveId}': {exception.Message}");
+            return false;
+        }
+
         if (string.Equals(RunSession.CurrentSaveId, saveId, StringComparison.Ordinal))
         {
             RunSession.ClearActiveRun();
@@ -223,7 +232,7 @@ public static class RunPersistenceService
         }
         catch (Exception exception)
         {
-            Debug.LogWarning($"Failed to read run save '{filePath}': {exception.Message}");
+            Debug.LogError($"Failed to read run save '{filePath}': {exception.Message}");
             return false;
         }
     }

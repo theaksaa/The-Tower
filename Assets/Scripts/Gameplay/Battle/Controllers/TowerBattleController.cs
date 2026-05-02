@@ -218,6 +218,7 @@ public class TowerBattleController : MonoBehaviour
     private float heroHealthBarTargetFill = 1f;
     private float monsterHealthBarTargetFill = 1f;
     private bool pendingInstantHealthBarSync = true;
+    private bool isReturningToOverviewAfterServerError;
 
     private readonly List<string> monsterMoveHistory = new();
     private readonly Color buffEffectColor = new(0.85f, 1f, 0.3f, 1f);
@@ -499,6 +500,30 @@ public class TowerBattleController : MonoBehaviour
         StartCoroutine(BootstrapEncounter());
     }
 
+    private void ReturnToOverviewAfterServerError(string requestError, string fallbackMessage = null)
+    {
+        if (isReturningToOverviewAfterServerError)
+        {
+            return;
+        }
+
+        isReturningToOverviewAfterServerError = true;
+        var detail = string.IsNullOrWhiteSpace(requestError)
+            ? "The game server is not responding."
+            : requestError;
+        var statusMessage = string.IsNullOrWhiteSpace(fallbackMessage)
+            ? $"Battle closed because the server is not responding. {detail}"
+            : $"{fallbackMessage} {detail}";
+
+        Debug.LogWarning(statusMessage);
+        RunSession.SetStatus(statusMessage);
+        ErrorOverlayService.QueueError(statusMessage, overviewSceneName);
+        settingsPanel?.Close();
+        RestoreSavedRunState();
+        ReleasePauseState();
+        SceneLoader.LoadScene(overviewSceneName);
+    }
+
     private void Update()
     {
         UpdateHealthBarAnimations();
@@ -593,6 +618,16 @@ public class TowerBattleController : MonoBehaviour
                     RunSession.InitializeNewRun(runConfig, usingFallback);
                 }
             });
+
+            if (!string.IsNullOrWhiteSpace(RunConfigService.LastRunConfigRequestError))
+            {
+                ReturnToOverviewAfterServerError(
+                    RunConfigService.LastRunConfigRequestError,
+                    useLocalFallbackIfApiFails && RunSession.HasActiveRun
+                        ? "Loaded offline fallback data for this battle."
+                        : "Unable to load battle data from the server.");
+                yield break;
+            }
         }
 
         if (!RunSession.HasActiveRun)
@@ -644,6 +679,14 @@ public class TowerBattleController : MonoBehaviour
                 baseUrl,
                 RunSession.GetClearedEncounterCount(),
                 loadedMonster => encounterMonster = loadedMonster);
+
+            if (!string.IsNullOrWhiteSpace(RunConfigService.LastEndlessEncounterRequestError))
+            {
+                ReturnToOverviewAfterServerError(
+                    RunConfigService.LastEndlessEncounterRequestError,
+                    "Unable to load the next endless encounter.");
+                yield break;
+            }
 
             if (encounterMonster == null)
             {
@@ -758,6 +801,11 @@ public class TowerBattleController : MonoBehaviour
 
         MonsterMoveResponse monsterResponse = null;
         yield return FetchMonsterMoveRoutine(response => monsterResponse = response);
+
+        if (isReturningToOverviewAfterServerError)
+        {
+            yield break;
+        }
 
         if (monsterResponse == null)
         {
@@ -884,6 +932,8 @@ public class TowerBattleController : MonoBehaviour
             else
             {
                 Debug.LogWarning($"Monster move request failed: {request.error}");
+                ReturnToOverviewAfterServerError(request.error, "Monster turn data could not be loaded.");
+                yield break;
             }
         }
 

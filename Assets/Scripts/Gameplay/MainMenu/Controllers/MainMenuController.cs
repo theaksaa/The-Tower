@@ -756,6 +756,7 @@ public class MainMenuController : MonoBehaviour
     {
         if (!RunPersistenceService.TryLoadRun(saveId))
         {
+            ErrorOverlayService.ShowError("Failed to load the selected save.");
             RefreshContinuePanel();
             return;
         }
@@ -767,6 +768,7 @@ public class MainMenuController : MonoBehaviour
     {
         if (!RunPersistenceService.DeleteRun(saveId))
         {
+            ErrorOverlayService.ShowError("Failed to delete the selected save.");
             return;
         }
 
