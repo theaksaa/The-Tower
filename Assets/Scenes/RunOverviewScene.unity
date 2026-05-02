@@ -15052,6 +15052,8 @@ MonoBehaviour:
   pressedButtonTextOffset: {x: 0, y: -6}
   movesBarHoverLift: 10
   movesBarHoverAnimationSpeed: 14
+  xpBarHoverScale: 1.04
+  xpBarHoverAnimationSpeed: 14
   shopItemHoverScale: 1.05
   shopItemHoverAnimationSpeed: 14
   shopButtonRevealAnimationSpeed: 18

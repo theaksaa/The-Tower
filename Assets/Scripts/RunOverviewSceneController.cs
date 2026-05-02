@@ -81,6 +81,8 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
     [SerializeField] private Vector2 pressedButtonTextOffset = new(0f, -6f);
     [SerializeField] private float movesBarHoverLift = 10f;
     [SerializeField] private float movesBarHoverAnimationSpeed = 14f;
+    [SerializeField] private float xpBarHoverScale = 1.04f;
+    [SerializeField] private float xpBarHoverAnimationSpeed = 14f;
     [SerializeField] private float shopItemHoverScale = 1.05f;
     [SerializeField] private float shopItemHoverAnimationSpeed = 14f;
     [SerializeField] private float shopButtonRevealAnimationSpeed = 18f;
@@ -88,6 +90,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
 
     private Image heroImage;
     private UiSpriteSheetAnimator heroAnimator;
+    private RectTransform xpBarRoot;
     private Button xpBarButton;
     private Image xpFillImage;
     private TMP_Text xpValueText;
@@ -912,6 +915,7 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         canvasRoot = GameObject.Find("Canvas")?.transform;
         canvas = GameObject.Find("Canvas")?.GetComponent<Canvas>();
         heroImage = FindComponent<Image>("Hero");
+        xpBarRoot = FindChild("XP Bar") as RectTransform;
         xpFillImage = FindComponent<Image>("XP Bar/XP Bar");
         xpValueText = FindComponent<TMP_Text>("XP Bar/Value");
         coinsText = FindComponent<TMP_Text>("Coins")
@@ -1017,6 +1021,18 @@ public class RunOverviewSceneController : MonoBehaviour, IMoveLoadoutController,
         {
             xpBarButton.onClick.RemoveAllListeners();
             xpBarButton.onClick.AddListener(OpenLevelPanel);
+
+            var hoverScale = xpBarButton.GetComponent<HoverScaleFeedback>();
+            if (hoverScale == null)
+            {
+                hoverScale = xpBarButton.gameObject.AddComponent<HoverScaleFeedback>();
+            }
+
+            hoverScale.Initialize(
+                xpBarRoot != null ? xpBarRoot : xpBarButton.transform as RectTransform,
+                xpBarHoverScale,
+                xpBarHoverAnimationSpeed,
+                () => xpBarButton.IsInteractable());
         }
 
         ConfigureLevelButton(attackButton, "attack");
