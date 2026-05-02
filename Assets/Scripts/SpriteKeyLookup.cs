@@ -24,17 +24,17 @@ public static class SpriteKeyLookup
 {
     private const string CharacterResourceRoot = "Sprites/Characters";
     private const string MoveResourceRoot = "Sprites/Moves";
-    private const string IconResourceRoot = "Sprites/Icons";
-    private const string ItemResourceRoot = "Sprites/Items";
-    private const string EnvironmentResourceRoot = "Environments";
+    private static readonly string[] IconResourceRoots = { "Sprites/Icons" };
+    private static readonly string[] ItemResourceRoots = { "Sprites/Items", "Sprites/Icons" };
+    private static readonly string[] EnvironmentResourceRoots = { "Environments", "Backgrounds", "Sprites/Backgrounds" };
     private const string DefaultSpriteKey = "default";
-    private const string DefaultEnvironmentResourcePath = EnvironmentResourceRoot + "/" + DefaultSpriteKey;
     private const string DefaultHeroResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/hero";
     private const string DefaultMonsterResourceRoot = CharacterResourceRoot + "/" + DefaultSpriteKey + "/monster";
 
     private static readonly Dictionary<string, Sprite[]> CharacterAnimationCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Sprite> MoveSpriteCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Sprite> IconSpriteCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, Sprite> ItemSpriteCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, Sprite> EnvironmentSpriteCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static Sprite[] LoadCharacterAnimation(string spriteKey, BattleAnimationState state)
@@ -86,7 +86,7 @@ public static class SpriteKeyLookup
             return cachedSprite;
         }
 
-        var sprite = LoadSingleSprite($"{IconResourceRoot}/{spriteKey}");
+        var sprite = LoadSingleSpriteFromRoots(IconResourceRoots, spriteKey);
         IconSpriteCache[spriteKey] = sprite;
         return sprite;
     }
@@ -98,7 +98,13 @@ public static class SpriteKeyLookup
             return null;
         }
 
-        var sprite = LoadSingleSprite($"{ItemResourceRoot}/{spriteKey}");
+        if (ItemSpriteCache.TryGetValue(spriteKey, out var cachedSprite))
+        {
+            return cachedSprite;
+        }
+
+        var sprite = LoadSingleSpriteFromRoots(ItemResourceRoots, spriteKey);
+        ItemSpriteCache[spriteKey] = sprite;
         return sprite;
     }
 
@@ -110,9 +116,9 @@ public static class SpriteKeyLookup
             return cachedSprite;
         }
 
-        var sprite = LoadSingleSprite($"{EnvironmentResourceRoot}/{normalizedKey}")
+        var sprite = LoadSingleSpriteFromRoots(EnvironmentResourceRoots, normalizedKey)
                      ?? LoadSingleSprite(normalizedKey)
-                     ?? LoadSingleSprite(DefaultEnvironmentResourcePath)
+                     ?? LoadSingleSpriteFromRoots(EnvironmentResourceRoots, DefaultSpriteKey)
                      ?? LoadSingleSprite(DefaultSpriteKey);
         EnvironmentSpriteCache[normalizedKey] = sprite;
         return sprite;
@@ -231,5 +237,29 @@ public static class SpriteKeyLookup
     {
         var sprites = LoadSpritesAtPath(resourcePath);
         return sprites.FirstOrDefault();
+    }
+
+    private static Sprite LoadSingleSpriteFromRoots(IEnumerable<string> resourceRoots, string spriteKey)
+    {
+        if (resourceRoots == null || string.IsNullOrWhiteSpace(spriteKey))
+        {
+            return null;
+        }
+
+        foreach (var root in resourceRoots)
+        {
+            if (string.IsNullOrWhiteSpace(root))
+            {
+                continue;
+            }
+
+            var sprite = LoadSingleSprite($"{root}/{spriteKey}");
+            if (sprite != null)
+            {
+                return sprite;
+            }
+        }
+
+        return null;
     }
 }
