@@ -36,7 +36,7 @@ public class TowerBattleController : MonoBehaviour
     private const string SwordIconFallbackKey = "attack";
 
     [Header("API")]
-    [SerializeField] private string baseUrl = "http://localhost:3000";
+    [SerializeField] private string baseUrl = ServerConfigService.DefaultServerBaseUrl;
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]
@@ -933,6 +933,7 @@ public class TowerBattleController : MonoBehaviour
 
         using (var request = UnityWebRequest.Get(url))
         {
+            ServerConfigService.ApplyTrustedServerCertificatePolicy(request, request.url);
             request.timeout = 5;
             yield return request.SendWebRequest();
             yield return WaitWhilePauseMenuOpen();

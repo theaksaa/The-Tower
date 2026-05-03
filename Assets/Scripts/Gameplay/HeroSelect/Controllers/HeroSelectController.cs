@@ -12,7 +12,7 @@ public class HeroSelectController : MonoBehaviour
 {
     private const string HeroSelectMusicPath = AudioPaths.HeroSelectMusic;
     [Header("API")]
-    [SerializeField] private string baseUrl = "http://localhost:3000";
+    [SerializeField] private string baseUrl = ServerConfigService.DefaultServerBaseUrl;
     [SerializeField] private bool useLocalFallbackIfApiFails = true;
 
     [Header("Navigation")]

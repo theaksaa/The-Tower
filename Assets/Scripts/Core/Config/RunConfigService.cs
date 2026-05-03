@@ -22,6 +22,7 @@ public static class RunConfigService
 
         using (var request = UnityWebRequest.Get($"{baseUrl}/run/config"))
         {
+            ServerConfigService.ApplyTrustedServerCertificatePolicy(request, request.url);
             request.timeout = 5;
             yield return request.SendWebRequest();
 
@@ -167,6 +168,7 @@ public static class RunConfigService
             var json = JsonConvert.SerializeObject(requestBody);
             request.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
             request.downloadHandler = new DownloadHandlerBuffer();
+            ServerConfigService.ApplyTrustedServerCertificatePolicy(request, request.url);
             request.timeout = 5;
             request.SetRequestHeader("Content-Type", "application/json");
 

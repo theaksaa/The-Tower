@@ -1,16 +1,27 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public static class ServerConfigService
 {
     private const string ConfigFileName = "server_config.json";
-    public const string DefaultServerBaseUrl = "http://127.0.0.1:3000";
+    private const string TrustedServerHost = "159.69.242.255";
+    private const int DefaultServerPort = 3000;
+    public const string DefaultServerBaseUrl = "https://159.69.242.255:3000";
 
     [Serializable]
     private sealed class ServerUrlConfig
     {
         public string serverUrl;
+    }
+
+    private sealed class TrustedServerCertificateHandler : CertificateHandler
+    {
+        protected override bool ValidateCertificate(byte[] certificateData)
+        {
+            return true;
+        }
     }
 
     public static string ResolveBaseUrl()
@@ -23,17 +34,16 @@ public static class ServerConfigService
             var normalizedExistingUrl = NormalizeServerBaseUrl(existingConfig?.serverUrl);
             if (!string.IsNullOrWhiteSpace(normalizedExistingUrl))
             {
+                if (ShouldUpgradeLegacyDefaultUrl(normalizedExistingUrl))
+                {
+                    return PersistBaseUrl(configPath, DefaultServerBaseUrl);
+                }
+
                 return normalizedExistingUrl;
             }
         }
 
-        var fallbackConfig = new ServerUrlConfig
-        {
-            serverUrl = DefaultServerBaseUrl
-        };
-
-        File.WriteAllText(configPath, JsonUtility.ToJson(fallbackConfig, true));
-        return DefaultServerBaseUrl;
+        return PersistBaseUrl(configPath, DefaultServerBaseUrl);
     }
 
     public static string NormalizeServerBaseUrl(string value)
@@ -50,6 +60,85 @@ public static class ServerConfigService
             return trimmedValue;
         }
 
+        if (TryExtractHostAndPort(trimmedValue, out var host, out var port) &&
+            string.Equals(host, TrustedServerHost, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"https://{TrustedServerHost}:{port ?? DefaultServerPort}";
+        }
+
         return $"http://{trimmedValue}:3000";
+    }
+
+    public static void ApplyTrustedServerCertificatePolicy(UnityWebRequest request, string url)
+    {
+        if (request == null || !RequiresTrustedServerCertificateBypass(url))
+        {
+            return;
+        }
+
+        request.certificateHandler = new TrustedServerCertificateHandler();
+        request.disposeCertificateHandlerOnDispose = true;
+    }
+
+    private static string PersistBaseUrl(string configPath, string baseUrl)
+    {
+        var fallbackConfig = new ServerUrlConfig
+        {
+            serverUrl = baseUrl
+        };
+
+        File.WriteAllText(configPath, JsonUtility.ToJson(fallbackConfig, true));
+        return baseUrl;
+    }
+
+    private static bool ShouldUpgradeLegacyDefaultUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        if (uri.Port != DefaultServerPort)
+        {
+            return false;
+        }
+
+        return string.Equals(uri.Host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool RequiresTrustedServerCertificateBypass(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        return uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+               uri.Port == DefaultServerPort &&
+               string.Equals(uri.Host, TrustedServerHost, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool TryExtractHostAndPort(string value, out string host, out int? port)
+    {
+        host = value;
+        port = null;
+
+        var colonIndex = value.LastIndexOf(':');
+        if (colonIndex <= 0 || colonIndex == value.Length - 1)
+        {
+            return !string.IsNullOrWhiteSpace(host);
+        }
+
+        var parsedHost = value[..colonIndex];
+        var portText = value[(colonIndex + 1)..];
+        if (!int.TryParse(portText, out var parsedPort))
+        {
+            return false;
+        }
+
+        host = parsedHost;
+        port = parsedPort;
+        return !string.IsNullOrWhiteSpace(host);
     }
 }

@@ -26906,7 +26906,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f9b0a91e7b08964ab955ce15332f9b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TowerBattleController
-  baseUrl: http://localhost:3000
+  baseUrl: https://159.69.242.255:3000
   useLocalFallbackIfApiFails: 1
   overviewSceneName: RunOverviewScene
   endSceneName: EndScene

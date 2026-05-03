@@ -13,7 +13,7 @@ public sealed class LoadingSceneController : MonoBehaviour
     [SerializeField] private float minimumVisibleDuration = 0.1f;
     [SerializeField] private string heroSelectSceneName = GameScenes.HeroSelect;
     [SerializeField] private string mainMenuSceneName = GameScenes.MainMenu;
-    [SerializeField] private string defaultBaseUrl = "http://localhost:3000";
+    [SerializeField] private string defaultBaseUrl = ServerConfigService.DefaultServerBaseUrl;
 
     private static bool sceneHookRegistered;
     private TMP_Text loadingText;
