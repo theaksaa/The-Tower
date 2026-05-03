@@ -13,7 +13,7 @@ public static class ServerConfigService
     [Serializable]
     private sealed class ServerUrlConfig
     {
-        public string serverUrl;
+        public string serverUrl = null;
     }
 
     private sealed class TrustedServerCertificateHandler : CertificateHandler
@@ -27,23 +27,17 @@ public static class ServerConfigService
     public static string ResolveBaseUrl()
     {
         var configPath = Path.Combine(Application.persistentDataPath, ConfigFileName);
-        if (File.Exists(configPath))
+        if (!File.Exists(configPath))
         {
-            var existingJson = File.ReadAllText(configPath);
-            var existingConfig = JsonUtility.FromJson<ServerUrlConfig>(existingJson);
-            var normalizedExistingUrl = NormalizeServerBaseUrl(existingConfig?.serverUrl);
-            if (!string.IsNullOrWhiteSpace(normalizedExistingUrl))
-            {
-                if (ShouldUpgradeLegacyDefaultUrl(normalizedExistingUrl))
-                {
-                    return PersistBaseUrl(configPath, DefaultServerBaseUrl);
-                }
-
-                return normalizedExistingUrl;
-            }
+            return PersistBaseUrl(configPath, DefaultServerBaseUrl);
         }
 
-        return PersistBaseUrl(configPath, DefaultServerBaseUrl);
+        var existingJson = File.ReadAllText(configPath);
+        var existingConfig = JsonUtility.FromJson<ServerUrlConfig>(existingJson);
+        var normalizedExistingUrl = NormalizeServerBaseUrl(existingConfig?.serverUrl);
+        return !string.IsNullOrWhiteSpace(normalizedExistingUrl)
+            ? normalizedExistingUrl
+            : DefaultServerBaseUrl;
     }
 
     public static string NormalizeServerBaseUrl(string value)
@@ -54,19 +48,26 @@ public static class ServerConfigService
         }
 
         var trimmedValue = value.Trim().TrimEnd('/');
-        if (trimmedValue.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            trimmedValue.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return trimmedValue;
-        }
-
         if (TryExtractHostAndPort(trimmedValue, out var host, out var port) &&
             string.Equals(host, TrustedServerHost, StringComparison.OrdinalIgnoreCase))
         {
             return $"https://{TrustedServerHost}:{port ?? DefaultServerPort}";
         }
 
-        return $"http://{trimmedValue}:3000";
+        if (trimmedValue.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            trimmedValue.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmedValue;
+        }
+
+        if (TryExtractHostAndPort(trimmedValue, out host, out port))
+        {
+            return port.HasValue
+                ? $"http://{host}:{port.Value}"
+                : $"http://{host}:{DefaultServerPort}";
+        }
+
+        return $"http://{trimmedValue}:{DefaultServerPort}";
     }
 
     public static void ApplyTrustedServerCertificatePolicy(UnityWebRequest request, string url)
@@ -89,22 +90,6 @@ public static class ServerConfigService
 
         File.WriteAllText(configPath, JsonUtility.ToJson(fallbackConfig, true));
         return baseUrl;
-    }
-
-    private static bool ShouldUpgradeLegacyDefaultUrl(string url)
-    {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-        {
-            return false;
-        }
-
-        if (uri.Port != DefaultServerPort)
-        {
-            return false;
-        }
-
-        return string.Equals(uri.Host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool RequiresTrustedServerCertificateBypass(string url)
