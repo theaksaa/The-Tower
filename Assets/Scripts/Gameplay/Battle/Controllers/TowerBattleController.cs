@@ -273,6 +273,10 @@ public class TowerBattleController : MonoBehaviour
 
     private sealed class EncounterSnapshot
     {
+        public List<string> HeroEquippedItems;
+        public List<string> HeroInventoryItems;
+        public List<string> MonsterEquippedItems;
+        public List<string> MonsterInventoryItems;
     }
 
     private sealed class EnvironmentTurnResolution
@@ -3714,6 +3718,7 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
+        RestoreEncounterSnapshot();
         RunSession.RestoreHeroToFullHealth();
         pendingVictoryRewards = null;
         heroReviveAvailable = false;
@@ -3998,7 +4003,30 @@ public class TowerBattleController : MonoBehaviour
             return;
         }
 
-        encounterSnapshot = new EncounterSnapshot();
+        encounterSnapshot = new EncounterSnapshot
+        {
+            HeroEquippedItems = hero.EquippedItems?.ToList() ?? new List<string>(),
+            HeroInventoryItems = hero.InventoryItems?.ToList() ?? new List<string>(),
+            MonsterEquippedItems = currentMonster?.equippedItems?.ToList() ?? new List<string>(),
+            MonsterInventoryItems = currentMonster?.inventoryItems?.ToList() ?? new List<string>()
+        };
+    }
+
+    private void RestoreEncounterSnapshot()
+    {
+        if (hero == null || encounterSnapshot == null)
+        {
+            return;
+        }
+
+        hero.EquippedItems = encounterSnapshot.HeroEquippedItems?.ToList() ?? new List<string>();
+        hero.InventoryItems = encounterSnapshot.HeroInventoryItems?.ToList() ?? new List<string>();
+
+        if (currentMonster != null)
+        {
+            currentMonster.equippedItems = encounterSnapshot.MonsterEquippedItems?.ToList() ?? new List<string>();
+            currentMonster.inventoryItems = encounterSnapshot.MonsterInventoryItems?.ToList() ?? new List<string>();
+        }
     }
 
     private void SetContinueArrowVisible(bool isVisible)
