@@ -40,6 +40,9 @@ The game comes with a default server address, and the server is currently hosted
 
 If you want to run your own local server, start the game once, then edit the `server_config.json` file inside the local game data/config folder created by Unity. Change the server address to your local server IP and restart the game.
 
+Server repository:
+[The Tower Server](https://github.com/theaksaa/the-tower-server)
+
 On Windows, this will usually be inside a path like:
 
 `C:\Users\<YourUser>\AppData\LocalLow\UATower\The Tower\config\server_config.json`
