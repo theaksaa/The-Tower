@@ -1,40 +1,45 @@
 # The Tower
 
-Short Unity game project built around a tower-run loop:
-`Main Menu -> Hero Select -> Run Overview -> Battle -> End Scene`.
+The Tower is a turn-based RPG where you climb a cursed tower, battle dangerous monsters, learn new moves, collect useful items, and fight your way upward to rescue the princess.
 
-## What's in the project
+## Gameplay Video
 
-- Story and Endless run modes
-- Hero selection with stats and move preview
-- Run overview/map scene with loadout, shop, items, and progression
-- Turn-based battle scene with rewards, effects, revive flow, and battle log
-- Save/load support for continuing runs
-- API-driven run config and endless encounters, with offline fallback data if the server is unavailable
+[Watch Gameplay](https://www.youtube.com/watch?v=CP1REoD5v0o)
 
-## Main folders
+## Download
 
-- `Assets/Scenes` - playable scenes such as `MainMenu`, `HeroSelectScene`, `RunOverviewScene`, `BattleScene`, `StoryScene`, `EndScene`, and `LoadingScreen`
-- `Assets/Scripts/Core` - shared systems like audio, config, scene loading, and persistence
-- `Assets/Scripts/Domain` - runtime/domain models
-- `Assets/Scripts/Gameplay` - scene/gameplay controllers for menu, hero select, overview, story, battle, and ending
-- `Assets/Scripts/Session` - active run state and progression
-- `Assets/Scripts/UI` - shared UI components, presenters, sprites, and drag/drop helpers
-- `Assets/Resources` - sprites, audio, fonts, prefabs, and runtime-loaded assets
-- `ProjectSettings` / `Packages` - Unity project configuration and dependencies
+The game can be downloaded from GitHub Releases.
 
-## Notes
+[Download Latest Release](https://github.com/theaksaa/The-Tower/releases)
 
-- Unity version: `6000.4.4f1`
-- The project uses URP, the Input System, TextMeshPro, and UGUI
-- Server config is resolved by `ServerConfigService`; default API base URL points to `https://159.69.242.255:3000`
-- Unity-generated folders like `Library`, `Temp`, and `Logs` do not need to be shared for normal source control workflows
+## Features
 
-## Current script structure
+- Turn-based combat
+- Animations
+- Sounds
+- Multiple heroes with different playstyles
+- Hero classes
+- Monsters with unique moves
+- Learn new moves from defeated monsters
+- Item drops and equipment system
+- Shop system
+- Save system
+- Story mode
+- Endless mode
+- Remote server configuration
 
-- `MainMenuController` handles mode selection and continue saves
-- `HeroSelectController` loads heroes and starts a run
-- `RunOverviewSceneController` manages map progression, shop, and move/item loadouts
-- `TowerBattleController` drives combat, rewards, logging, and scene return flow
-- `RunSession` keeps the active run state in memory
-- `RunPersistenceService` handles saving and loading runs
+## How to Play
+
+1. Download the latest release.
+2. Extract the ZIP file.
+3. Run `The Tower.exe`.
+
+## Server Configuration
+
+The game comes with a default server address, and the server is currently hosted and active, so you can just download the game and start playing without setting up anything yourself.
+
+If you want to run your own local server, start the game once, then edit the `server_config.json` file inside the local game data/config folder created by Unity. Change the server address to your local server IP and restart the game.
+
+On Windows, this will usually be inside a path like:
+
+`C:\Users\<YourUser>\AppData\LocalLow\UATower\The Tower\config\server_config.json`
